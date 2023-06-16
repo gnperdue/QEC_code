@@ -28,6 +28,9 @@ sigma_y = np.array([[0,1j],[-1j,0]])
 sigma_z = np.array([[1,0],[0,-1]])
 sigma_I = np.identity(2)
 
+# Hadamard Gate
+hadamard = 1/np.sqrt(2) * np.array([[1, 1],[1, -1]])
+
 # CNOT gate
 cnot = np.array([[1, 0, 0, 0],[0, 1, 0, 0],[0, 0, 0, 1],[0, 0, 1, 0]])
 
