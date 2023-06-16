@@ -78,36 +78,26 @@ def vector_state_to_bit_state(logical_state, k):
     for i in range(logical_state.size):
         if logical_state[i] != 0:
             index_of_element = np.append(index_of_element, i)
-    
+
     # How many total qubits are in our vector representation
-    n = int(np.log(len(logical_state))/np.log(2) + 2)
-    
+    n = int(np.log(len(logical_state))/np.log(2))
+
     # Keeps track of the logical bits needed 
     # (i.e. a|000> + b|111> : 000 and 111 are considered separate and we will combine them)
     log_bit = np.array([])
-    
-    # - - - If we fix this part it will work for any qubit system size - - - # 
-    ##### SMALL BUG WHEN NO ERROR OCCURS AND k = 3: outputs '000' as '0000' #####
+
     # Create the bits and make sure they have the correct number of '0's in front 
     for j in range(index_of_element.size):
         bits = bin(index_of_element[j].astype(int))
-        if len(bits) == n:
-            log_bit = np.append(log_bit, bits[2:2+k])
-        elif len(bits) == n-1:
-            log_bit = np.append(log_bit, '0' + bits[2:2+k-1])
-        elif len(bits) == n-2:
-            log_bit = np.append(log_bit, '00' + bits[2:2+k-2])
-        elif len(bits) == n-3:
-            log_bit = np.append(log_bit, '000' + bits[2:2+k-3])
-        else:
-            log_bit = np.append(log_bit, '0000' + bits[2:2+k-4])
+        bits = bits[2:]  # Remove the '0b' prefix
 
-    # Add '0's to the end to make sure they are the proper length desired
-    for i in range(0,k):
-        if len(bits) < k:
-            bits = bits + '0'
+        if len(bits) < n:
+            zeros = '0' * (n - len(bits))
+            new_bits = zeros + bits[0:(k - (n - len(bits)))]
+            new_bits = new_bits[0:k]
+            log_bit = np.append(log_bit, new_bits)
         else:
-            break
+            log_bit = np.append(log_bit, bits[0:k])
 
     return log_bit, index_of_element, logical_state
 
