@@ -71,9 +71,9 @@ def non_adj_CNOT(control, target, tot_qubits):
     return final_total_gate
 
 
-### Changes the vector state representation to the bit representation (only works for max of 5 right now) ###
+### Changes the vector state representation to the bit representation ###
 def vector_state_to_bit_state(logical_state, k):
-    # logical_state: the full logical state of the qubit system you wish to reduce (32 x 1)
+    # logical_state: the full logical state of the n qubit system you wish to reduce (2^n x 1)
     # k: the number of qubits you wish to reduce the system to (must be less than the full system size)
 
     # used to keep an index of where the non-zero element is in the vector representation
@@ -232,6 +232,40 @@ def three_qubit_correct_full_x_error(logical_state):
         corrected_state = logical_state
     
     return corrected_state
+
+
+### Corrects for the coherent x rotation error
+def three_qubit_correct_coherent_x_error(error_state, U, k):
+    # error_state: the vector state representation of the error state
+    # U: coherent error operator that acts on each qubit
+    # k: number of qubits in your system including ancilla
+    
+    errored_bit_states = vector_state_to_bit_state(error_state, 5)[0]
+    
+    for i in range(0,len(errored_bit_states)):
+        
+        qubit_index = three_qubit_detect_error_location_from_bit_state(errored_bit_states[i])[0]
+        if i != 0:
+            error_state = corrected_state
+        if qubit_index == 0:
+            corrected_state = np.dot(np.kron(inv(U), np.identity(16)), error_state)
+            logical_bit_state = vector_state_to_bit_state(corrected_state, 5)[0]
+            
+        elif qubit_index == 1:
+            corrected_state = np.dot(np.kron(np.identity(2), np.kron(inv(U), np.identity(8))), error_state)
+            logical_bit_state = vector_state_to_bit_state(corrected_state, 5)[0]
+
+        elif qubit_index == 2:
+            corrected_state = np.dot(np.kron(np.identity(4), np.kron(inv(U), np.identity(4))), error_state)
+            logical_bit_state = vector_state_to_bit_state(corrected_state, 5)[0]
+
+        else:
+            corrected_state = error_state           
+            logical_bit_state = vector_state_to_bit_state(corrected_state, 5)[0]
+
+        
+    return corrected_state, logical_bit_state
+
 
 ### - - - - - - Outputting Information - - - - - - ###
 
