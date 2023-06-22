@@ -144,13 +144,36 @@ def three_qubit_defined_qubit_x_error(logical_state, error_index):
     return errored_logical_state, error_index
 
 
-### Applies an arbitrary X rotation to all of the three physical qubits in your system ###
-def three_qubit_coherent_x_rotation_error(logical_state, epsilon):
+### Applies an arbitrary X rotation to 1-3 of the physical qubits in your system ###
+def three_qubit_coherent_x_rotation_error(logical_state, epsilon, qubits):
     # logical_state: state of the logical qubit before error occurs
     # epsilon: error constant in a coherent rotation error
-    
     U = np.cos(epsilon) * sigma_I + 1j*np.sin(epsilon) * sigma_x # Create the Unitary error operator 
-    E = np.kron(U, np.kron(U, U)) # Create the Error operator that will act on our logical qubit
+    
+    if qubits == 3:
+        E = np.kron(U, np.kron(U, U)) # Create the Error operator that will act on our logical qubit
+    
+    elif qubits == 2:
+        # Choose the index of the qubit you want to apply the error to.
+        error_index = random.randint(0,2)
+        # Apply the error to two qubits
+        if error_index == 0:
+            E = np.kron(U, np.kron(U, np.identity(2))) # Create the Error operator that will act on our logical qubit
+        elif error_index == 1:
+            E = np.kron(U, np.kron(np.identity(2), U)) # Create the Error operator that will act on our logical qubit        
+        elif error_index == 2:
+            E = np.kron(np.identity(2), np.kron(U, U)) # Create the Error operator that will act on our logical qubit
+        
+    elif qubits == 1:
+        # Choose the index of the qubit you want to apply the error to.
+        error_index = random.randint(0,2)
+        # Apply the error to two qubits
+        if error_index == 0:
+            E = np.kron(U, np.kron(np.identity(2), np.identity(2))) # Create the Error operator that will act on our logical qubit
+        elif error_index == 1:
+            E = np.kron(np.identity(2), np.kron(np.identity(2), U)) # Create the Error operator that will act on our logical qubit        
+        elif error_index == 2:
+            E = np.kron(np.identity(2), np.kron(U, np.identity(2))) # Create the Error operator that will act on our logical qubit
     
     # Apply error
     errored_state = np.dot(E, logical_state)
