@@ -239,7 +239,7 @@ def three_qubit_detect_error_location_from_bit_state(logical_bits):
 ### - - - - - - Error Correction - - - - - - ###
 
 ### Correct for errors by applying full X rotation gate to the qubit where the error occured. ###
-def three_qubit_correct_full_x_error(logical_state):
+def three_qubit_correct_x_error(logical_state):
     # logical_state: the logical state of our 3 qubit system with 2 ancillas (32 x 1)
 
     # Find where the error occured using the error detection function
@@ -256,38 +256,38 @@ def three_qubit_correct_full_x_error(logical_state):
     
     return corrected_state
 
-
-### Corrects for the coherent x rotation error
-def three_qubit_correct_coherent_x_error(error_state, U, k):
-    # error_state: the vector state representation of the error state
-    # U: coherent error operator that acts on each qubit
-    # k: number of qubits in your system including ancilla
+### DONT NEED THIS ###
+# ### Corrects for the coherent x rotation error
+# def three_qubit_correct_coherent_x_error(error_state, U, k):
+#     # error_state: the vector state representation of the error state
+#     # U: coherent error operator that acts on each qubit
+#     # k: number of qubits in your system including ancilla
     
-    errored_bit_states = vector_state_to_bit_state(error_state, 5)[0]
+#     errored_bit_states = vector_state_to_bit_state(error_state, 5)[0]
     
-    for i in range(0,len(errored_bit_states)):
+#     for i in range(0,len(errored_bit_states)):
         
-        qubit_index = three_qubit_detect_error_location_from_bit_state(errored_bit_states[i])[0]
-        if i != 0:
-            error_state = corrected_state
-        if qubit_index == 0:
-            corrected_state = np.dot(np.kron(inv(U), np.identity(16)), error_state)
-            logical_bit_state = vector_state_to_bit_state(corrected_state, 5)[0]
+#         qubit_index = three_qubit_detect_error_location_from_bit_state(errored_bit_states[i])[0]
+#         if i != 0:
+#             error_state = corrected_state
+#         if qubit_index == 0:
+#             corrected_state = np.dot(np.kron(inv(U), np.identity(16)), error_state)
+#             logical_bit_state = vector_state_to_bit_state(corrected_state, 5)[0]
             
-        elif qubit_index == 1:
-            corrected_state = np.dot(np.kron(np.identity(2), np.kron(inv(U), np.identity(8))), error_state)
-            logical_bit_state = vector_state_to_bit_state(corrected_state, 5)[0]
+#         elif qubit_index == 1:
+#             corrected_state = np.dot(np.kron(np.identity(2), np.kron(inv(U), np.identity(8))), error_state)
+#             logical_bit_state = vector_state_to_bit_state(corrected_state, 5)[0]
 
-        elif qubit_index == 2:
-            corrected_state = np.dot(np.kron(np.identity(4), np.kron(inv(U), np.identity(4))), error_state)
-            logical_bit_state = vector_state_to_bit_state(corrected_state, 5)[0]
+#         elif qubit_index == 2:
+#             corrected_state = np.dot(np.kron(np.identity(4), np.kron(inv(U), np.identity(4))), error_state)
+#             logical_bit_state = vector_state_to_bit_state(corrected_state, 5)[0]
 
-        else:
-            corrected_state = error_state           
-            logical_bit_state = vector_state_to_bit_state(corrected_state, 5)[0]
+#         else:
+#             corrected_state = error_state           
+#             logical_bit_state = vector_state_to_bit_state(corrected_state, 5)[0]
 
         
-    return corrected_state, logical_bit_state
+#     return corrected_state, logical_bit_state
 
 
 ### - - - - - - Outputting Information - - - - - - ###
