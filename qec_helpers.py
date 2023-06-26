@@ -39,3 +39,13 @@ def vector_state_to_bit_state(logical_state, k):
 
     return log_bit, index_of_element, logical_state
 
+### Prints out the full state information with the amplitude of each state ###
+def print_state_info(logical_state, k):
+    # logical_state: the full logical state of the qubit system after initialization
+    # k: total number of qubits in your system you want to display
+    
+    bit_states, index, vector_state = vector_state_to_bit_state(logical_state, k)
+    non_zero_vector_state = vector_state[vector_state != 0]
+    
+    for j in range(len(bit_states)):
+        print(bit_states[j], ': ', non_zero_vector_state[j])
