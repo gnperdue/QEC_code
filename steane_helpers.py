@@ -128,10 +128,13 @@ def initialize_steane_logical_state(initial_state):
             # combine the vector states again
             final_vector_state = final_vector_state + all_vector_states[j]
 
+    
+    # Using this for superposition states, doesnt do anything for |0> initial states 
+    # becuase they are already +1 eigenstates of Z
+    final_vector_state = steane_bit_correction(final_vector_state)
 
     logical_bits, state_indices, logical_vector_state = vector_state_to_bit_state(final_vector_state, 10)
-
-   
+       
     return logical_bits, state_indices, logical_vector_state
 
 
@@ -572,7 +575,7 @@ def initialize_larger_steane_code(initial_state):
     full_system = np.dot(larger_control_k_one, np.dot(larger_control_k_two, np.dot(larger_control_k_three, full_system)))
 
     # apply the second hadamard to the ancillas
-    full_system = np.dot(np.sqrt(8) * ancilla_hadamard, full_system)
+    full_system = np.dot(ancilla_hadamard, full_system)
 
     # Find the bit representation of our full system
     bits, index, vector_state = vector_state_to_bit_state(full_system, 13)
