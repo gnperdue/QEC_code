@@ -70,7 +70,7 @@ def initialize_steane_logical_state(initial_state):
     full_system = np.dot(ancilla_hadamard, full_system)
 
     # Find the bit representation of our full system
-    bits, index, vector_state = vector_state_to_bit_state(np.sqrt(8) * full_system, 10)
+    bits, index, vector_state = vector_state_to_bit_state(full_system, 10)
     
   
     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
@@ -82,13 +82,13 @@ def initialize_steane_logical_state(initial_state):
     for i in range(len(vector_state)):
         if vector_state[i] != 0: 
             # initialize the vector that will hold the single non-zero value in the proper spot
-            value_position = np.zeros((1,2**n), dtype=complex) 
-            value_position[:,i] = vector_state[i] # insert the non-zero value in the correct spot
+            value_position = np.zeros((2**n,), dtype=complex) 
+            value_position[i,] = vector_state[i] # insert the non-zero value in the correct spot
             # Add the value position vector to an array of all the error places
             if x == 0:
-                all_vector_states = value_position
+                all_vector_states = [value_position]
             else:
-                all_vector_states = np.append(all_vector_states, value_position , axis=0)
+                all_vector_states = np.append(all_vector_states, [value_position] , axis=0)
             x+=1
 
     # find the number of rows and columns in the all error state array so that we can loop over the rows later
@@ -98,7 +98,7 @@ def initialize_steane_logical_state(initial_state):
     final_vector_state = np.zeros((2**(n),), dtype=complex)
 
     # Measure the three ancilla qubits
-    # Applying the Z gate operation on a qubit (i = 1^(M_2) + 2^(M_3) + 4^(M_1))
+    # Applying the Z gate operation on a specific qubit
     for j in range(num_rows):
         # find index
         m_one = 0
@@ -111,24 +111,22 @@ def initialize_steane_logical_state(initial_state):
         if bits[j][9] == '1':
             m_three = 1
 
-            # Which qubit do we perform the Z gate on
-            index = (m_one * 2**2) + (m_three * 2**1) + (m_two * 2**0) - 1
+        # Which qubit do we perform the Z gate on
+        index = (m_one * 2**2) + (m_three * 2**1) + (m_two * 2**0) - 1
 
-            # if no error occurs we dont need to apply a correction
-            if index == -1:
-                final_vector_state = final_vector_state + all_vector_states[j][:]
+        # if no error occurs we dont need to apply a correction
+        if index == -1:
+            final_vector_state = final_vector_state + all_vector_states[j]
 
-            else:
-                # apply the z gate depending on index
-                operation = np.kron(np.identity(2**(index)), np.kron(sigma_x, np.kron(
-                    np.identity(2**(n-3-index-1)), np.identity(2**3))))
+        else:
+            # apply the z gate depending on index
+            operation = np.kron(np.identity(2**(index)), np.kron(sigma_z, np.kron(
+                np.identity(2**(n-3-index-1)), np.identity(2**3))))
 
-                all_vector_states[j][:] = np.dot(operation, all_vector_states[j][:])
+            all_vector_states[j] = np.dot(operation, all_vector_states[j])
 
-                # combine the vector states again
-                final_vector_state = final_vector_state + all_vector_states[j][:]
-
-        final_vector_state = final_vector_state + all_vector_states[j][:]
+            # combine the vector states again
+            final_vector_state = final_vector_state + all_vector_states[j]
 
 
     logical_bits, state_indices, logical_vector_state = vector_state_to_bit_state(final_vector_state, 10)
@@ -303,7 +301,7 @@ def steane_phase_correction(logical_state):
 
         # Which qubit do we perform the Z gate on
         index = (m_one * 2**2) + (m_three * 2**1) + (m_two * 2**0) -1
-        
+
         # if no error occurs we dont need to apply a correction
         if index == -1:
             final_vector_state = final_vector_state + all_vector_states[j][:]
