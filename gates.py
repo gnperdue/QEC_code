@@ -15,6 +15,8 @@ hadamard = 1/np.sqrt(2) * np.array([[1, 1],[1, -1]])
 ### CNOT gate
 cnot = np.array([[1, 0, 0, 0],[0, 1, 0, 0],[0, 0, 0, 1],[0, 0, 1, 0]])
 
+# flips the roles of control and target in our usual CNOT gate
+flipped_cnot = np.array([[1, 0, 0, 0],[0, 0, 0, 1],[0, 0, 1, 0],[0, 1, 0, 0]]) 
 ### Implement a CNOT gate between 2 adjacent qubits in a system ###
 def adj_CNOT(control, target, tot_qubits):
     # control: control qubit index (starting from 0)
