@@ -787,3 +787,322 @@ def simultaneous_error_correction(logical_state):
 
     return corrected_vector_state
 
+
+# - - - - - - - - - - Steane Code Using Line Connectivity - - - - - - - - - - #
+
+# Define the Stabilizer Operators as CNOT gates between adjacent qubits 
+# (remember that the non-adj CNOT calculation is using line connectivity)
+K1_operation = np.dot(flipped_non_adj_CNOT(7, 3, 10), np.dot(flipped_non_adj_CNOT(7, 4, 10), np.dot(
+    flipped_non_adj_CNOT(7, 5, 10), flipped_adj_CNOT(7, 6, 10))))
+K2_operation = np.dot(flipped_non_adj_CNOT(8, 0, 10), np.dot(flipped_non_adj_CNOT(8, 2, 10), np.dot(
+    flipped_non_adj_CNOT(8, 4, 10), flipped_non_adj_CNOT(8, 6, 10))))
+K3_operation = np.dot(flipped_non_adj_CNOT(9, 1, 10), np.dot(flipped_non_adj_CNOT(9, 2, 10), np.dot(
+    flipped_non_adj_CNOT(9, 5, 10), flipped_non_adj_CNOT(9, 6, 10))))
+
+K4_operation = np.dot(non_adj_CZ(7, 3, 10), np.dot(non_adj_CZ(7, 4, 10), np.dot(
+    non_adj_CZ(7, 5, 10), adj_CZ(7, 6, 10))))
+K5_operation =np.dot(non_adj_CZ(8, 0, 10), np.dot(non_adj_CZ(8, 2, 10), np.dot(
+    non_adj_CZ(8, 4, 10), non_adj_CZ(8, 6, 10))))
+K6_operation =np.dot(non_adj_CZ(9, 1, 10), np.dot(non_adj_CZ(9, 2, 10), np.dot(
+    non_adj_CZ(9, 5, 10), non_adj_CZ(9, 6, 10))))
+
+
+### Initializes the 10 qubit (7 physical, 3 ancilla) qubit system ###
+def initialize_steane_line_conn(initial_state):
+    # initial_state: initial state of your 7 qubits qubit that you want to use as your logical state combined with ancillas
+    
+    
+    ancilla_syndrome = np.kron(zero, np.kron(zero, zero))
+    full_system = np.kron(initial_state, ancilla_syndrome)
+
+    # apply the first hadamard to the ancillas
+    ancilla_hadamard = np.kron(np.identity(2**7), np.kron(hadamard, np.kron(hadamard, hadamard)))
+    full_system = np.dot(ancilla_hadamard, full_system[0])
+
+    # apply the control stabilizer gates to the full_system
+    full_system = np.dot(K1_operation, np.dot(K2_operation, np.dot(K3_operation, full_system)))
+
+    # apply the second hadamard to the ancillas
+    full_system = np.dot(ancilla_hadamard, full_system)
+
+    # Find the bit representation of our full system
+    bits, index, vector_state = vector_state_to_bit_state(full_system, 10)
+    
+  
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    # Here we take the vector state and separate it into vectors so that we can apply a phase flip to designated qubits
+    
+    n = 10 # Total number of qubits in the system
+    x = 0 # used to keep track of first indice where vector_state is non-zero
+
+    for i in range(len(vector_state)):
+        if vector_state[i] != 0: 
+            # initialize the vector that will hold the single non-zero value in the proper spot
+            value_position = np.zeros((2**n,), dtype=complex) 
+            value_position[i,] = vector_state[i] # insert the non-zero value in the correct spot
+            # Add the value position vector to an array of all the error places
+            if x == 0:
+                all_vector_states = [value_position]
+            else:
+                all_vector_states = np.append(all_vector_states, [value_position] , axis=0)
+            x+=1
+
+    # find the number of rows and columns in the all error state array so that we can loop over the rows later
+    num_rows, num_cols = all_vector_states.shape
+
+    # initialize the final vector state as all 0s so we can add in the values to designated spots
+    final_vector_state = np.zeros((2**(n),), dtype=complex)
+
+    # Measure the three ancilla qubits
+    # Applying the Z gate operation on a specific qubit
+    for j in range(num_rows):
+        # find index
+        m_one = 0
+        m_two = 0
+        m_three = 0
+        if bits[j][7] == '1':
+            m_one = 1
+        if bits[j][8] == '1':
+            m_two = 1
+        if bits[j][9] == '1':
+            m_three = 1
+
+        # Which qubit do we perform the Z gate on
+        index = (m_one * 2**2) + (m_three * 2**1) + (m_two * 2**0) - 1
+
+        # if no error occurs we dont need to apply a correction
+        if index == -1:
+            final_vector_state = final_vector_state + all_vector_states[j]
+
+        else:
+            # apply the z gate depending on index
+            operation = np.kron(np.identity(2**(index)), np.kron(sigma_z, np.kron(
+                np.identity(2**(n-3-index-1)), np.identity(2**3))))
+
+            all_vector_states[j] = np.dot(operation, all_vector_states[j])
+
+            # combine the vector states again
+            final_vector_state = final_vector_state + all_vector_states[j]
+       
+        
+    # Using this for superposition states, doesnt do anything for |0> initial states 
+    # becuase they are already +1 eigenstates of Z
+    final_vector_state = steane_bit_correction(final_vector_state)
+
+    logical_bits, state_indices, logical_vector_state = vector_state_to_bit_state(final_vector_state, 10)
+        
+        
+    return final_vector_state
+
+
+### Implements the 7 Qubit Steane phase correction code using line connectivity
+def steane_line_conn_phase_correction(logical_state):
+    # logical_state: The vector state representation of your 10 qubit system 
+                    # (7 data qubits initialized to your desired logical state, 3 ancilla initialized to 0)
+    
+    full_system = logical_state
+    
+
+    # - - - - - - - - - - # Z Error Correction # - - - - - - - - - - #
+    
+    # apply the first hadamard to the ancillas
+    ancilla_hadamard = np.kron(np.identity(2**7), np.kron(hadamard, np.kron(hadamard, hadamard)))
+    full_system = np.dot(ancilla_hadamard, full_system)
+
+    # apply the control stabilizer gates to the full_system
+    full_system = np.dot(K1_operation, np.dot(K2_operation, np.dot(K3_operation, full_system)))
+
+    # apply the second hadamard to the ancillas
+    full_system = np.dot(ancilla_hadamard, full_system)
+
+    # Find the bit representation of our full system
+    bits, index, vector_state = vector_state_to_bit_state(full_system, 10)
+
+
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    # Here we take the vector state and separate it into vectors so that we can apply a phase flip to designated qubits
+
+    n = 10 # Total number of qubits in the system
+    x = 0 # used to keep track of first indice where vector_state is non-zero
+
+    for i in range(len(vector_state)):
+        if vector_state[i] != 0: 
+            # initialize the vector that will hold the single non-zero value in the proper spot
+            value_position = np.zeros((1,2**n), dtype=complex) 
+            value_position[:,i] = vector_state[i] # insert the non-zero value in the correct spot
+            # Add the value position vector to an array of all the error places
+            if x == 0:
+                all_vector_states = value_position
+            else:
+                all_vector_states = np.append(all_vector_states, value_position , axis=0)
+            x+=1
+
+    # find the number of rows and columns in the all error state array so that we can loop over the rows later
+    num_rows, num_cols = all_vector_states.shape
+
+    # initialize the final vector state as all 0s so we can add in the values to designated spots
+    final_vector_state = np.zeros((2**(n),), dtype=complex)
+
+    # Measure the three ancilla qubits
+    # Applying the Z gate operation on a qubit depending on the ancilla measuremnts
+    for j in range(num_rows):
+        # find index
+        m_one = 0
+        m_two = 0
+        m_three = 0
+        if bits[j][7] == '1':
+            m_one = 1
+        if bits[j][8] == '1':
+            m_two = 1
+        if bits[j][9] == '1':
+            m_three = 1
+
+        # Which qubit do we perform the Z gate on
+        index = (m_one * 2**2) + (m_three * 2**1) + (m_two * 2**0) -1
+
+        # if no error occurs we dont need to apply a correction
+        if index == -1:
+            final_vector_state = final_vector_state + all_vector_states[j][:]
+        else:
+            # apply the z gate depending on index
+            operation = np.kron(np.identity(2**index), np.kron(sigma_z, np.kron(
+                np.identity(int(2**(n-3-index-1))), np.identity(2**3))))
+
+            all_vector_states[j][:] = np.dot(operation, all_vector_states[j][:])
+
+            # combine the vector states again
+            final_vector_state = final_vector_state + all_vector_states[j][:]
+
+
+    logical_bits, state_indices, logical_vector_state = vector_state_to_bit_state(final_vector_state, 10)
+    
+    
+    # Used to remove the smaller values after error correction
+    x=0
+    for j in range(len(logical_vector_state)):
+        if (abs(logical_vector_state[j]) > 1e-17): 
+            # initialize the vector that will hold the single non-zero value in the proper spot
+            value_position = np.zeros((1,2**n), dtype=complex) 
+            value_position[:,j] = logical_vector_state[j] # insert the non-zero value in the correct spot
+            # Add the value position vector to an array of all the error places
+            if x == 0:
+                all_vector_states = value_position
+            else:
+                all_vector_states = np.append(all_vector_states, value_position , axis=0)
+            x+=1
+
+    # find the number of rows and columns in the all error state array so that we can loop over the rows later
+    num_rows, num_cols = all_vector_states.shape
+
+    # combine the vector states again
+    corrected_vector_state = np.zeros((2**(n),), dtype=complex)
+    for j in range(num_rows):
+        corrected_vector_state = corrected_vector_state + all_vector_states[j][:]
+    
+    return corrected_vector_state
+
+
+### Implements the 7 Qubit Steane bit correction code using line connectivity
+def steane_line_conn_bit_correction(logical_state):
+    # logical_state: The vector state representation of your 10 qubit system 
+                    # (7 data qubits initialized to your desired logical state, 3 ancilla initialized to 0)
+    
+    full_system = logical_state
+    
+    ancilla_hadamard = np.kron(np.identity(2**7), np.kron(hadamard, np.kron(hadamard, hadamard)))
+
+    full_system = np.dot(ancilla_hadamard, full_system)
+
+    # apply the control stabilizer gates to the full_system
+    full_system = np.dot(K4_operation, np.dot(K5_operation, np.dot(K6_operation, full_system)))
+    # full_system = np.dot(control_k_four, np.dot(control_k_five, np.dot(control_k_six, full_system)))
+
+    # apply the second hadamard to the ancillas
+    full_system = np.dot(ancilla_hadamard, full_system)
+
+    # Find the bit representation of our full system
+    bits, index, vector_state = vector_state_to_bit_state(full_system, 10)
+    
+    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+    # Here we take the vector state and separate it into vectors so that we can apply a phase flip to designated qubits
+    
+    n = 10 # Total number of qubits in the system
+    x = 0 # used to keep track of first indice where vector_state is non-zero
+
+    for i in range(len(vector_state)):
+        if vector_state[i] != 0: 
+            # initialize the vector that will hold the single non-zero value in the proper spot
+            value_position = np.zeros((1,2**n), dtype=complex) 
+            value_position[:,i] = vector_state[i] # insert the non-zero value in the correct spot
+            # Add the value position vector to an array of all the error places
+            if x == 0:
+                all_vector_states = value_position
+            else:
+                all_vector_states = np.append(all_vector_states, value_position , axis=0)
+            x+=1
+
+    # find the number of rows and columns in the all error state array so that we can loop over the rows later
+    num_rows, num_cols = all_vector_states.shape
+
+    # initialize the final vector state as all 0s so we can add in the values to designated spots
+    final_vector_state = np.zeros((2**(n),), dtype=complex)
+
+    # Measure the three ancilla qubits
+    # Applying the X gate operation on a qubit depending on the ancilla measuremnts
+    for j in range(num_rows):
+        # find index
+        m_four = 0
+        m_five = 0
+        m_six = 0
+        if bits[j][7] == '1':
+            m_four = 1
+        if bits[j][8] == '1':
+            m_five = 1
+        if bits[j][9] == '1':
+            m_six = 1
+
+        # Which qubit do we perform the x gate on
+        index = (m_four * 2**2) + (m_six * 2**1) + (m_five * 2**0) -1
+
+        # if no error occurs we dont need to apply a correction
+        if index == -1:
+            final_vector_state = final_vector_state + all_vector_states[j][:]
+
+        else:
+            # apply the x gate depending on index
+            operation = np.kron(np.identity(2**(index)), np.kron(sigma_x, np.kron(
+                np.identity(2**(n-3-index-1)), np.identity(2**3))))
+
+            all_vector_states[j][:] = np.dot(operation, all_vector_states[j][:])
+
+            # combine the vector states again
+            final_vector_state = final_vector_state + all_vector_states[j][:]
+
+
+    logical_bits, state_indices, logical_vector_state = vector_state_to_bit_state(final_vector_state, 10)
+
+    # Used to remove the smaller values after error correction
+    x=0
+    for j in range(len(logical_vector_state)):
+        if (abs(logical_vector_state[j]) > 1e-15): 
+            # initialize the vector that will hold the single non-zero value in the proper spot
+            value_position = np.zeros((1,2**n), dtype=complex) 
+            value_position[:,j] = logical_vector_state[j] # insert the non-zero value in the correct spot
+            # Add the value position vector to an array of all the error places
+            if x == 0:
+                all_vector_states = value_position
+            else:
+                all_vector_states = np.append(all_vector_states, value_position , axis=0)
+            x+=1
+
+    # find the number of rows and columns in the all error state array so that we can loop over the rows later
+    num_rows, num_cols = all_vector_states.shape
+
+    # combine the vector states again
+    logical_vector_state = np.zeros((2**(n),), dtype=complex)
+    for j in range(num_rows):
+        logical_vector_state = logical_vector_state + all_vector_states[j][:]
+    
+    return logical_vector_state
+        
+    
