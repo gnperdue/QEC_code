@@ -177,6 +177,9 @@ def three_qubit_correct_x_error(logical_state):
 
 ### Takes the error state and separates it into vectors so that we can see the separate error bit states and correct for them
 def separate_and_correct_multiple_errors(error_state, n):
+    # error_state: The errored logical state of your system
+    # n: total number of qubits in your system
+    
     x = 0 # used to keep track of first indice where error_state is non-zero
     for i in range(len(error_state)):
         if error_state[i] != 0: 
