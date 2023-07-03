@@ -138,59 +138,59 @@ def initialize_steane_logical_state(initial_state):
     return logical_bits, state_indices, logical_vector_state
 
 
-### Splits the state up into vectors and takes only those that have '000' as the ancilla measurement (using 3 ancilla) ###
-def format_state(logical_state):
-    # logical_state: The logical state of the 10 qubit system
+# ### Splits the state up into vectors and takes only those that have '000' as the ancilla measurement (using 3 ancilla) ###
+# def format_state(logical_state):
+#     # logical_state: The logical state of the 10 qubit system
     
-    n = 10 # Total number of qubits in the system
+#     n = 10 # Total number of qubits in the system
 
-    # Take our vector and find the bit strings that represent it
-    logical_bits, state_indices, logical_vector_state = vector_state_to_bit_state(logical_state, 10)
+#     # Take our vector and find the bit strings that represent it
+#     logical_bits, state_indices, logical_vector_state = vector_state_to_bit_state(logical_state, 10)
     
-    # Finding the logical bits that contain '000' in the end
-    x=0
-    for j in range(len(logical_bits)):
-        if logical_bits[j][7:10] == '000':
-            if x == 0:
-                final_bits = logical_bits[j]
-            else:
-                final_bits = np.append(final_bits, logical_bits[j])
-            x+=1
+#     # Finding the logical bits that contain '000' in the end
+#     x=0
+#     for j in range(len(logical_bits)):
+#         if logical_bits[j][7:10] == '000':
+#             if x == 0:
+#                 final_bits = logical_bits[j]
+#             else:
+#                 final_bits = np.append(final_bits, logical_bits[j])
+#             x+=1
     
-    # Take the vector and split it into individual vectors that contain only a single non zero value in the same spot
-    x=0
-    for j in range(len(logical_vector_state)):
-        if logical_vector_state[j] != 0: 
-            # initialize the vector that will hold the single non-zero value in the proper spot
-            value_position = np.zeros((1,2**n), dtype=complex) 
-            value_position[:,j] = logical_vector_state[j] # insert the non-zero value in the correct spot
-            # Add the value position vector to an array of all the error places
-            if x == 0:
-                all_vector_states = value_position
-            else:
-                all_vector_states = np.append(all_vector_states, value_position , axis=0)
-            x+=1
+#     # Take the vector and split it into individual vectors that contain only a single non zero value in the same spot
+#     x=0
+#     for j in range(len(logical_vector_state)):
+#         if logical_vector_state[j] != 0: 
+#             # initialize the vector that will hold the single non-zero value in the proper spot
+#             value_position = np.zeros((1,2**n), dtype=complex) 
+#             value_position[:,j] = logical_vector_state[j] # insert the non-zero value in the correct spot
+#             # Add the value position vector to an array of all the error places
+#             if x == 0:
+#                 all_vector_states = value_position
+#             else:
+#                 all_vector_states = np.append(all_vector_states, value_position , axis=0)
+#             x+=1
 
-    # find the number of rows and columns in the all error state array so that we can loop over the rows later
-    num_rows, num_cols = all_vector_states.shape
+#     # find the number of rows and columns in the all error state array so that we can loop over the rows later
+#     num_rows, num_cols = all_vector_states.shape
 
-    # take out the vectors that do not have '000' as the 3 ancilla bits
-    for j in range(num_rows):
-        if vector_state_to_bit_state(all_vector_states[j][:], 10)[0] not in final_bits : 
-            all_vector_states[j][:].fill(0)
+#     # take out the vectors that do not have '000' as the 3 ancilla bits
+#     for j in range(num_rows):
+#         if vector_state_to_bit_state(all_vector_states[j][:], 10)[0] not in final_bits : 
+#             all_vector_states[j][:].fill(0)
 
-    # combine the vector states again
-    final_vector_state = np.zeros((2**(n),), dtype=complex)
-    for j in range(num_rows):
-        final_vector_state = final_vector_state + all_vector_states[j][:]
+#     # combine the vector states again
+#     final_vector_state = np.zeros((2**(n),), dtype=complex)
+#     for j in range(num_rows):
+#         final_vector_state = final_vector_state + all_vector_states[j][:]
 
-#     print(vector_state_to_bit_state(final_vector_state,7)[0])
-#     print(final_vector_state[final_vector_state != 0])
+# #     print(vector_state_to_bit_state(final_vector_state,7)[0])
+# #     print(final_vector_state[final_vector_state != 0])
 
-    logical_bits = vector_state_to_bit_state(final_vector_state,7)[0]
-#     print(logical_vector_state[logical_vector_state != 0])
+#     logical_bits = vector_state_to_bit_state(final_vector_state,7)[0]
+# #     print(logical_vector_state[logical_vector_state != 0])
     
-    return final_vector_state
+#     return final_vector_state
 
 
 # - - - - - - - - - -  Errors - - - - - - - - - - #
@@ -453,26 +453,26 @@ def steane_bit_correction(logical_state):
     return corrected_vector_state
 
 
-### Reset the ancilla qubits to '000' between the two measurements ###
-def ancilla_reset(logical_state):
-    # logical_state: The vector state representation of your full system
+# ### Reset the ancilla qubits to '000' between the two measurements ###
+# def ancilla_reset(logical_state):
+#     # logical_state: The vector state representation of your full system
 
-    ancilla_bits = vector_state_to_bit_state(logical_state, 10)[0][0][7:10]
+#     ancilla_bits = vector_state_to_bit_state(logical_state, 10)[0][0][7:10]
 
-    if ancilla_bits[0] == '1':
-        operation = np.kron(np.identity(2**7), np.kron(sigma_x, np.identity(2**2)))
-        logical_state = np.dot(operation, logical_state)
+#     if ancilla_bits[0] == '1':
+#         operation = np.kron(np.identity(2**7), np.kron(sigma_x, np.identity(2**2)))
+#         logical_state = np.dot(operation, logical_state)
 
-    if ancilla_bits[1] == '1':
-        operation = np.kron(np.identity(2**7), np.kron(np.identity(2), np.kron(sigma_x, np.identity(2))))
-        logical_state = np.dot(operation, logical_state)
+#     if ancilla_bits[1] == '1':
+#         operation = np.kron(np.identity(2**7), np.kron(np.identity(2), np.kron(sigma_x, np.identity(2))))
+#         logical_state = np.dot(operation, logical_state)
 
-    if ancilla_bits[2] == '1':
-        operation = np.kron(np.identity(2**7), np.kron(np.identity(2**2), sigma_x))
-        logical_state = np.dot(operation, logical_state)
+#     if ancilla_bits[2] == '1':
+#         operation = np.kron(np.identity(2**7), np.kron(np.identity(2**2), sigma_x))
+#         logical_state = np.dot(operation, logical_state)
 
-#     print(vector_state_to_bit_state(logical_state, 10)[0])
-    return logical_state
+# #     print(vector_state_to_bit_state(logical_state, 10)[0])
+#     return logical_state
 
 
 # - - - - - - - - - - Larger 6 ancilla Steane code implementation - - - - - - - - - - #
