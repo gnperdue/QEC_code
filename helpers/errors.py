@@ -50,3 +50,31 @@ def random_qubit_z_error(logical_state, qubit_range = None):
         errored_logical_state = np.dot(error_gate, logical_state)
 
         return errored_logical_state, error_index
+    
+    
+### Takes the density matrix after a perfect operation and applies an error gate based on probability of error ###
+def qubit_gate_error_matrix(rho, error_prob, index, n):
+    # rho: density matrix of qubit system after perfect gate was applied
+    # error_prob: probability for gate operation error
+    # index: index of qubit that gate was applied (target qubit in this case)
+    # n: total number of qubits in your system
+    
+    # qubit error rates:
+    KD0 = np.sqrt(1-error_prob) * sigma_I
+    KD1 = np.sqrt(error_prob/3) * sigma_x
+    KD2 = np.sqrt(error_prob/3) * sigma_z
+    KD3 = np.sqrt(error_prob/3) * sigma_y
+    
+    # qubit error gates
+    KD0 = np.kron(np.identity(2**(index)), np.kron(KD0, np.identity(2**(n-index-1))))
+    KD1 = np.kron(np.identity(2**(index)), np.kron(KD1, np.identity(2**(n-index-1)))) 
+    KD2 = np.kron(np.identity(2**(index)), np.kron(KD2, np.identity(2**(n-index-1)))) 
+    KD3 = np.kron(np.identity(2**(index)), np.kron(KD3, np.identity(2**(n-index-1))))
+    
+    # apply error gates (qubit 0 and qubit 2 will not be affected by error gates, although we do apply Identity to q0)
+    D_rho = np.dot(KD0, np.dot(rho, KD0.conj().T)) + np.dot(
+        KD1, np.dot(rho, KD1.conj().T)) + np.dot(
+        KD2, np.dot(rho, KD2.conj().T)) + np.dot(
+        KD3, np.dot(rho, KD3.conj().T))
+    
+    return D_rho
