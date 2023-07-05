@@ -2,9 +2,9 @@
 
 import numpy as np
 import random
-from helpers.qec_helpers import *
-from helpers.gates import *
-from helpers.errors import *
+from quantum.qec_helpers import *
+from quantum.gates import *
+from quantum.errors import *
 
 ### - - - - - - - - - - Fault Tolerant 7 qubit Steane code - - - - - - - - - - ###
 

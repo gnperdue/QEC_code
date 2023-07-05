@@ -2,8 +2,8 @@
 
 import numpy as np
 import random
-from helpers.qec_helpers import *
-from helpers.gates import *
+from quantum.qec_helpers import *
+from quantum.gates import *
 
 ### Applies a random X rotation to one of the physical qubits in your system (randomly) ### 
 def random_qubit_x_error(logical_state, qubit_range = None):
