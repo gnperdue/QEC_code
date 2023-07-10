@@ -8,6 +8,7 @@ from general_qec.gates import *
 ### Applies a random X rotation to one of the physical qubits in your system (randomly) ### 
 def random_qubit_x_error(logical_state, qubit_range = None):
     # logical_state: The logical state of the three qubit system you wish to apply the error to
+    # qubit_range: The indices you want to consider in your error application (starts at 1)
     
     # total number of qubits in your system
     n = int(np.log(len(logical_state))/np.log(2))
@@ -30,7 +31,8 @@ def random_qubit_x_error(logical_state, qubit_range = None):
 ### Applies a random Z rotation to one of the physical qubits in your system (randomly) ### 
 def random_qubit_z_error(logical_state, qubit_range = None):
     # logical_state: The logical state of the three qubit system you wish to apply the error to
-    
+    # qubit_range: The indices you want to consider in your error application (starts at 1)
+   
     # total number of qubits in your system
     n = int(np.log(len(logical_state))/np.log(2))
     
@@ -79,6 +81,8 @@ def qubit_gate_error_matrix(rho, error_prob, index, n):
     
     return D_rho
 
+
+### - - - CNOT Gates - - - ###
 
 ### Apply an adjacent CNOT gate between 2 qubits in a system with line connectivity and errors ###
 def errored_adj_CNOT(rho, control, target, qubit_error_probs):
@@ -254,7 +258,7 @@ def errored_flipped_non_adj_CNOT(rho, control, target, qubit_error_probs):
          
     return error_rho # returns the density matrix of your system
 
-### Implement a CNOT gate between 2 qubits depending on your control and target qubit
+### Implement an errored CNOT gate between 2 qubits depending on your control and target qubit
 def line_errored_CNOT(state, control, target, qubit_error_probs, form = 'psi'):
     # state: the vector state representation or density matrix representation of your system
     # control: control qubit index (starting from 0)
@@ -287,14 +291,149 @@ def line_errored_CNOT(state, control, target, qubit_error_probs, form = 'psi'):
     return final_rho # output is always the density matrix after the operation
 
 
+### - - - - - CZ Gates - - - - - ###
 
-### - - - - - - - - - CNOT Gates which contain rad (relaxation and dephasing) errors (line connectivity) - - - - - - - - - ###
+### Implement a CZ gate between 2 adjacent qubits in a system ###
+def errored_adj_CZ(rho, control, target, qubit_error_probs):
+    # rho: the density matrix representation of your system
+    # control: control qubit index (starting from 0)
+    # target: target qubit index (starting from 0) (must be a larger index than control)
+    # qubit_error_probs: an array of the probability for errors of each qubit in your system
+    
+    # Adds the dimensions needed depending on the tot_qubits
+    if control < target:
+        n1 = control # exponent used to tensor the left side identity matrix for our full system
+        n2 = tot_qubits - target - 1 # exponent used to tensor the right side identity matrix for our full system
+    else:
+        n1 = target # exponent used to tensor the left side identity matrix for our full system
+        n2 = tot_qubits - control - 1 # exponent used to tensor the right side identity matrix for our full system
+
+    gate = np.kron(np.identity(2**(n1)), np.kron(cz, np.identity(2**(n2))))
+    # remove small values
+    gate[np.abs(gate) < 1e-15] = 0
+    
+    perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
+    
+    # apply our error gate and find the new density matrix
+    error_rho = qubit_gate_error_matrix(perfect_gate_rho, qubit_error_probs[control-j-1], control-j-1, tot_qubits)
+
+    return error_rho
+
+
+### Implement a non-adjacent CZ gate between 2 qubits in a system ###
+def errored_non_adj_CZ(rho, control, target, qubit_error_probs):
+    # rho: the density matrix representation of your system
+    # control: control qubit index (starting from 0)
+    # target: target qubit index (starting from 0) (must be a larger index than control)
+    # qubit_error_probs: an array of the probability for errors of each qubit in your system
+    
+      # find our density matrix
+#     rho = np.kron(psi, psi[np.newaxis].conj().T)
+
+    # How many total qubits are in our vector representation
+    tot_qubits = int(np.log(len(rho))/np.log(2))
+    
+    p = np.abs(target - control) # used to index over all gates neeeded to compose final gate
+    all_dots = np.array([[]]) # array used to keep track of the components we will combine at the end
+
+     # Adds the dimensions needed depending on the tot_qubits
+    if control < target:
+        n1 = control # exponent used to tensor the left side identity matrix for our full system
+        n2 = tot_qubits - target - 1 # exponent used to tensor the right side identity matrix for our full system
+
+    else:
+        n1 = target # exponent used to tensor the left side identity matrix for our full system
+        n2 = tot_qubits - control - 1 # exponent used to tensor the right side identity matrix for our full system
+
+    # Applies the gates twice (square in our formula)
+    for k in range(0,2):
+        if k != 0:
+            rho = error_rho
+        # Indexing over the values of p to get the first half of the formula
+        for j in range(p):
+            # Sets the next component of the matrix multiplication up
+            next_dot = np.kron(np.identity(2**(j)), np.kron(cnot, np.identity(2**(p-j-1))))
+            next_dot = np.kron(np.identity(2**(n1)), np.kron(next_dot, np.identity(2**(n2))))
+
+            # Adds the components to the array and multiplies them together
+            if j == 0:
+                all_dots = np.array([next_dot]) # adds the perfect gate to an array
+                gate = all_dots[j] # sets the current gate
+                # remove small values
+                gate[np.abs(gate) < 1e-15] = 0
+                # applies the perfect gate to our density matrix
+                perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
+                # apply our error gate and find the new density matrix
+                error_rho = qubit_gate_error_matrix(
+                    perfect_gate_rho, qubit_error_probs[j+control+1], j+control+1, tot_qubits)
+                
+            else:
+                all_dots = np.append(all_dots, [next_dot], axis = 0) # adds the perfect gate to an array
+                gate = all_dots[j] # sets the current gate
+                # remove small values
+                gate[np.abs(gate) < 1e-15] = 0
+                # applies the perfect gate to our density matrix
+                perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
+                # apply our error gate and find the new density matrix
+                error_rho = qubit_gate_error_matrix(
+                    perfect_gate_rho, qubit_error_probs[j+control+1], j+control+1, tot_qubits)
+                
+        # Indexing over values of p such that we get the 2nd half of the equation together
+        for j in range(p - 2):
+            gate = all_dots[p-j-2] # sets the current gate
+            # remove small values
+            gate[np.abs(gate) < 1e-15] = 0
+            # applies the perfect gate to our density matrix
+            perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
+            # apply our error gate and find the new density matrix
+            error_rho = qubit_gate_error_matrix(perfect_gate_rho, qubit_error_probs[target-j-2+1], target-j-2+1, tot_qubits)
+            
+            
+          # Find the correct Hadamard gate to apply so that you convert the CNOT to a CZ
+    h_gate = np.kron(np.identity(2**(n1)), np.kron(np.kron(
+            np.identity(2**(np.abs(target - control))), hadamard), np.identity(2**(n2))))
+    
+    # Calculate the final rho
+    error_rho = np.dot(h_gate, np.dot(error_rho, h_gate.conj().T))
+    
+    error_rho = qubit_gate_error_matrix(error_rho, qubit_error_probs[target], target, tot_qubits)
+                
+    return error_rho # returns the density matrix of your system
+
+
+### Implement a CNOT gate between 2 qubits depending on your control and target qubit
+def line_errored_CZ(state, control, target, qubit_error_probs, form = 'psi'):
+    # state: the vector state representation or density matrix representation of your system
+    # control: control qubit index (starting from 0)
+    # target: target qubit index (starting from 0)
+    # qubit_error_probs: an array of the probability for errors of each qubit in your system
+    # form: either 'psi' for vector representation or 'rho' for density matrix that user inputs
+    
+    # if the form is 'psi' find the density matrix
+    if form == 'psi':
+        rho = np.kron(state, state[np.newaxis].conj().T)
+    else:
+        rho = state
+
+    # Check if adjacent
+    if target - control == 1:
+        final_rho = errored_adj_CZ(rho, control, target, qubit_error_probs)
+    else:
+        final_rho = errored_non_adj_CZ(rho, control, target, qubit_error_probs)
+    
+    return final_rho # output is always the density matrix after the operation
+
+
+
+### - - - - - - - - - Gates which contain rad (relaxation and dephasing) errors (line connectivity) - - - - - - - - - ###
+
+### - - - CNOT GATES - - - ###
 
 ### Takes the density matrix after a perfect operation and applies an error gate based on t1, t2, and tg ###
 def qubit_rad_error_matrix(rho, t1, t2, tg):
     # rho: density matrix of qubit system after perfect gate was applied
-    # t1: the relaxation time of the qubit
-    # t2: the dephasing time of the qubit
+    # t1: the relaxation time of the qubits
+    # t2: the dephasing time of the qubits
     # tg: time of the gate you are applying
     
     zero = np.array([1, 0])
@@ -341,12 +480,14 @@ def qubit_rad_error_matrix(rho, t1, t2, tg):
     return final_rho
 
 
-### Apply an adjacent CNOT gate between 2 qubits in a system with line connectivity and errors ###
+### Apply an adjacent CNOT gate between 2 qubits in a system with line connectivity and rad errors ###
 def rad_adj_CNOT(rho, control, target, t1, t2, tg):
     # rho: the desnity matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0) (must be a larger index than control)
-    # qubit_error_probs: an array of the probability for errors of each qubit in your system
+    # t1: The relaxation time of each physical qubit in your system
+    # t2: The dephasing time of each physical qubit in your system
+    # tg: The gate time of your gate operations 
     
     # find our density matrix
 #     rho = np.kron(psi, psi[np.newaxis].conj().T)
@@ -368,12 +509,14 @@ def rad_adj_CNOT(rho, control, target, t1, t2, tg):
     return error_rho
 
 
-### Apply a non-adjacent CNOT gate between 2 qubits in a system with line connectivity and errors ###
+### Apply a non-adjacent CNOT gate between 2 qubits in a system with line connectivity and rad errors ###
 def rad_non_adj_CNOT(rho, control, target, t1, t2, tg):
     # rho: the density matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0) (must be a larger index than control)
-    # qubit_error_probs: an array of the probability for errors of each qubit in your system
+    # t1: The relaxation time of each physical qubit in your system
+    # t2: The dephasing time of each physical qubit in your system
+    # tg: The gate time of your gate operations 
     
     # find our density matrix
 #     rho = np.kron(psi, psi[np.newaxis].conj().T)
@@ -426,12 +569,14 @@ def rad_non_adj_CNOT(rho, control, target, t1, t2, tg):
     return error_rho # returns the density matrix of your system
 
 
-### Apply an adjacent flipped CNOT gate between 2 qubits in a system with line connectivity and errors ###
+### Apply an adjacent flipped CNOT gate between 2 qubits in a system with line connectivity and rad errors ###
 def rad_flipped_adj_CNOT(rho, control, target, t1, t2, tg):
     # rho: the density matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0) (must be a larger index than control)
-    # qubit_error_probs: an array of the probability for errors of each qubit in your system
+    # t1: The relaxation time of each physical qubit in your system
+    # t2: The dephasing time of each physical qubit in your system
+    # tg: The gate time of your gate operations 
     
     # find our density matrix
 #     rho = np.kron(psi, psi[np.newaxis].conj().T)
@@ -453,12 +598,14 @@ def rad_flipped_adj_CNOT(rho, control, target, t1, t2, tg):
     return error_rho
 
 
-### Apply a non-adjacent flipped CNOT gate between 2 qubits in a system with line connectivity and errors ###
+### Apply a non-adjacent flipped CNOT gate between 2 qubits in a system with line connectivity and rad errors ###
 def rad_flipped_non_adj_CNOT(rho, control, target, t1, t2, tg):
     # rho: the density matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0) (must be a larger index than control)
-    # qubit_error_probs: an array of the probability for errors of each qubit in your system
+    # t1: The relaxation time of each physical qubit in your system
+    # t2: The dephasing time of each physical qubit in your system
+    # tg: The gate time of your gate operations 
     
     # find our density matrix
 #     rho = np.kron(psi, psi[np.newaxis].conj().T)
@@ -511,12 +658,14 @@ def rad_flipped_non_adj_CNOT(rho, control, target, t1, t2, tg):
          
     return error_rho # returns the density matrix of your system
 
-### Implement a CNOT gate between 2 qubits depending on your control and target qubit
+### Implement a rad CNOT gate between 2 qubits depending on your control and target qubit
 def line_rad_CNOT(state, control, target, t1, t2, tg, form = 'psi'):
     # state: the vector state representation or density matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0)
-    # qubit_error_probs: an array of the probability for errors of each qubit in your system
+    # t1: The relaxation time of each physical qubit in your system
+    # t2: The dephasing time of each physical qubit in your system
+    # tg: The gate time of your gate operations 
     # form: either 'psi' for vector representation or 'rho' for density matrix that user inputs
     
     # if the form is 'psi' find the density matrix
@@ -540,6 +689,510 @@ def line_rad_CNOT(state, control, target, t1, t2, tg, form = 'psi'):
             final_rho = rad_flipped_adj_CNOT(rho, control, target, t1, t2, tg)
         else:
             final_rho = rad_flipped_non_adj_CNOT(rho, control, target, t1, t2, tg)
+    
+    return final_rho # output is always the density matrix after the operation
+
+### - - - CZ GATES - - - ###
+
+### Implement a rad CZ gate between 2 adjacent qubits in a system ###
+def rad_adj_CZ(rho, control, target, t1, t2, tg):
+    # rho: the density matrix representation of your system
+    # control: control qubit index (starting from 0)
+    # target: target qubit index (starting from 0) (must be a larger index than control)
+    # t1: The relaxation time of each physical qubit in your system
+    # t2: The dephasing time of each physical qubit in your system
+    # tg: The gate time of your gate operations 
+    
+    # Adds the dimensions needed depending on the tot_qubits
+    if control < target:
+        n1 = control # exponent used to tensor the left side identity matrix for our full system
+        n2 = tot_qubits - target - 1 # exponent used to tensor the right side identity matrix for our full system
+    else:
+        n1 = target # exponent used to tensor the left side identity matrix for our full system
+        n2 = tot_qubits - control - 1 # exponent used to tensor the right side identity matrix for our full system
+
+    gate = np.kron(np.identity(2**(n1)), np.kron(cz, np.identity(2**(n2))))
+    # remove small values
+    gate[np.abs(gate) < 1e-15] = 0               
+    perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
+    
+    # apply our error gate and find the new density matrix
+    error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg)
+
+    return error_rho
+
+
+### Implement a non-adjacent rad CZ gate between 2 qubits in a system ###
+def rad_non_adj_CZ(rho, control, target, t1, t2, tg):
+    # rho: the density matrix representation of your system
+    # control: control qubit index (starting from 0)
+    # target: target qubit index (starting from 0) (must be a larger index than control)
+    # t1: The relaxation time of each physical qubit in your system
+    # t2: The dephasing time of each physical qubit in your system
+    # tg: The gate time of your gate operations 
+    
+      # find our density matrix
+#     rho = np.kron(psi, psi[np.newaxis].conj().T)
+
+    # How many total qubits are in our vector representation
+    tot_qubits = int(np.log(len(rho))/np.log(2))
+    
+    p = np.abs(target - control) # used to index over all gates neeeded to compose final gate
+    all_dots = np.array([[]]) # array used to keep track of the components we will combine at the end
+
+     # Adds the dimensions needed depending on the tot_qubits
+    if control < target:
+        n1 = control # exponent used to tensor the left side identity matrix for our full system
+        n2 = tot_qubits - target - 1 # exponent used to tensor the right side identity matrix for our full system
+
+    else:
+        n1 = target # exponent used to tensor the left side identity matrix for our full system
+        n2 = tot_qubits - control - 1 # exponent used to tensor the right side identity matrix for our full system
+
+    # Applies the gates twice (square in our formula)
+    for k in range(0,2):
+        if k != 0:
+            rho = error_rho
+        # Indexing over the values of p to get the first half of the formula
+        for j in range(p):
+            # Sets the next component of the matrix multiplication up
+            next_dot = np.kron(np.identity(2**(j)), np.kron(cnot, np.identity(2**(p-j-1))))
+            next_dot = np.kron(np.identity(2**(n1)), np.kron(next_dot, np.identity(2**(n2))))
+
+            # Adds the components to the array and multiplies them together
+            if j == 0:
+                all_dots = np.array([next_dot]) # adds the perfect gate to an array
+                gate = all_dots[j] # sets the current gate
+                # applies the perfect gate to our density matrix
+                perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
+                # apply our error gate and find the new density matrix
+                error_rho = qubit_rad_error_matrix(perfect_gate_rho, t1, t2, tg)
+
+            else:
+                all_dots = np.append(all_dots, [next_dot], axis = 0) # adds the perfect gate to an array
+                gate = all_dots[j] # sets the current gate
+                # applies the perfect gate to our density matrix
+                perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
+                # apply our error gate and find the new density matrix
+                error_rho = qubit_rad_error_matrix(perfect_gate_rho, t1, t2, tg)
+
+        # Indexing over values of p such that we get the 2nd half of the equation together
+        for j in range(p - 2):
+            gate = all_dots[p-j-2] # sets the current gate
+            # applies the perfect gate to our density matrix
+            perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
+            # apply our error gate and find the new density matrix
+            error_rho = qubit_rad_error_matrix(perfect_gate_rho, t1, t2, tg)
+            
+            
+          # Find the correct Hadamard gate to apply so that you convert the CNOT to a CZ
+    h_gate = np.kron(np.identity(2**(n1)), np.kron(np.kron(
+            np.identity(2**(np.abs(target - control))), hadamard), np.identity(2**(n2))))
+
+    # Calculate the final rho
+    error_rho = np.dot(h_gate, np.dot(error_rho, h_gate.conj().T))
+    error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg)
+    
+    return error_rho # returns the density matrix of your system
+
+
+### Implement a CNOT gate between 2 qubits depending on your control and target qubit
+def line_rad_CZ(state, control, target, t1, t2, tg, form = 'psi'):
+    # state: the vector state representation or density matrix representation of your system
+    # control: control qubit index (starting from 0)
+    # target: target qubit index (starting from 0)
+    # t1: The relaxation time of each physical qubit in your system
+    # t2: The dephasing time of each physical qubit in your system
+    # tg: The gate time of your gate operations 
+    # form: either 'psi' for vector representation or 'rho' for density matrix that user inputs
+    
+    # if the form is 'psi' find the density matrix
+    if form == 'psi':
+        rho = np.kron(state, state[np.newaxis].conj().T)
+    else:
+        rho = state
+
+    # Check if adjacent
+    if target - control == 1:
+        final_rho = rad_adj_CZ(rho, control, target, t1, t2, tg)
+    else:
+        final_rho = rad_non_adj_CZ(rho, control, target, t1, t2, tg)
+    
+    return final_rho # output is always the density matrix after the operation
+
+### - - - - - Gates which contain gate errors and rad (relaxation and dephasing) errors (line connectivity) - - - - - ###
+
+### - - - CNOT GATES - - - ###
+
+### Apply a adjacent CNOT gate between 2 qubits in system with line connectivity (probability of error and rad errors) ###
+def prob_rad_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs):
+    # rho: the desnity matrix representation of your system
+    # control: control qubit index (starting from 0)
+    # target: target qubit index (starting from 0) (must be a larger index than control)
+    # t1: The relaxation time of each physical qubit in your system
+    # t2: The dephasing time of each physical qubit in your system
+    # tg: The gate time of your gate operations 
+    # qubit_error_probs: an array of the probability for errors of each qubit in your system
+    
+    # find our density matrix
+#     rho = np.kron(psi, psi[np.newaxis].conj().T)
+    
+    # How many total qubits are in our vector representation
+    tot_qubits = int(np.log(len(rho))/np.log(2))
+    
+    # Adds the dimensions needed depending on the tot_qubits
+    n1 = control # exponent used to tensor the left side identity matrix for our full system
+    n2 = tot_qubits - target - 1 # exponent used to tensor the right side identity matrix for our full system
+    
+    gate = np.kron(np.identity(2**(n1)), np.kron(cnot, np.identity(2**(n2))))
+
+    # applies the perfect gate to our density matrix
+    perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
+    # apply our error gates and find the new density matrix
+    error_rho = qubit_gate_error_matrix(perfect_gate_rho, qubit_error_probs[target], target, tot_qubits) # prob error
+    error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+
+                    
+    return error_rho
+
+
+### Apply a non-adjacent CNOT gate between 2 qubits in system with line connectivity (probability of error and rad errors) ###
+def prob_rad_non_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs):
+    # rho: the density matrix representation of your system
+    # control: control qubit index (starting from 0)
+    # target: target qubit index (starting from 0) (must be a larger index than control)
+    # t1: The relaxation time of each physical qubit in your system
+    # t2: The dephasing time of each physical qubit in your system
+    # tg: The gate time of your gate operations 
+    # qubit_error_probs: an array of the probability for errors of each qubit in your system
+
+    # find our density matrix
+#     rho = np.kron(psi, psi[np.newaxis].conj().T)
+    
+    # How many total qubits are in our vector representation
+    tot_qubits = int(np.log(len(rho))/np.log(2))
+    
+    p = target - control # used to index over all gates neeeded to compose final gate
+    all_dots = np.array([[]]) # array used to keep track of the components we will combine at the end
+
+    # Adds the dimensions needed depending on the tot_qubits
+    n1 = control # exponent used to tensor the left side identity matrix for our full system
+    n2 = tot_qubits - target - 1 # exponent used to tensor the right side identity matrix for our full system
+    
+    # Applies the gates twice (square in our formula)
+    for k in range(0,2):
+        if k != 0:
+            rho = error_rho
+        # Indexing over the values of p to get the first half of the formula
+        for j in range(p):
+            # Sets the next component of the matrix multiplication up
+            next_dot = np.kron(np.identity(2**(j)), np.kron(cnot, np.identity(2**(p-j-1))))
+            next_dot = np.kron(np.identity(2**(n1)), np.kron(next_dot, np.identity(2**(n2))))
+
+            # Adds the components to the array and multiplies them together
+            if j == 0:
+                all_dots = np.array([next_dot]) # adds the perfect gate to an array
+                gate = all_dots[j] # sets the current gate
+                # applies the perfect gate to our density matrix
+                perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
+                # apply our error gate and find the new density matrix
+                error_rho = qubit_gate_error_matrix(
+                    perfect_gate_rho, qubit_error_probs[j+control+1], j+control+1, tot_qubits) # prob error
+                error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+                
+            else:
+                all_dots = np.append(all_dots, [next_dot], axis = 0) # adds the perfect gate to an array
+                gate = all_dots[j] # sets the current gate
+                # applies the perfect gate to our density matrix
+                perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
+                # apply our error gate and find the new density matrix
+                error_rho = qubit_gate_error_matrix(
+                    perfect_gate_rho, qubit_error_probs[j+control+1], j+control+1, tot_qubits) # prob error
+                error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+                
+        # Indexing over values of p such that we get the 2nd half of the equation together
+        for j in range(p - 2):
+            gate = all_dots[p-j-2] # sets the current gate
+            # applies the perfect gate to our density matrix
+            perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
+            # apply our error gate and find the new density matrix
+            error_rho = qubit_gate_error_matrix(
+                perfect_gate_rho, qubit_error_probs[target-j-2+1], target-j-2+1, tot_qubits) # prob error
+            error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+            
+    return error_rho # returns the density matrix of your system
+
+
+### Apply a adjacent flipped CNOT gate between 2 qubits in system with line connectivity (probability of error and rad errors) ###
+def prob_rad_flipped_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs):
+    # rho: the density matrix representation of your system
+    # control: control qubit index (starting from 0)
+    # target: target qubit index (starting from 0) (must be a larger index than control)
+    # t1: The relaxation time of each physical qubit in your system
+    # t2: The dephasing time of each physical qubit in your system
+    # tg: The gate time of your gate operations 
+    # qubit_error_probs: an array of the probability for errors of each qubit in your system
+    
+    # find our density matrix
+#     rho = np.kron(psi, psi[np.newaxis].conj().T)
+
+    # How many total qubits are in our vector representation
+    tot_qubits = int(np.log(len(rho))/np.log(2))
+
+    # Adds the dimensions needed depending on the tot_qubits
+    n1 = target # exponent used to tensor the left side identity matrix for our full system
+    n2 = tot_qubits - control - 1 # exponent used to tensor the right side identity matrix for our full system
+    
+    gate = np.kron(np.identity(2**(n1)), np.kron(flipped_cnot, np.identity(2**(n2))))
+
+    # applies the perfect gate to our density matrix
+    perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
+    # apply our error gate and find the new density matrix
+    error_rho = qubit_gate_error_matrix(perfect_gate_rho, qubit_error_probs[target], target, tot_qubits) # prob error
+    error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error 
+                    
+    return error_rho
+
+
+### Apply a non-adjacent flipped CNOT gate between 2 qubits in system with line connectivity (probability of error and rad errors) ###
+def prob_rad_flipped_non_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs):
+    # rho: the density matrix representation of your system
+    # control: control qubit index (starting from 0)
+    # target: target qubit index (starting from 0) (must be a larger index than control)
+    # t1: The relaxation time of each physical qubit in your system
+    # t2: The dephasing time of each physical qubit in your system
+    # tg: The gate time of your gate operations 
+    # qubit_error_probs: an array of the probability for errors of each qubit in your system
+    
+    # find our density matrix
+#     rho = np.kron(psi, psi[np.newaxis].conj().T)
+    
+    # How many total qubits are in our vector representation
+    tot_qubits = int(np.log(len(rho))/np.log(2))
+    
+    p = np.abs(target - control) # used to index over all gates neeeded to compose final gate
+    all_dots = np.array([[]]) # array used to keep track of the components we will combine at the end
+
+    # Adds the dimensions needed depending on the tot_qubits
+    n1 = target # exponent used to tensor the left side identity matrix for our full system
+    n2 = tot_qubits - control - 1 # exponent used to tensor the right side identity matrix for our full system
+    
+    # Applies the gates twice (square in our formula)
+    for k in range(0,2):
+        if k != 0:
+            rho = error_rho
+        # Indexing over the values of p to get the first half of the formula
+        for j in range(p):
+            # Sets the next component of the matrix multiplication up
+            next_dot = np.kron(np.identity(2**(p-j-1)), np.kron(flipped_cnot, np.identity(2**(j))))
+            next_dot = np.kron(np.identity(2**(n1)), np.kron(next_dot, np.identity(2**(n2))))
+
+            # Adds the components to the array and multiplies them together
+            if j == 0:
+                all_dots = np.array([next_dot]) # adds the perfect gate to an array
+                gate = all_dots[j] # sets the current gate
+                # applies the perfect gate to our density matrix
+                perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
+                # apply our error gates and find the new density matrix
+                error_rho = qubit_gate_error_matrix(
+                    perfect_gate_rho, qubit_error_probs[control-j-1], control-j-1, tot_qubits) # prob error
+                error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+                
+            else:
+                all_dots = np.append(all_dots, [next_dot], axis = 0) # adds the perfect gate to an array
+                gate = all_dots[j] # sets the current gate
+                # applies the perfect gate to our density matrix
+                perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
+                # apply our error gates and find the new density matrix
+                error_rho = qubit_gate_error_matrix(
+                    perfect_gate_rho, qubit_error_probs[control-j-1], control-j-1, tot_qubits) # prob error
+                error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+                   
+        # Indexing over values of p such that we get the 2nd half of the equation together
+        for j in range(p - 2):
+            gate = all_dots[p-j-2] # sets the current gate
+            # applies the perfect gate to our density matrix
+            perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
+            # apply our error gates and find the new density matrix
+            error_rho = qubit_gate_error_matrix(
+                perfect_gate_rho, qubit_error_probs[target-j+1], target-j+1, tot_qubits) # prob error
+            error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+            
+         
+    return error_rho # returns the density matrix of your system
+
+            
+### Implement a CNOT gate between 2 qubits in system with line connectivity (probability of error and rad errors) ###
+def prob_line_rad_CNOT(state, control, target, t1, t2, tg, qubit_error_probs, form = 'psi'):
+    # state: the vector state representation or density matrix representation of your system
+    # control: control qubit index (starting from 0)
+    # target: target qubit index (starting from 0)
+    # t1: The relaxation time of each physical qubit in your system
+    # t2: The dephasing time of each physical qubit in your system
+    # tg: The gate time of your gate operations 
+    # qubit_error_probs: an array of the probability for errors of each qubit in your system
+    # form: either 'psi' for vector representation or 'rho' for density matrix that user inputs
+    
+    # if the form is 'psi' find the density matrix
+    if form == 'psi':
+        rho = np.kron(state, state[np.newaxis].conj().T)
+    else:
+        rho = state
+        
+    # First check if it is a normal CNOT or a flipped CNOT gate
+    if control < target:
+        # Check if adjacent
+        if target - control == 1:
+            final_rho = prob_rad_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs)
+        else:
+            final_rho = prob_rad_non_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs)
+    
+    #Check if it is a normal CNOT or a flipped CNOT gate
+    elif control > target:
+        # Check if adjacent
+        if control - target == 1:
+            final_rho = prob_rad_flipped_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs)
+        else:
+            final_rho = prob_rad_flipped_non_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs)
+    
+    return final_rho # output is always the density matrix after the operation
+
+### - - - CZ GATES - - - ###
+
+### Implement a rad CZ gate between 2 adjacent qubits in a system ###
+def prob_rad_adj_CZ(rho, control, target, t1, t2, tg, qubit_error_probs):
+    # rho: the density matrix representation of your system
+    # control: control qubit index (starting from 0)
+    # target: target qubit index (starting from 0) (must be a larger index than control)
+    # t1: The relaxation time of each physical qubit in your system
+    # t2: The dephasing time of each physical qubit in your system
+    # tg: The gate time of your gate operations 
+    # qubit_error_probs: an array of the probability for errors of each qubit in your system
+    
+    # Adds the dimensions needed depending on the tot_qubits
+    if control < target:
+        n1 = control # exponent used to tensor the left side identity matrix for our full system
+        n2 = tot_qubits - target - 1 # exponent used to tensor the right side identity matrix for our full system
+    else:
+        n1 = target # exponent used to tensor the left side identity matrix for our full system
+        n2 = tot_qubits - control - 1 # exponent used to tensor the right side identity matrix for our full system
+
+    gate = np.kron(np.identity(2**(n1)), np.kron(cz, np.identity(2**(n2))))
+    # remove small values
+    gate[np.abs(gate) < 1e-15] = 0
+    perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
+    
+    # apply our error gate and find the new density matrix
+    error_rho = qubit_gate_error_matrix(perfect_gate_rho, qubit_error_probs[control-j-1], control-j-1, tot_qubits) # prob error
+    error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+
+    return error_rho
+
+
+### Implement a non-adjacent rad CZ gate between 2 qubits in a system ###
+def prob_rad_non_adj_CZ(rho, control, target, t1, t2, tg, qubit_error_probs):
+    # rho: the density matrix representation of your system
+    # control: control qubit index (starting from 0)
+    # target: target qubit index (starting from 0) (must be a larger index than control)
+    # t1: The relaxation time of each physical qubit in your system
+    # t2: The dephasing time of each physical qubit in your system
+    # tg: The gate time of your gate operations 
+    # qubit_error_probs: an array of the probability for errors of each qubit in your system
+    
+      # find our density matrix
+#     rho = np.kron(psi, psi[np.newaxis].conj().T)
+
+    # How many total qubits are in our vector representation
+    tot_qubits = int(np.log(len(rho))/np.log(2))
+    
+    p = np.abs(target - control) # used to index over all gates neeeded to compose final gate
+    all_dots = np.array([[]]) # array used to keep track of the components we will combine at the end
+
+     # Adds the dimensions needed depending on the tot_qubits
+    if control < target:
+        n1 = control # exponent used to tensor the left side identity matrix for our full system
+        n2 = tot_qubits - target - 1 # exponent used to tensor the right side identity matrix for our full system
+
+    else:
+        n1 = target # exponent used to tensor the left side identity matrix for our full system
+        n2 = tot_qubits - control - 1 # exponent used to tensor the right side identity matrix for our full system
+
+    # Applies the gates twice (square in our formula)
+    for k in range(0,2):
+        if k != 0:
+            rho = error_rho
+        # Indexing over the values of p to get the first half of the formula
+        for j in range(p):
+            # Sets the next component of the matrix multiplication up
+            next_dot = np.kron(np.identity(2**(j)), np.kron(cnot, np.identity(2**(p-j-1))))
+            next_dot = np.kron(np.identity(2**(n1)), np.kron(next_dot, np.identity(2**(n2))))
+
+            # Adds the components to the array and multiplies them together
+            if j == 0:
+                all_dots = np.array([next_dot]) # adds the perfect gate to an array
+                gate = all_dots[j] # sets the current gate
+                # applies the perfect gate to our density matrix
+                perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
+                # apply our error gate and find the new density matrix
+                error_rho = qubit_gate_error_matrix(
+                    perfect_gate_rho, qubit_error_probs[j+control+1], j+control+1, tot_qubits) # prob_error
+                error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+
+            else:
+                all_dots = np.append(all_dots, [next_dot], axis = 0) # adds the perfect gate to an array
+                gate = all_dots[j] # sets the current gate
+                # applies the perfect gate to our density matrix
+                perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
+                # apply our error gate and find the new density matrix
+                error_rho = qubit_gate_error_matrix(
+                    perfect_gate_rho, qubit_error_probs[j+control+1], j+control+1, tot_qubits) # prob error
+                error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+
+        # Indexing over values of p such that we get the 2nd half of the equation together
+        for j in range(p - 2):
+            gate = all_dots[p-j-2] # sets the current gate
+            # applies the perfect gate to our density matrix
+            perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
+            # apply our error gate and find the new density matrix
+            error_rho = qubit_gate_error_matrix(
+                perfect_gate_rho, qubit_error_probs[target-j-2+1], target-j-2+1, tot_qubits) # prob error
+            error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+            
+            
+          # Find the correct Hadamard gate to apply so that you convert the CNOT to a CZ
+    h_gate = np.kron(np.identity(2**(n1)), np.kron(np.kron(
+            np.identity(2**(np.abs(target - control))), hadamard), np.identity(2**(n2))))
+
+    # Calculate the final rho
+    error_rho = np.dot(h_gate, np.dot(error_rho, h_gate.conj().T))
+    error_rho = qubit_gate_error_matrix(error_rho, qubit_error_probs[target], target, tot_qubits) # prob error
+    error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+    
+    return error_rho # returns the density matrix of your system
+
+            
+### Implement a CNOT gate between 2 qubits depending on your control and target qubit
+def prob_line_rad_CZ(state, control, target, t1, t2, tg, qubit_error_probs, form = 'psi'):
+    # state: the vector state representation or density matrix representation of your system
+    # control: control qubit index (starting from 0)
+    # target: target qubit index (starting from 0)
+    # t1: The relaxation time of each physical qubit in your system
+    # t2: The dephasing time of each physical qubit in your system
+    # tg: The gate time of your gate operations 
+    # qubit_error_probs: an array of the probability for errors of each qubit in your system
+    # form: either 'psi' for vector representation or 'rho' for density matrix that user inputs
+    
+    # if the form is 'psi' find the density matrix
+    if form == 'psi':
+        rho = np.kron(state, state[np.newaxis].conj().T)
+    else:
+        rho = state
+
+    # Check if adjacent
+    if target - control == 1:
+        final_rho = prob_rad_adj_CZ(rho, control, target, t1, t2, tg, qubit_error_probs)
+    else:
+        final_rho = prob_rad_non_adj_CZ(rho, control, target, t1, t2, tg, qubit_error_probs)
     
     return final_rho # output is always the density matrix after the operation
 

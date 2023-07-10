@@ -182,6 +182,9 @@ def adj_CZ(control, target, tot_qubits):
 
     final_gate = np.kron(np.identity(2**(n1)), np.kron(cz, np.identity(2**(n2))))
     
+    # remove small values
+    final_gate[np.abs(final_gate) < 1e-15] = 0
+    
     return final_gate
 
 
@@ -231,6 +234,9 @@ def non_adj_CZ(control, target, tot_qubits):
     final_total_gate = np.dot(h_gate, np.dot(
         np.kron(np.identity(2**(n1)), np.kron(final_gate, np.identity(2**(n2)))), h_gate))
     
+    
+    # remove small values
+    final_total_gate[np.abs(final_total_gate) < 1e-15] = 0
     
     return final_total_gate
 
