@@ -2,8 +2,8 @@
 
 import numpy as np
 import random
-from quantum.qec_helpers import *
-from quantum.gates import *
+from general_qec.qec_helpers import *
+from general_qec.gates import *
 
 
 # - - - - - - - - - -  Useful variables - - - - - - - - - - #

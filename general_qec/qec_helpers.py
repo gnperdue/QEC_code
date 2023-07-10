@@ -1,6 +1,6 @@
 import numpy as np
 import random
-from quantum.gates import *
+from general_qec.gates import *
 
 # A few helpful states to use in initializing a single qubit (they have an exra dimension since some cases it is needed, but this can be removed fairly easily)
 zero = np.array([1, 0])

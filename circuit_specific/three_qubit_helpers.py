@@ -2,8 +2,8 @@
 
 import numpy as np
 import random
-from quantum.gates import *
-from quantum.qec_helpers import *
+from general_qec.gates import *
+from general_qec.qec_helpers import *
 
 ### Initializes the three qubit logical state using an initial single qubit psi ###
 def three_qubit_initialize_logical_state(initial_psi):
