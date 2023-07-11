@@ -133,7 +133,7 @@ def flipped_non_adj_CNOT(control, target, tot_qubits):
     return final_total_gate
 
 
-### Implement a CNOT gate between 2 qubits depending on your parameters
+### Implement a CNOT gate between 2 qubits depending on your control and target qubit
 def CNOT(control, target, tot_qubits):
     
     # First check if it is a normal CNOT or a flipped CNOT gate
@@ -181,6 +181,9 @@ def adj_CZ(control, target, tot_qubits):
         n2 = tot_qubits - control - 1 # exponent used to tensor the right side identity matrix for our full system
 
     final_gate = np.kron(np.identity(2**(n1)), np.kron(cz, np.identity(2**(n2))))
+    
+    # remove small values
+    final_gate[np.abs(final_gate) < 1e-15] = 0
     
     return final_gate
 
@@ -232,5 +235,25 @@ def non_adj_CZ(control, target, tot_qubits):
         np.kron(np.identity(2**(n1)), np.kron(final_gate, np.identity(2**(n2)))), h_gate))
     
     
+    # remove small values
+    final_total_gate[np.abs(final_total_gate) < 1e-15] = 0
+    
     return final_total_gate
+
+
+### Implement a Control-Z gate between 2 qubits depending on your parameters
+def CZ(control, target, tot_qubits):
+    
+    # Check if adjacent
+    if target - control == 1:
+        gate = adj_CZ(control, target, tot_qubits)
+    else:
+        gate = non_adj_CZ(control, target, tot_qubits)
+    
+    
+    return gate
+
+
+
+
 
