@@ -51,7 +51,7 @@ def print_state_info(logical_state, k):
     for j in range(len(bit_states)):
         print(bit_states[j], ': ', non_zero_vector_state[j])
 
-### Collapse the ancilla qubits to one of their states and return the vector representation ###
+### Collapse the ancilla qubits to one of their states and return the vector representation (probability taken in to account)###
 def collapse_ancilla(logical_state, k):
     # logical_state: The vector state representation of your full qubit system
     #k: number of ancillas in your system (at the end of the bit representation)
@@ -60,15 +60,15 @@ def collapse_ancilla(logical_state, k):
     n = int(np.log(len(logical_state))/np.log(2))
 
     # Find all of the bit combinations that are in our vector state representation
-    all_bits = vector_state_to_bit_state(logical_state, n)[0]
+    all_bits, indices, logical_state = vector_state_to_bit_state(logical_state, n)
 
-    # create two empty arrays to stor information
+    # create two empty arrays to store information
     organized_bits = np.array([])
     all_organized_bits = np.array([[]])
 
     # loop over our bit representations and organize them based on 
     # whether or not they have the same ancilla qubits
-    for j in range(int(len(all_bits)/2)):
+    for j in range(int(len(all_bits))):
         organized_bits = all_bits
         for i in range(len(all_bits)):
             if all_bits[j][n-k:] != all_bits[i][n-k:]:
@@ -77,14 +77,24 @@ def collapse_ancilla(logical_state, k):
             all_organized_bits = [organized_bits]
         else:
             all_organized_bits = np.append(all_organized_bits, [organized_bits], axis = 0)
+         
+    # finding our probability for measurement
+    rows, cols = np.shape(all_organized_bits)
+    probs = np.array([])
+    for k in range(rows):
+        summation = 0
+        for j in range(cols):
+            summation += np.abs(logical_state[int(indices[all_bits == all_organized_bits[k][j]])])**2
+        probs = np.append(probs, summation)
 
     # find which ancilla we will measure
-    x = random.randint(0,len(all_organized_bits)-1)
+    x = random.choices(all_organized_bits, weights=probs, k=1)
+    x = np.where(all_organized_bits == x)[0][0]
     # set our collapsed state to that ancilla measurement
     collapsed_bits = all_organized_bits[x]
 
 
-    # Here we take the vector state and separate it into vectors so that we can apply corrections
+    # Here we take the vector state and separate it into vectors so that we can manipulate it
     x = 0 # used to keep track of first indice where vector_state is non-zero
 
     for i in range(len(logical_state)):
@@ -111,8 +121,70 @@ def collapse_ancilla(logical_state, k):
     collapsed_vector_state = np.zeros((2**(n),), dtype=complex)
     for j in range(num_rows):
         collapsed_vector_state = collapsed_vector_state + all_vector_states[j][:]
-
+        
     return collapsed_vector_state
+# ### Collapse the ancilla qubits to one of their states and return the vector representation ###
+# def collapse_ancilla(logical_state, k):
+#     # logical_state: The vector state representation of your full qubit system
+#     #k: number of ancillas in your system (at the end of the bit representation)
+    
+#     # How many total qubits are in our vector representation
+#     n = int(np.log(len(logical_state))/np.log(2))
+
+#     # Find all of the bit combinations that are in our vector state representation
+#     all_bits = vector_state_to_bit_state(logical_state, n)[0]
+
+#     # create two empty arrays to store information
+#     organized_bits = np.array([])
+#     all_organized_bits = np.array([[]])
+
+#     # loop over our bit representations and organize them based on 
+#     # whether or not they have the same ancilla qubits
+#     for j in range(int(len(all_bits)/2)):
+#         organized_bits = all_bits
+#         for i in range(len(all_bits)):
+#             if all_bits[j][n-k:] != all_bits[i][n-k:]:
+#                 organized_bits = np.delete(organized_bits, organized_bits == all_bits[i])
+#         if j == 0:
+#             all_organized_bits = [organized_bits]
+#         else:
+#             all_organized_bits = np.append(all_organized_bits, [organized_bits], axis = 0)
+
+#     # find which ancilla we will measure
+#     x = random.randint(0,len(all_organized_bits)-1)
+#     # set our collapsed state to that ancilla measurement
+#     collapsed_bits = all_organized_bits[x]
+
+
+#     # Here we take the vector state and separate it into vectors so that we can manipulate it
+#     x = 0 # used to keep track of first indice where vector_state is non-zero
+
+#     for i in range(len(logical_state)):
+#         if logical_state[i] != 0: 
+#             # initialize the vector that will hold the single non-zero value in the proper spot
+#             value_position = np.zeros((2**n,), dtype=complex) 
+#             value_position[i,] = logical_state[i] # insert the non-zero value in the correct spot
+#             # Add the value position vector to an array of all the error places
+#             if x == 0:
+#                 all_vector_states = [value_position]
+#             else:
+#                 all_vector_states = np.append(all_vector_states, [value_position] , axis=0)
+#             x+=1
+
+#     # find the number of rows and columns in the all error state array so that we can loop over the rows later
+#     num_rows, num_cols = np.array(all_vector_states).shape
+
+#     # take out the vectors that do not match our collapsed bit state
+#     for j in range(num_rows):
+#         if vector_state_to_bit_state(all_vector_states[j], n)[0] not in collapsed_bits : 
+#             all_vector_states[j][:].fill(0)
+
+#     # combine the vector states again
+#     collapsed_vector_state = np.zeros((2**(n),), dtype=complex)
+#     for j in range(num_rows):
+#         collapsed_vector_state = collapsed_vector_state + all_vector_states[j][:]
+
+#     return collapsed_vector_state
 
 
 ### Reset the ancilla qubits to '0' ###
