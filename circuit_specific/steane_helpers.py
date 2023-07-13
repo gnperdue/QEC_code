@@ -511,19 +511,19 @@ def simultaneous_steane_code(logical_state):
 
 # Define the Stabilizer Operators as CNOT gates between line adjacent qubits 
 # (remember that the non-adj CNOT calculation is using line connectivity)
-K1_line_operation = np.dot(flipped_non_adj_CNOT(7, 3, 10), np.dot(flipped_non_adj_CNOT(7, 4, 10), np.dot(
-    flipped_non_adj_CNOT(7, 5, 10), flipped_adj_CNOT(7, 6, 10))))
-K2_line_operation = np.dot(flipped_non_adj_CNOT(8, 0, 10), np.dot(flipped_non_adj_CNOT(8, 2, 10), np.dot(
-    flipped_non_adj_CNOT(8, 4, 10), flipped_non_adj_CNOT(8, 6, 10))))
-K3_line_operation = np.dot(flipped_non_adj_CNOT(9, 1, 10), np.dot(flipped_non_adj_CNOT(9, 2, 10), np.dot(
-    flipped_non_adj_CNOT(9, 5, 10), flipped_non_adj_CNOT(9, 6, 10))))
+K1_line_operation = np.dot(CNOT(7, 3, 10), np.dot(CNOT(7, 4, 10), np.dot(
+    CNOT(7, 5, 10), CNOT(7, 6, 10))))
+K2_line_operation = np.dot(CNOT(8, 0, 10), np.dot(CNOT(8, 2, 10), np.dot(
+    CNOT(8, 4, 10), CNOT(8, 6, 10))))
+K3_line_operation = np.dot(CNOT(9, 1, 10), np.dot(CNOT(9, 2, 10), np.dot(
+    CNOT(9, 5, 10), CNOT(9, 6, 10))))
 
-K4_line_operation = np.dot(non_adj_CZ(7, 3, 10), np.dot(non_adj_CZ(7, 4, 10), np.dot(
-    non_adj_CZ(7, 5, 10), adj_CZ(7, 6, 10))))
-K5_line_operation =np.dot(non_adj_CZ(8, 0, 10), np.dot(non_adj_CZ(8, 2, 10), np.dot(
-    non_adj_CZ(8, 4, 10), non_adj_CZ(8, 6, 10))))
-K6_line_operation =np.dot(non_adj_CZ(9, 1, 10), np.dot(non_adj_CZ(9, 2, 10), np.dot(
-    non_adj_CZ(9, 5, 10), non_adj_CZ(9, 6, 10))))
+K4_line_operation = np.dot(CZ(7, 3, 10), np.dot(CZ(7, 4, 10), np.dot(
+    CZ(7, 5, 10), CZ(7, 6, 10))))
+K5_line_operation =np.dot(CZ(8, 0, 10), np.dot(CZ(8, 2, 10), np.dot(
+    CZ(8, 4, 10), CZ(8, 6, 10))))
+K6_line_operation =np.dot(CZ(9, 1, 10), np.dot(CZ(9, 2, 10), np.dot(
+    CZ(9, 5, 10), CZ(9, 6, 10))))
 
 
 ### Initializes the 10 qubit (7 physical, 3 ancilla) qubit system ###

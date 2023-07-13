@@ -300,6 +300,9 @@ def errored_adj_CZ(rho, control, target, qubit_error_probs):
     # target: target qubit index (starting from 0) (must be a larger index than control)
     # qubit_error_probs: an array of the probability for errors of each qubit in your system
     
+    # How many total qubits are in our vector representation
+    tot_qubits = int(np.log(len(rho))/np.log(2))
+    
     # Adds the dimensions needed depending on the tot_qubits
     if control < target:
         n1 = control # exponent used to tensor the left side identity matrix for our full system
@@ -345,6 +348,14 @@ def errored_non_adj_CZ(rho, control, target, qubit_error_probs):
         n1 = target # exponent used to tensor the left side identity matrix for our full system
         n2 = tot_qubits - control - 1 # exponent used to tensor the right side identity matrix for our full system
 
+    # Find the correct Hadamard gate to apply so that you convert the CNOT to a CZ
+    h_gate = np.kron(np.identity(2**(n1)), np.kron(np.kron(
+            np.identity(2**(np.abs(target - control))), hadamard), np.identity(2**(n2))))
+    
+    # apply the hadamard first to take it to the (+, -) basis
+    rho = np.dot(h_gate, np.dot(rho, h_gate.conj().T))
+    rho = qubit_rad_error_matrix(rho, t1, t2, tg)
+    
     # Applies the gates twice (square in our formula)
     for k in range(0,2):
         if k != 0:
@@ -388,10 +399,6 @@ def errored_non_adj_CZ(rho, control, target, qubit_error_probs):
             # apply our error gate and find the new density matrix
             error_rho = qubit_gate_error_matrix(perfect_gate_rho, qubit_error_probs[target-j-2+1], target-j-2+1, tot_qubits)
             
-            
-          # Find the correct Hadamard gate to apply so that you convert the CNOT to a CZ
-    h_gate = np.kron(np.identity(2**(n1)), np.kron(np.kron(
-            np.identity(2**(np.abs(target - control))), hadamard), np.identity(2**(n2))))
     
     # Calculate the final rho
     error_rho = np.dot(h_gate, np.dot(error_rho, h_gate.conj().T))
@@ -416,7 +423,7 @@ def line_errored_CZ(state, control, target, qubit_error_probs, form = 'psi'):
         rho = state
 
     # Check if adjacent
-    if target - control == 1:
+    if np.abs(target - control) == 1:
         final_rho = errored_adj_CZ(rho, control, target, qubit_error_probs)
     else:
         final_rho = errored_non_adj_CZ(rho, control, target, qubit_error_probs)
@@ -703,6 +710,9 @@ def rad_adj_CZ(rho, control, target, t1, t2, tg):
     # t2: The dephasing time of each physical qubit in your system
     # tg: The gate time of your gate operations 
     
+    # How many total qubits are in our vector representation
+    tot_qubits = int(np.log(len(rho))/np.log(2))
+    
     # Adds the dimensions needed depending on the tot_qubits
     if control < target:
         n1 = control # exponent used to tensor the left side identity matrix for our full system
@@ -712,12 +722,14 @@ def rad_adj_CZ(rho, control, target, t1, t2, tg):
         n2 = tot_qubits - control - 1 # exponent used to tensor the right side identity matrix for our full system
 
     gate = np.kron(np.identity(2**(n1)), np.kron(cz, np.identity(2**(n2))))
+    
     # remove small values
-    gate[np.abs(gate) < 1e-15] = 0               
+    gate[np.abs(gate) < 1e-15] = 0        
+    
     perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
     
     # apply our error gate and find the new density matrix
-    error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg)
+    error_rho = qubit_rad_error_matrix(perfect_gate_rho, t1, t2, tg)
 
     return error_rho
 
@@ -748,6 +760,14 @@ def rad_non_adj_CZ(rho, control, target, t1, t2, tg):
     else:
         n1 = target # exponent used to tensor the left side identity matrix for our full system
         n2 = tot_qubits - control - 1 # exponent used to tensor the right side identity matrix for our full system
+    
+    # Find the correct Hadamard gate to apply so that you convert the CNOT to a CZ
+    h_gate = np.kron(np.identity(2**(n1)), np.kron(np.kron(
+            np.identity(2**(np.abs(target - control))), hadamard), np.identity(2**(n2))))
+    
+    # apply the hadamard first to take it to the (+, -) basis
+    rho = np.dot(h_gate, np.dot(rho, h_gate.conj().T))
+    rho = qubit_rad_error_matrix(rho, t1, t2, tg)
 
     # Applies the gates twice (square in our formula)
     for k in range(0,2):
@@ -784,12 +804,8 @@ def rad_non_adj_CZ(rho, control, target, t1, t2, tg):
             # apply our error gate and find the new density matrix
             error_rho = qubit_rad_error_matrix(perfect_gate_rho, t1, t2, tg)
             
-            
-          # Find the correct Hadamard gate to apply so that you convert the CNOT to a CZ
-    h_gate = np.kron(np.identity(2**(n1)), np.kron(np.kron(
-            np.identity(2**(np.abs(target - control))), hadamard), np.identity(2**(n2))))
 
-    # Calculate the final rho
+    # Calculate the final rho by applying the h gate again to bring it back to the (0, 1) basis
     error_rho = np.dot(h_gate, np.dot(error_rho, h_gate.conj().T))
     error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg)
     
@@ -813,7 +829,7 @@ def line_rad_CZ(state, control, target, t1, t2, tg, form = 'psi'):
         rho = state
 
     # Check if adjacent
-    if target - control == 1:
+    if np.abs(target - control) == 1:
         final_rho = rad_adj_CZ(rho, control, target, t1, t2, tg)
     else:
         final_rho = rad_non_adj_CZ(rho, control, target, t1, t2, tg)
@@ -1117,6 +1133,16 @@ def prob_rad_non_adj_CZ(rho, control, target, t1, t2, tg, qubit_error_probs):
         n1 = target # exponent used to tensor the left side identity matrix for our full system
         n2 = tot_qubits - control - 1 # exponent used to tensor the right side identity matrix for our full system
 
+        
+    # Find the correct Hadamard gate to apply so that you convert the CNOT to a CZ
+    h_gate = np.kron(np.identity(2**(n1)), np.kron(np.kron(
+            np.identity(2**(np.abs(target - control))), hadamard), np.identity(2**(n2))))
+    
+    # apply the hadamard first to take it to the (+, -) basis
+    rho = np.dot(h_gate, np.dot(rho, h_gate.conj().T))
+    rho = qubit_gate_error_matrix(rho, qubit_error_probs[target], target, tot_qubits) # depolarizing error
+    rho = qubit_rad_error_matrix(rho, t1, t2, tg) # rad error
+    
     # Applies the gates twice (square in our formula)
     for k in range(0,2):
         if k != 0:
@@ -1158,10 +1184,6 @@ def prob_rad_non_adj_CZ(rho, control, target, t1, t2, tg, qubit_error_probs):
                 perfect_gate_rho, qubit_error_probs[target-j-2+1], target-j-2+1, tot_qubits) # prob error
             error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
             
-            
-          # Find the correct Hadamard gate to apply so that you convert the CNOT to a CZ
-    h_gate = np.kron(np.identity(2**(n1)), np.kron(np.kron(
-            np.identity(2**(np.abs(target - control))), hadamard), np.identity(2**(n2))))
 
     # Calculate the final rho
     error_rho = np.dot(h_gate, np.dot(error_rho, h_gate.conj().T))
@@ -1189,7 +1211,7 @@ def prob_line_rad_CZ(state, control, target, t1, t2, tg, qubit_error_probs, form
         rho = state
 
     # Check if adjacent
-    if target - control == 1:
+    if np.abs(target - control) == 1:
         final_rho = prob_rad_adj_CZ(rho, control, target, t1, t2, tg, qubit_error_probs)
     else:
         final_rho = prob_rad_non_adj_CZ(rho, control, target, t1, t2, tg, qubit_error_probs)

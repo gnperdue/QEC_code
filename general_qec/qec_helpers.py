@@ -123,8 +123,10 @@ def collapse_ancilla(logical_state, k):
         collapsed_vector_state = collapsed_vector_state + all_vector_states[j][:]
         
     return collapsed_vector_state
+
+
 # ### Collapse the ancilla qubits to one of their states and return the vector representation ###
-# def collapse_ancilla(logical_state, k):
+# def non_prob_collapse_ancilla(logical_state, k):
 #     # logical_state: The vector state representation of your full qubit system
 #     #k: number of ancillas in your system (at the end of the bit representation)
     
@@ -244,6 +246,15 @@ def remove_small_values(logical_state):
         corrected_vector_state = corrected_vector_state + all_vector_states[j][:]
    
     return corrected_vector_state
+
+### Find out how many operations your CNOT gate is if it is line connected
+def CNOT_gate_tot(control, target):
+    if target < control:
+        tot_gates = np.abs(2*((control - target) + (control - target - 1)))
+    elif control < target:
+        tot_gates = np.abs(2*((target - control) + (target - control - 1)))
+
+    return tot_gates
 
 
 # ### Splits the state up into vectors and takes only those that have '0' as the ancilla measurement (using n-7 ancilla) ###
