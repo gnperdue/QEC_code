@@ -55,7 +55,7 @@ def random_qubit_z_error(logical_state, qubit_range = None):
 ### - - - - - - - - - - Gates which contain probability for errors (line connectivity) - - - - - - - - - - ###
 
 ### Takes the density matrix after a perfect operation and applies an error gate based on probability of error ###
-def qubit_gate_error_matrix(rho, error_prob, index, n):
+def gate_error(rho, error_prob, index, n):
     # rho: density matrix of qubit system after perfect gate was applied
     # error_prob: probability for gate operation error
     # index: index of qubit that gate was applied (target qubit in this case)
@@ -106,7 +106,7 @@ def errored_adj_CNOT(rho, control, target, qubit_error_probs):
     # applies the perfect gate to our density matrix
     perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
     # apply our error gate and find the new density matrix
-    error_rho = qubit_gate_error_matrix(perfect_gate_rho, qubit_error_probs[target], target, tot_qubits)
+    error_rho = gate_error(perfect_gate_rho, qubit_error_probs[target], target, tot_qubits)
                     
     return error_rho
 
@@ -148,7 +148,7 @@ def errored_non_adj_CNOT(rho, control, target, qubit_error_probs):
                 # applies the perfect gate to our density matrix
                 perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
                 # apply our error gate and find the new density matrix
-                error_rho = qubit_gate_error_matrix(
+                error_rho = gate_error(
                     perfect_gate_rho, qubit_error_probs[j+control+1], j+control+1, tot_qubits)
                 
             else:
@@ -157,7 +157,7 @@ def errored_non_adj_CNOT(rho, control, target, qubit_error_probs):
                 # applies the perfect gate to our density matrix
                 perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
                 # apply our error gate and find the new density matrix
-                error_rho = qubit_gate_error_matrix(
+                error_rho = gate_error(
                     perfect_gate_rho, qubit_error_probs[j+control+1], j+control+1, tot_qubits)
                 
         # Indexing over values of p such that we get the 2nd half of the equation together
@@ -166,7 +166,7 @@ def errored_non_adj_CNOT(rho, control, target, qubit_error_probs):
             # applies the perfect gate to our density matrix
             perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
             # apply our error gate and find the new density matrix
-            error_rho = qubit_gate_error_matrix(perfect_gate_rho, qubit_error_probs[target-j-2+1], target-j-2+1, tot_qubits)
+            error_rho = gate_error(perfect_gate_rho, qubit_error_probs[target-j-2+1], target-j-2+1, tot_qubits)
             
     return error_rho # returns the density matrix of your system
 
@@ -193,7 +193,7 @@ def errored_flipped_adj_CNOT(rho, control, target, qubit_error_probs):
     # applies the perfect gate to our density matrix
     perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
     # apply our error gate and find the new density matrix
-    error_rho = qubit_gate_error_matrix(perfect_gate_rho, qubit_error_probs[target], target, tot_qubits)
+    error_rho = gate_error(perfect_gate_rho, qubit_error_probs[target], target, tot_qubits)
                     
     return error_rho
 
@@ -235,7 +235,7 @@ def errored_flipped_non_adj_CNOT(rho, control, target, qubit_error_probs):
                 # applies the perfect gate to our density matrix
                 perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
                 # apply our error gate and find the new density matrix
-                error_rho = qubit_gate_error_matrix(
+                error_rho = gate_error(
                     perfect_gate_rho, qubit_error_probs[control-j-1], control-j-1, tot_qubits)
                 
             else:
@@ -244,7 +244,7 @@ def errored_flipped_non_adj_CNOT(rho, control, target, qubit_error_probs):
                 # applies the perfect gate to our density matrix
                 perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
                 # apply our error gate and find the new density matrix
-                error_rho = qubit_gate_error_matrix(
+                error_rho = gate_error(
                     perfect_gate_rho, qubit_error_probs[control-j-1], control-j-1, tot_qubits)
                    
         # Indexing over values of p such that we get the 2nd half of the equation together
@@ -253,7 +253,7 @@ def errored_flipped_non_adj_CNOT(rho, control, target, qubit_error_probs):
             # applies the perfect gate to our density matrix
             perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
             # apply our error gate and find the new density matrix
-            error_rho = qubit_gate_error_matrix(perfect_gate_rho, qubit_error_probs[target-j+1], target-j+1, tot_qubits)
+            error_rho = gate_error(perfect_gate_rho, qubit_error_probs[target+j], target+j, tot_qubits)
             
          
     return error_rho # returns the density matrix of your system
@@ -318,7 +318,7 @@ def errored_adj_CZ(rho, control, target, qubit_error_probs):
     perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
     
     # apply our error gate and find the new density matrix
-    error_rho = qubit_gate_error_matrix(perfect_gate_rho, qubit_error_probs[control-j-1], control-j-1, tot_qubits)
+    error_rho = gate_error(perfect_gate_rho, qubit_error_probs[control-j-1], control-j-1, tot_qubits)
 
     return error_rho
 
@@ -354,7 +354,7 @@ def errored_non_adj_CZ(rho, control, target, qubit_error_probs):
     
     # apply the hadamard first to take it to the (+, -) basis
     rho = np.dot(h_gate, np.dot(rho, h_gate.conj().T))
-    rho = qubit_rad_error_matrix(rho, t1, t2, tg)
+    rho = rad_error(rho, t1, t2, tg)
     
     # Applies the gates twice (square in our formula)
     for k in range(0,2):
@@ -375,7 +375,7 @@ def errored_non_adj_CZ(rho, control, target, qubit_error_probs):
                 # applies the perfect gate to our density matrix
                 perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
                 # apply our error gate and find the new density matrix
-                error_rho = qubit_gate_error_matrix(
+                error_rho = gate_error(
                     perfect_gate_rho, qubit_error_probs[j+control+1], j+control+1, tot_qubits)
                 
             else:
@@ -386,7 +386,7 @@ def errored_non_adj_CZ(rho, control, target, qubit_error_probs):
                 # applies the perfect gate to our density matrix
                 perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
                 # apply our error gate and find the new density matrix
-                error_rho = qubit_gate_error_matrix(
+                error_rho = gate_error(
                     perfect_gate_rho, qubit_error_probs[j+control+1], j+control+1, tot_qubits)
                 
         # Indexing over values of p such that we get the 2nd half of the equation together
@@ -397,13 +397,13 @@ def errored_non_adj_CZ(rho, control, target, qubit_error_probs):
             # applies the perfect gate to our density matrix
             perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
             # apply our error gate and find the new density matrix
-            error_rho = qubit_gate_error_matrix(perfect_gate_rho, qubit_error_probs[target-j-2+1], target-j-2+1, tot_qubits)
+            error_rho = gate_error(perfect_gate_rho, qubit_error_probs[target-j-2+1], target-j-2+1, tot_qubits)
             
     
     # Calculate the final rho
     error_rho = np.dot(h_gate, np.dot(error_rho, h_gate.conj().T))
     
-    error_rho = qubit_gate_error_matrix(error_rho, qubit_error_probs[target], target, tot_qubits)
+    error_rho = gate_error(error_rho, qubit_error_probs[target], target, tot_qubits)
                 
     return error_rho # returns the density matrix of your system
 
@@ -437,7 +437,7 @@ def line_errored_CZ(state, control, target, qubit_error_probs, form = 'psi'):
 ### - - - CNOT GATES - - - ###
 
 ### Takes the density matrix after a perfect operation and applies an error gate based on t1, t2, and tg ###
-def qubit_rad_error_matrix(rho, t1, t2, tg):
+def rad_error(rho, t1, t2, tg):
     # rho: density matrix of qubit system after perfect gate was applied
     # t1: the relaxation time of the qubits
     # t2: the dephasing time of the qubits
@@ -511,7 +511,7 @@ def rad_adj_CNOT(rho, control, target, t1, t2, tg):
     # applies the perfect gate to our density matrix
     perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
     # apply our error gate and find the new density matrix
-    error_rho = qubit_rad_error_matrix(perfect_gate_rho, t1, t2, tg)
+    error_rho = rad_error(perfect_gate_rho, t1, t2, tg)
                     
     return error_rho
 
@@ -555,7 +555,7 @@ def rad_non_adj_CNOT(rho, control, target, t1, t2, tg):
                 # applies the perfect gate to our density matrix
                 perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
                 # apply our error gate and find the new density matrix
-                error_rho = qubit_rad_error_matrix(perfect_gate_rho, t1, t2, tg)
+                error_rho = rad_error(perfect_gate_rho, t1, t2, tg)
                 
             else:
                 all_dots = np.append(all_dots, [next_dot], axis = 0) # adds the perfect gate to an array
@@ -563,7 +563,7 @@ def rad_non_adj_CNOT(rho, control, target, t1, t2, tg):
                 # applies the perfect gate to our density matrix
                 perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
                 # apply our error gate and find the new density matrix
-                error_rho = qubit_rad_error_matrix(perfect_gate_rho, t1, t2, tg)
+                error_rho = rad_error(perfect_gate_rho, t1, t2, tg)
                 
         # Indexing over values of p such that we get the 2nd half of the equation together
         for j in range(p - 2):
@@ -571,7 +571,7 @@ def rad_non_adj_CNOT(rho, control, target, t1, t2, tg):
             # applies the perfect gate to our density matrix
             perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
             # apply our error gate and find the new density matrix
-            error_rho = qubit_rad_error_matrix(perfect_gate_rho, t1, t2, tg)
+            error_rho = rad_error(perfect_gate_rho, t1, t2, tg)
             
     return error_rho # returns the density matrix of your system
 
@@ -600,7 +600,7 @@ def rad_flipped_adj_CNOT(rho, control, target, t1, t2, tg):
     # applies the perfect gate to our density matrix
     perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
     # apply our error gate and find the new density matrix
-    error_rho = qubit_rad_error_matrix(perfect_gate_rho, t1, t2, tg)
+    error_rho = rad_error(perfect_gate_rho, t1, t2, tg)
                     
     return error_rho
 
@@ -644,7 +644,7 @@ def rad_flipped_non_adj_CNOT(rho, control, target, t1, t2, tg):
                 # applies the perfect gate to our density matrix
                 perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
                 # apply our error gate and find the new density matrix
-                error_rho = qubit_rad_error_matrix(perfect_gate_rho, t1, t2, tg)
+                error_rho = rad_error(perfect_gate_rho, t1, t2, tg)
                 
             else:
                 all_dots = np.append(all_dots, [next_dot], axis = 0) # adds the perfect gate to an array
@@ -652,7 +652,7 @@ def rad_flipped_non_adj_CNOT(rho, control, target, t1, t2, tg):
                 # applies the perfect gate to our density matrix
                 perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
                 # apply our error gate and find the new density matrix
-                error_rho = qubit_rad_error_matrix(perfect_gate_rho, t1, t2, tg)
+                error_rho = rad_error(perfect_gate_rho, t1, t2, tg)
                    
         # Indexing over values of p such that we get the 2nd half of the equation together
         for j in range(p - 2):
@@ -660,7 +660,7 @@ def rad_flipped_non_adj_CNOT(rho, control, target, t1, t2, tg):
             # applies the perfect gate to our density matrix
             perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
             # apply our error gate and find the new density matrix
-            error_rho = qubit_rad_error_matrix(perfect_gate_rho, t1, t2, tg)
+            error_rho = rad_error(perfect_gate_rho, t1, t2, tg)
             
          
     return error_rho # returns the density matrix of your system
@@ -729,7 +729,7 @@ def rad_adj_CZ(rho, control, target, t1, t2, tg):
     perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
     
     # apply our error gate and find the new density matrix
-    error_rho = qubit_rad_error_matrix(perfect_gate_rho, t1, t2, tg)
+    error_rho = rad_error(perfect_gate_rho, t1, t2, tg)
 
     return error_rho
 
@@ -767,7 +767,7 @@ def rad_non_adj_CZ(rho, control, target, t1, t2, tg):
     
     # apply the hadamard first to take it to the (+, -) basis
     rho = np.dot(h_gate, np.dot(rho, h_gate.conj().T))
-    rho = qubit_rad_error_matrix(rho, t1, t2, tg)
+    rho = rad_error(rho, t1, t2, tg)
 
     # Applies the gates twice (square in our formula)
     for k in range(0,2):
@@ -786,7 +786,7 @@ def rad_non_adj_CZ(rho, control, target, t1, t2, tg):
                 # applies the perfect gate to our density matrix
                 perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
                 # apply our error gate and find the new density matrix
-                error_rho = qubit_rad_error_matrix(perfect_gate_rho, t1, t2, tg)
+                error_rho = rad_error(perfect_gate_rho, t1, t2, tg)
 
             else:
                 all_dots = np.append(all_dots, [next_dot], axis = 0) # adds the perfect gate to an array
@@ -794,7 +794,7 @@ def rad_non_adj_CZ(rho, control, target, t1, t2, tg):
                 # applies the perfect gate to our density matrix
                 perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
                 # apply our error gate and find the new density matrix
-                error_rho = qubit_rad_error_matrix(perfect_gate_rho, t1, t2, tg)
+                error_rho = rad_error(perfect_gate_rho, t1, t2, tg)
 
         # Indexing over values of p such that we get the 2nd half of the equation together
         for j in range(p - 2):
@@ -802,12 +802,12 @@ def rad_non_adj_CZ(rho, control, target, t1, t2, tg):
             # applies the perfect gate to our density matrix
             perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
             # apply our error gate and find the new density matrix
-            error_rho = qubit_rad_error_matrix(perfect_gate_rho, t1, t2, tg)
+            error_rho = rad_error(perfect_gate_rho, t1, t2, tg)
             
 
     # Calculate the final rho by applying the h gate again to bring it back to the (0, 1) basis
     error_rho = np.dot(h_gate, np.dot(error_rho, h_gate.conj().T))
-    error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg)
+    error_rho = rad_error(error_rho, t1, t2, tg)
     
     return error_rho # returns the density matrix of your system
 
@@ -865,8 +865,8 @@ def prob_rad_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs):
     # applies the perfect gate to our density matrix
     perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
     # apply our error gates and find the new density matrix
-    error_rho = qubit_gate_error_matrix(perfect_gate_rho, qubit_error_probs[target], target, tot_qubits) # prob error
-    error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+    error_rho = gate_error(perfect_gate_rho, qubit_error_probs[target], target, tot_qubits) # prob error
+    error_rho = rad_error(error_rho, t1, t2, tg) # rad error
 
                     
     return error_rho
@@ -912,9 +912,9 @@ def prob_rad_non_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs):
                 # applies the perfect gate to our density matrix
                 perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
                 # apply our error gate and find the new density matrix
-                error_rho = qubit_gate_error_matrix(
+                error_rho = gate_error(
                     perfect_gate_rho, qubit_error_probs[j+control+1], j+control+1, tot_qubits) # prob error
-                error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+                error_rho = rad_error(error_rho, t1, t2, tg) # rad error
                 
             else:
                 all_dots = np.append(all_dots, [next_dot], axis = 0) # adds the perfect gate to an array
@@ -922,9 +922,9 @@ def prob_rad_non_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs):
                 # applies the perfect gate to our density matrix
                 perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
                 # apply our error gate and find the new density matrix
-                error_rho = qubit_gate_error_matrix(
+                error_rho = gate_error(
                     perfect_gate_rho, qubit_error_probs[j+control+1], j+control+1, tot_qubits) # prob error
-                error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+                error_rho = rad_error(error_rho, t1, t2, tg) # rad error
                 
         # Indexing over values of p such that we get the 2nd half of the equation together
         for j in range(p - 2):
@@ -932,9 +932,9 @@ def prob_rad_non_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs):
             # applies the perfect gate to our density matrix
             perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
             # apply our error gate and find the new density matrix
-            error_rho = qubit_gate_error_matrix(
+            error_rho = gate_error(
                 perfect_gate_rho, qubit_error_probs[target-j-2+1], target-j-2+1, tot_qubits) # prob error
-            error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+            error_rho = rad_error(error_rho, t1, t2, tg) # rad error
             
     return error_rho # returns the density matrix of your system
 
@@ -964,8 +964,8 @@ def prob_rad_flipped_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_prob
     # applies the perfect gate to our density matrix
     perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
     # apply our error gate and find the new density matrix
-    error_rho = qubit_gate_error_matrix(perfect_gate_rho, qubit_error_probs[target], target, tot_qubits) # prob error
-    error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error 
+    error_rho = gate_error(perfect_gate_rho, qubit_error_probs[target], target, tot_qubits) # prob error
+    error_rho = rad_error(error_rho, t1, t2, tg) # rad error 
                     
     return error_rho
 
@@ -1010,9 +1010,9 @@ def prob_rad_flipped_non_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_
                 # applies the perfect gate to our density matrix
                 perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
                 # apply our error gates and find the new density matrix
-                error_rho = qubit_gate_error_matrix(
+                error_rho = gate_error(
                     perfect_gate_rho, qubit_error_probs[control-j-1], control-j-1, tot_qubits) # prob error
-                error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+                error_rho = rad_error(error_rho, t1, t2, tg) # rad error
                 
             else:
                 all_dots = np.append(all_dots, [next_dot], axis = 0) # adds the perfect gate to an array
@@ -1020,9 +1020,9 @@ def prob_rad_flipped_non_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_
                 # applies the perfect gate to our density matrix
                 perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
                 # apply our error gates and find the new density matrix
-                error_rho = qubit_gate_error_matrix(
+                error_rho = gate_error(
                     perfect_gate_rho, qubit_error_probs[control-j-1], control-j-1, tot_qubits) # prob error
-                error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+                error_rho = rad_error(error_rho, t1, t2, tg) # rad error
                    
         # Indexing over values of p such that we get the 2nd half of the equation together
         for j in range(p - 2):
@@ -1030,13 +1030,13 @@ def prob_rad_flipped_non_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_
             # applies the perfect gate to our density matrix
             perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
             # apply our error gates and find the new density matrix
-            error_rho = qubit_gate_error_matrix(
-                perfect_gate_rho, qubit_error_probs[target-j+1], target-j+1, tot_qubits) # prob error
-            error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+            error_rho = gate_error(
+                perfect_gate_rho, qubit_error_probs[target+j], target+j, tot_qubits) # prob error
+            error_rho = rad_error(error_rho, t1, t2, tg) # rad error
             
          
     return error_rho # returns the density matrix of your system
-
+            
             
 ### Implement a CNOT gate between 2 qubits in system with line connectivity (probability of error and rad errors) ###
 def prob_line_rad_CNOT(state, control, target, t1, t2, tg, qubit_error_probs, form = 'psi'):
@@ -1085,6 +1085,9 @@ def prob_rad_adj_CZ(rho, control, target, t1, t2, tg, qubit_error_probs):
     # tg: The gate time of your gate operations 
     # qubit_error_probs: an array of the probability for errors of each qubit in your system
     
+    # How many total qubits are in our vector representation
+    tot_qubits = int(np.log(len(rho))/np.log(2))
+    
     # Adds the dimensions needed depending on the tot_qubits
     if control < target:
         n1 = control # exponent used to tensor the left side identity matrix for our full system
@@ -1099,8 +1102,8 @@ def prob_rad_adj_CZ(rho, control, target, t1, t2, tg, qubit_error_probs):
     perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
     
     # apply our error gate and find the new density matrix
-    error_rho = qubit_gate_error_matrix(perfect_gate_rho, qubit_error_probs[control-j-1], control-j-1, tot_qubits) # prob error
-    error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+    error_rho = gate_error(perfect_gate_rho, qubit_error_probs[target], target, tot_qubits) # prob error
+    error_rho = rad_error(error_rho, t1, t2, tg) # rad error
 
     return error_rho
 
@@ -1140,8 +1143,8 @@ def prob_rad_non_adj_CZ(rho, control, target, t1, t2, tg, qubit_error_probs):
     
     # apply the hadamard first to take it to the (+, -) basis
     rho = np.dot(h_gate, np.dot(rho, h_gate.conj().T))
-    rho = qubit_gate_error_matrix(rho, qubit_error_probs[target], target, tot_qubits) # depolarizing error
-    rho = qubit_rad_error_matrix(rho, t1, t2, tg) # rad error
+    rho = gate_error(rho, qubit_error_probs[target], target, tot_qubits) # depolarizing error
+    rho = rad_error(rho, t1, t2, tg) # rad error
     
     # Applies the gates twice (square in our formula)
     for k in range(0,2):
@@ -1160,9 +1163,14 @@ def prob_rad_non_adj_CZ(rho, control, target, t1, t2, tg, qubit_error_probs):
                 # applies the perfect gate to our density matrix
                 perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T)) 
                 # apply our error gate and find the new density matrix
-                error_rho = qubit_gate_error_matrix(
-                    perfect_gate_rho, qubit_error_probs[j+control+1], j+control+1, tot_qubits) # prob_error
-                error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+                if control < target:
+                    error_rho = gate_error(
+                        perfect_gate_rho, qubit_error_probs[j+control+1], j+control+1, tot_qubits) # prob_error
+                else:
+                    error_rho = gate_error(
+                    perfect_gate_rho, qubit_error_probs[control-j-1], control-j-1, tot_qubits) # prob error
+                
+                error_rho = rad_error(error_rho, t1, t2, tg) # rad error
 
             else:
                 all_dots = np.append(all_dots, [next_dot], axis = 0) # adds the perfect gate to an array
@@ -1170,9 +1178,14 @@ def prob_rad_non_adj_CZ(rho, control, target, t1, t2, tg, qubit_error_probs):
                 # applies the perfect gate to our density matrix
                 perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
                 # apply our error gate and find the new density matrix
-                error_rho = qubit_gate_error_matrix(
-                    perfect_gate_rho, qubit_error_probs[j+control+1], j+control+1, tot_qubits) # prob error
-                error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+                if control < target:
+                    error_rho = gate_error(
+                        perfect_gate_rho, qubit_error_probs[j+control+1], j+control+1, tot_qubits) # prob_error
+                else:
+                    error_rho = gate_error(
+                    perfect_gate_rho, qubit_error_probs[control-j-1], control-j-1, tot_qubits) # prob error
+                
+                error_rho = rad_error(error_rho, t1, t2, tg) # rad error
 
         # Indexing over values of p such that we get the 2nd half of the equation together
         for j in range(p - 2):
@@ -1180,19 +1193,24 @@ def prob_rad_non_adj_CZ(rho, control, target, t1, t2, tg, qubit_error_probs):
             # applies the perfect gate to our density matrix
             perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T)) 
             # apply our error gate and find the new density matrix
-            error_rho = qubit_gate_error_matrix(
-                perfect_gate_rho, qubit_error_probs[target-j-2+1], target-j-2+1, tot_qubits) # prob error
-            error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+            if control < target:  
+                error_rho = gate_error(
+                    perfect_gate_rho, qubit_error_probs[target-j-2+1], target-j-2+1, tot_qubits) # prob error
+            else:
+                error_rho = gate_error(
+                    perfect_gate_rho, qubit_error_probs[target+j], target+j, tot_qubits) # prob error
+                
+            error_rho = rad_error(error_rho, t1, t2, tg) # rad error
             
 
     # Calculate the final rho
     error_rho = np.dot(h_gate, np.dot(error_rho, h_gate.conj().T))
-    error_rho = qubit_gate_error_matrix(error_rho, qubit_error_probs[target], target, tot_qubits) # prob error
-    error_rho = qubit_rad_error_matrix(error_rho, t1, t2, tg) # rad error
+    error_rho = gate_error(error_rho, qubit_error_probs[target], target, tot_qubits) # prob error
+    error_rho = rad_error(error_rho, t1, t2, tg) # rad error
     
     return error_rho # returns the density matrix of your system
 
-            
+   
 ### Implement a CNOT gate between 2 qubits depending on your control and target qubit
 def prob_line_rad_CZ(state, control, target, t1, t2, tg, qubit_error_probs, form = 'psi'):
     # state: the vector state representation or density matrix representation of your system
@@ -1218,5 +1236,29 @@ def prob_line_rad_CZ(state, control, target, t1, t2, tg, qubit_error_probs, form
     
     return final_rho # output is always the density matrix after the operation
 
+
+### - - - - - - - - - SPAM error function - - - - - - - - - ###
+
+### Takes the density matrix after state preparation and before measurement and applies an error gate with probability ###
+def spam_error(rho, error_prob, index):
+    # rho: density matrix of qubit system after perfect gate was applied
+    # error_prob: probability for state preparation error or measuremnt error
+    # index: index of qubit that was prepared/measureed
+    
+    # total number of qubits in your system
+    tot_qubits = int(np.log(len(rho))/np.log(2))
+    
+    # qubit error rates:
+    KM0 = np.sqrt(1-error_prob) * sigma_I
+    KM1 = np.sqrt(error_prob) * sigma_x
+    
+    # qubit error gates
+    KM0 = np.kron(np.identity(2**(index)), np.kron(KM0, np.identity(2**(tot_qubits-index-1))))
+    KM1 = np.kron(np.identity(2**(index)), np.kron(KM1, np.identity(2**(tot_qubits-index-1)))) 
+    
+    # apply error gates 
+    spam_rho = np.dot(KM0, np.dot(rho, KM0.conj().T)) + np.dot(KM1, np.dot(rho, KM1.conj().T))
+    
+    return spam_rho
 
 

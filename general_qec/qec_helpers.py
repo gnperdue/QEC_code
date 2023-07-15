@@ -77,7 +77,9 @@ def collapse_ancilla(logical_state, k):
             all_organized_bits = [organized_bits]
         else:
             all_organized_bits = np.append(all_organized_bits, [organized_bits], axis = 0)
-         
+            
+    all_organized_bits = np.unique(all_organized_bits, axis=0)
+    
     # finding our probability for measurement
     rows, cols = np.shape(all_organized_bits)
     probs = np.array([])
@@ -88,10 +90,10 @@ def collapse_ancilla(logical_state, k):
         probs = np.append(probs, summation)
 
     # find which ancilla we will measure
-    x = random.choices(all_organized_bits, weights=probs, k=1)
-    x = np.where(all_organized_bits == x)[0][0]
+    index = random.choices(all_organized_bits, weights=probs, k=1)
+    index = np.where(all_organized_bits == index)[0][0]
     # set our collapsed state to that ancilla measurement
-    collapsed_bits = all_organized_bits[x]
+    collapsed_bits = all_organized_bits[index]
 
 
     # Here we take the vector state and separate it into vectors so that we can manipulate it
@@ -121,7 +123,17 @@ def collapse_ancilla(logical_state, k):
     collapsed_vector_state = np.zeros((2**(n),), dtype=complex)
     for j in range(num_rows):
         collapsed_vector_state = collapsed_vector_state + all_vector_states[j][:]
-        
+    
+    # normalizing our state
+    pop = 0
+    for i in range(len(probs)):
+        pop += probs[i]
+            
+    norm = np.linalg.norm(collapsed_vector_state)
+#     print_state_info(collapsed_vector_state, n)
+#     print('pop: ', pop, 'norm: ', norm)
+    collapsed_vector_state =  np.sqrt(pop) * (collapsed_vector_state/norm)
+
     return collapsed_vector_state
 
 
