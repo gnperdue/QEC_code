@@ -43,14 +43,6 @@ def three_qubit_rad(initial_rho, t1, t2, tg):
     detection_rho = line_rad_CNOT(detection_rho, 0, 4, t1, t2, tg, form = 'rho')
     detection_rho = line_rad_CNOT(detection_rho, 2, 4, t1, t2, tg, form = 'rho')
 
-#     # probability of the state measurments from the density matrix are defined as Tr(p*rho)
-#     prob_sum = 0
-#     state_probs = np.array([])
-#     for i in range(len(detection_rho)):
-#         prob_sum += np.abs(detection_rho[i,i])
-#         state_probs = np.append(state_probs, detection_rho[i,i])
-
-#     logical_bits = vector_state_to_bit_state(state_probs, 5)[0][0]
     # probability of the state measurments from the density matrix are defined as Tr(p*rho)
     prob_sum = 0
     state_probs = np.array([])
@@ -79,23 +71,23 @@ def three_qubit_rad(initial_rho, t1, t2, tg):
     if error_index == 0: # Error on qubit 0
         correction_gate = np.kron(sigma_x, np.identity(2**4))
         corrected_rho = np.dot(correction_gate, np.dot(detection_rho, correction_gate.conj().T))
-        corrected_rho = qubit_rad_error_matrix(corrected_rho, t1, t2, tg) # apply rad error
+        corrected_rho = rad_error(corrected_rho, t1, t2, tg) # apply rad error
 
     elif error_index == 1: # Error on qubit 1
         correction_gate = np.kron(np.identity(2), np.kron(sigma_x, np.identity(2**3)))
         corrected_rho = np.dot(correction_gate, np.dot(detection_rho, correction_gate.conj().T))
-        corrected_rho = qubit_rad_error_matrix(corrected_rho, t1, t2, tg) # apply rad error
+        corrected_rho = rad_error(corrected_rho, t1, t2, tg) # apply rad error
 
 
     elif error_index == 2: # Error on qubit 2
         correction_gate = np.kron(np.identity(2**2), np.kron(sigma_x, np.identity(2**2)))
         corrected_rho = np.dot(correction_gate, np.dot(detection_rho, correction_gate.conj().T))
-        corrected_rho = qubit_rad_error_matrix(corrected_rho, t1, t2, tg) # apply rad error
+        corrected_rho = rad_error(corrected_rho, t1, t2, tg) # apply rad error
 
 
     else: # No error occured
         corrected_rho = detection_rho
-        corrected_rho = qubit_rad_error_matrix(corrected_rho, t1, t2, tg) # apply rad error
+        corrected_rho = rad_error(corrected_rho, t1, t2, tg) # apply rad error
 
     # probability of the state measurments from the density matrix are defined as Tr(p*rho)
     prob_sum = 0
@@ -155,26 +147,26 @@ def three_qubit_realistic(initial_rho, t1, t2, tg, qubit_error_probs):
         correction_gate = np.kron(sigma_x, np.identity(2**4))
         corrected_rho = np.dot(correction_gate, np.dot(detection_rho, correction_gate.conj().T))
         
-        corrected_rho = qubit_gate_error_matrix(corrected_rho, qubit_error_probs[0], 0, n) # gate error probability
-        corrected_rho = qubit_rad_error_matrix(corrected_rho, t1, t2, tg) # apply rad error
+        corrected_rho = gate_error(corrected_rho, qubit_error_probs[0], 0, n) # gate error probability
+        corrected_rho = rad_error(corrected_rho, t1, t2, tg) # apply rad error
 
     elif error_index == 1: # Error on qubit 1
         correction_gate = np.kron(np.identity(2), np.kron(sigma_x, np.identity(2**3)))
         corrected_rho = np.dot(correction_gate, np.dot(detection_rho, correction_gate.conj().T))
         
-        corrected_rho = qubit_gate_error_matrix(corrected_rho, qubit_error_probs[1], 1, n) # gate error probability
-        corrected_rho = qubit_rad_error_matrix(corrected_rho, t1, t2, tg) # apply rad error
+        corrected_rho = gate_error(corrected_rho, qubit_error_probs[1], 1, n) # gate error probability
+        corrected_rho = rad_error(corrected_rho, t1, t2, tg) # apply rad error
 
     elif error_index == 2: # Error on qubit 2
         correction_gate = np.kron(np.identity(2**2), np.kron(sigma_x, np.identity(2**2)))
         corrected_rho = np.dot(correction_gate, np.dot(detection_rho, correction_gate.conj().T))
         
-        corrected_rho = qubit_gate_error_matrix(corrected_rho, qubit_error_probs[2], 2, n) # gate error probability
-        corrected_rho = qubit_rad_error_matrix(corrected_rho, t1, t2, tg) # apply rad error
+        corrected_rho = gate_error(corrected_rho, qubit_error_probs[2], 2, n) # gate error probability
+        corrected_rho = rad_error(corrected_rho, t1, t2, tg) # apply rad error
 
     else: # No error occured
         corrected_rho = detection_rho
-        corrected_rho = qubit_rad_error_matrix(corrected_rho, t1, t2, tg) # apply rad error
+        corrected_rho = rad_error(corrected_rho, t1, t2, tg) # apply rad error
 
     # probability of the state measurments from the density matrix are defined as Tr(p*rho)
     prob_sum = 0
