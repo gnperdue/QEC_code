@@ -436,6 +436,57 @@ def line_errored_CZ(state, control, target, qubit_error_probs, form = 'psi'):
 
 ### - - - CNOT GATES - - - ###
 
+# ### Takes the density matrix after a perfect operation and applies an error gate based on t1, t2, and tg ###
+# def rad_error(rho, t1, t2, tg):
+#     # rho: density matrix of qubit system after perfect gate was applied
+#     # t1: the relaxation time of the qubits
+#     # t2: the dephasing time of the qubits
+#     # tg: time of the gate you are applying
+    
+#     zero = np.array([1, 0])
+#     one = np.array([0, 1])
+    
+#     # index: index of qubit that gate was applied (target qubit in this case) 
+#     ### - can add this, but for now all have same t1 and t2
+    
+#     # total number of qubits in your system
+#     tot_qubits = int(np.log(len(rho))/np.log(2))
+    
+#     p_t1 = np.exp(-tg/t1) # find the probability of relaxation
+#     p_t2 = np.exp(-tg/t2) # find the probability of dephasing
+#     p_reset = 1 - p_t1 # find the probability of resetting to equilibrium
+    
+    
+#     # find the dephasing (phase flip) gate operation
+#     p_z = (1-p_reset) * (1- (p_t2/p_t1)) * 0.5
+#     k_z = np.sqrt(p_z) * sigma_z
+
+#     # find the relaxation/thermal decay gate operation
+#     k_reset = np.sqrt(p_reset) * np.kron(zero, zero[np.newaxis].conj().T)
+
+#     # find the identity transformation gate operation
+#     p_I = 1 - p_z - p_reset
+#     k_I = np.sqrt(p_I) * sigma_I
+
+#     # apply the same error to all of our qubits in our system
+#     for i in range(tot_qubits):
+#         if i == 0:
+#             z_gate = k_z
+#             reset_gate = k_reset
+#             I_gate = k_I
+#         else:
+#             z_gate = np.kron(z_gate, k_z)
+#             reset_gate = np.kron(reset_gate, k_reset)
+#             I_gate = np.kron(I_gate, k_I)
+            
+#     # find the density matrix with the 3 types of error gates we found
+#     final_rho = np.dot(z_gate, np.dot(rho, z_gate.conj().T)) + np.dot(
+#         reset_gate, np.dot(rho, reset_gate.conj().T)) + np.dot(
+#         I_gate, np.dot(rho, I_gate.conj().T))
+
+#     return final_rho
+
+
 ### Takes the density matrix after a perfect operation and applies an error gate based on t1, t2, and tg ###
 def rad_error(rho, t1, t2, tg):
     # rho: density matrix of qubit system after perfect gate was applied
@@ -446,45 +497,43 @@ def rad_error(rho, t1, t2, tg):
     zero = np.array([1, 0])
     one = np.array([0, 1])
     
-    # index: index of qubit that gate was applied (target qubit in this case) 
-    ### - can add this, but for now all have same t1 and t2
-    
     # total number of qubits in your system
     tot_qubits = int(np.log(len(rho))/np.log(2))
-    
-    p_t1 = np.exp(-tg/t1) # find the probability of relaxation
-    p_t2 = np.exp(-tg/t2) # find the probability of dephasing
-    p_reset = 1 - p_t1 # find the probability of resetting to equilibrium
-    
-    
-    # find the dephasing (phase flip) gate operation
-    p_z = (1-p_reset) * (1- (p_t2/p_t1)) * 0.5
-    k_z = np.sqrt(p_z) * sigma_z
 
-    # find the relaxation/thermal decay gate operation
-    k_reset = np.sqrt(p_reset) * np.kron(zero, zero[np.newaxis].conj().T)
+    p_t1 = 1-np.exp(-tg/t1) # find the probability of relaxation
+    p_t2 = 1-np.exp(-tg/t2) # find the probability of dephasing
 
-    # find the identity transformation gate operation
-    p_I = 1 - p_z - p_reset
-    k_I = np.sqrt(p_I) * sigma_I
 
-    # apply the same error to all of our qubits in our system
+    # decay channel: 
+    k_0 = np.array([[1, 0], [0, np.sqrt(1-p_t1)]])
+    k_1 = np.array([[0, np.sqrt(p_t1)], [0, 0]])
+
+    # apply decay operators
     for i in range(tot_qubits):
-        if i == 0:
-            z_gate = k_z
-            reset_gate = k_reset
-            I_gate = k_I
-        else:
-            z_gate = np.kron(z_gate, k_z)
-            reset_gate = np.kron(reset_gate, k_reset)
-            I_gate = np.kron(I_gate, k_I)
-            
-    # find the density matrix with the 3 types of error gates we found
-    final_rho = np.dot(z_gate, np.dot(rho, z_gate.conj().T)) + np.dot(
-        reset_gate, np.dot(rho, reset_gate.conj().T)) + np.dot(
-        I_gate, np.dot(rho, I_gate.conj().T))
+        operator_0 = np.kron(np.identity(2**i), np.kron(k_0, np.identity(2**(tot_qubits - i - 1))))
+        operator_1 = np.kron(np.identity(2**i), np.kron(k_1, np.identity(2**(tot_qubits - i - 1))))
+        rho = np.dot(operator_0, np.dot(rho, operator_0.conj().T)) + np.dot(
+            operator_1, np.dot(rho, operator_1.conj().T))
 
-    return final_rho
+    # dephasing channel:
+    k_2 = np.sqrt(1-p_t2) * np.identity(2)
+    k_3 = np.array([[np.sqrt(p_t2), 0], [0, 0]])
+    k_4 = np.array([[0, 0], [0, np.sqrt(p_t2)]])
+
+    # apply dephasing operators
+    for i in range(tot_qubits):
+        operator_2 = np.kron(np.identity(2**i), np.kron(k_2, np.identity(2**(tot_qubits - i - 1))))
+        operator_3 = np.kron(np.identity(2**i), np.kron(k_3, np.identity(2**(tot_qubits - i - 1))))
+        operator_4 = np.kron(np.identity(2**i), np.kron(k_4, np.identity(2**(tot_qubits - i - 1))))
+
+        rho = np.dot(operator_2, np.dot(rho, operator_2.conj().T)) + np.dot(
+        operator_3, np.dot(rho, operator_3.conj().T)) + np.dot(
+        operator_4, np.dot(rho, operator_4.conj().T))
+
+    final_rho = rho
+
+    return final_rho #np.round(final_rho, 9)
+
 
 
 ### Apply an adjacent CNOT gate between 2 qubits in a system with line connectivity and rad errors ###
