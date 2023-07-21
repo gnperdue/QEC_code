@@ -317,5 +317,45 @@ def CNOT_gate_tot(control, target):
 #         final_vector_state = final_vector_state + all_vector_states[j][:]
     
 #     return final_vector_state
+
+### Used to fully collapse the density matrix when measuring it
+def collapse_dm(rho):
+    # rho: The density matrix of your system
+    # Create Measurement operators for density matrix of 5 qubits
+    for i in range(len(rho)):
+        operator = np.zeros((len(rho), len(rho)))
+        operator[i][i] = 1
+        if i == 0:
+            meas_operators = np.array([operator])
+        else:
+            meas_operators = np.append(meas_operators, [operator], axis = 0)
+
+    # Measure probability of each measurement operator
+    meas_probs = np.array([])
+    for i in range(len(meas_operators)):
+        prob = np.trace(np.dot(meas_operators[i].conj().T, np.dot(meas_operators[i], rho)))
+        meas_probs = np.append(meas_probs, prob)
+
+    # find which measurement operator is measured based on their probabilities
+    index = random.choices(meas_probs, weights=meas_probs, k=1)
+    index = np.where(meas_probs == index)[0][0]
+
+    # apply correct measurement collapse of the density matrix
+    rho_prime = np.dot(meas_operators[index], np.dot(rho, meas_operators[index].conj().T))/(meas_probs[index])
+
+    # Now that we have completed our measurement we are in a pure state. 
+    # This can be checked if there is only 1 non-zero element.
+#     print('Non-zero elements in our density matrix: ', rho_prime[rho_prime!=0])
+
+    # Thus we can find the elemnts on the diagaonal as our final psi since rho = |psi><psi|
+    final_psi = np.array([])
+    for i in range(len(rho_prime)):
+        final_psi = np.append(final_psi, rho_prime[i][i])
+
+#     print('- - -')
+#     print('Final Measured State: ')
+#     print_state_info(final_psi, 5)
+    
+    return final_psi
     
     
