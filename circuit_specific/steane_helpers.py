@@ -8,8 +8,8 @@ from general_qec.gates import *
 
 # - - - - - - - - - -  Useful variables - - - - - - - - - - #
 
-zero = np.array([[1, 0]])
-one = np.array([[0, 1]])
+zero = np.array([1, 0])
+one = np.array([0, 1])
 
 # Setting up the 6 Stabilizer Operators for the 7-qubit Steane Code
 k_one = np.kron(sigma_I, np.kron(sigma_I, np.kron(sigma_I, np.kron(
@@ -28,26 +28,26 @@ k_six = np.kron(sigma_I, np.kron(sigma_z, np.kron(sigma_z, np.kron(
 ### Gate operations for steane code using 3 ancillas ###
 
 # phase correction gates
-control_k_one = np.kron(np.identity(2**7), np.kron(np.kron(zero, zero.T), np.identity(2**2))) + np.kron(
-    k_one, np.kron(np.kron(one, one.T), np.identity(2**2)))
+control_k_one = np.kron(np.identity(2**7), np.kron(np.kron(zero, zero[np.newaxis].T), np.identity(2**2))) + np.kron(
+    k_one, np.kron(np.kron(one, one[np.newaxis].T), np.identity(2**2)))
 
 control_k_two = np.kron(np.identity(2**7), np.kron(np.identity(2), np.kron(np.kron(
-    zero, zero.T), np.identity(2)))) + np.kron(k_two, np.kron(np.identity(2), np.kron(
-    np.kron(one, one.T), np.identity(2))))
+    zero, zero[np.newaxis].T), np.identity(2)))) + np.kron(k_two, np.kron(np.identity(2), np.kron(
+    np.kron(one, one[np.newaxis].T), np.identity(2))))
 
-control_k_three = np.kron(np.identity(2**7), np.kron(np.identity(2**2), np.kron(zero, zero.T))) + np.kron(
-    k_three, np.kron(np.identity(2**2), np.kron(one, one.T)))
+control_k_three = np.kron(np.identity(2**7), np.kron(np.identity(2**2), np.kron(zero, zero[np.newaxis].T))) + np.kron(
+    k_three, np.kron(np.identity(2**2), np.kron(one, one[np.newaxis].T)))
 
 # bit correction gates
-control_k_four = np.kron(np.identity(2**7), np.kron(np.kron(zero, zero.T), np.identity(2**2))) + np.kron(
-    k_four, np.kron(np.kron(one, one.T), np.identity(2**2)))
+control_k_four = np.kron(np.identity(2**7), np.kron(np.kron(zero, zero[np.newaxis].T), np.identity(2**2))) + np.kron(
+    k_four, np.kron(np.kron(one, one[np.newaxis].T), np.identity(2**2)))
 
 control_k_five = np.kron(np.identity(2**7), np.kron(np.identity(2), np.kron(np.kron(
-    zero, zero.T), np.identity(2)))) + np.kron(k_five, np.kron(np.identity(2), np.kron(
-    np.kron(one, one.T), np.identity(2))))
+    zero, zero[np.newaxis].T), np.identity(2)))) + np.kron(k_five, np.kron(np.identity(2), np.kron(
+    np.kron(one, one[np.newaxis].T), np.identity(2))))
 
-control_k_six = np.kron(np.identity(2**7), np.kron(np.identity(2**2), np.kron(zero, zero.T))) + np.kron(
-    k_six, np.kron(np.identity(2**2), np.kron(one, one.T)))
+control_k_six = np.kron(np.identity(2**7), np.kron(np.identity(2**2), np.kron(zero, zero[np.newaxis].T))) + np.kron(
+    k_six, np.kron(np.identity(2**2), np.kron(one, one[np.newaxis].T)))
 
     
 # - - - - - - - - - -  Initializations - - - - - - - - - - #
@@ -61,7 +61,7 @@ def initialize_steane_logical_state(initial_state):
 
     # apply the first hadamard to the ancillas
     ancilla_hadamard = np.kron(np.identity(2**7), np.kron(hadamard, np.kron(hadamard, hadamard)))
-    full_system = np.dot(ancilla_hadamard, full_system[0])
+    full_system = np.dot(ancilla_hadamard, full_system)
 
     # apply the control stabilizer gates to the full_system
     full_system = np.dot(control_k_one, np.dot(control_k_two, np.dot(control_k_three, full_system)))
@@ -70,10 +70,10 @@ def initialize_steane_logical_state(initial_state):
     full_system = np.dot(ancilla_hadamard, full_system)
 
     # Find the bit representation of our full system
-    bits, index, vector_state = vector_state_to_bit_state(full_system, 10)
+#     bits, index, vector_state = vector_state_to_bit_state(full_system, 10)
     
     # Measure and collapse our ancilla qubits
-    collapsed_state = collapse_ancilla(vector_state, 3)
+    collapsed_state = collapse_ancilla(full_system, 3)
     
     # How many total qubits are in our vector representation
     n = int(np.log(len(full_system))/np.log(2))
@@ -81,6 +81,7 @@ def initialize_steane_logical_state(initial_state):
     # Measure the three ancilla qubits
     # Applying the Z gate operation on a specific qubit
     bits = vector_state_to_bit_state(collapsed_state, 10)[0][0]
+    
     # find index
     m_one = 0
     m_two = 0
@@ -109,7 +110,7 @@ def initialize_steane_logical_state(initial_state):
     # Using this for superposition states, doesnt do anything for |0> initial states 
     # becuase they are already +1 eigenstates of Z
     if (initial_state != np.kron(zero, np.kron(zero, np.kron(zero, np.kron(
-        zero, np.kron(zero, np.kron(zero, zero))))))[0]).all():
+        zero, np.kron(zero, np.kron(zero, zero))))))).all():
             final_vector_state = steane_bit_correction(final_vector_state)
     
     # apply global phase correction:
@@ -304,28 +305,28 @@ def steane_bit_correction(logical_state):
 # (first 3 are controlled by  first 3 ancilla, other 3 are controlled by the other 3 ancilla)
 
 # phase correction gates 
-larger_control_k_one = np.kron(np.identity(2**7), np.kron(np.kron(zero, zero.T), np.identity(2**5))) + np.kron(
-    k_one, np.kron(np.kron(one, one.T), np.identity(2**5)))
+larger_control_k_one = np.kron(np.identity(2**7), np.kron(np.kron(zero, zero[np.newaxis].T), np.identity(2**5))) + np.kron(
+    k_one, np.kron(np.kron(one, one[np.newaxis].T), np.identity(2**5)))
                         
 larger_control_k_two = np.kron(np.identity(2**7), np.kron(np.identity(2), np.kron(np.kron(
-    zero, zero.T), np.identity(2**4)))) + np.kron(k_two, np.kron(np.identity(2), np.kron(
-    np.kron(one, one.T), np.identity(2**4))))
+    zero, zero[np.newaxis].T), np.identity(2**4)))) + np.kron(k_two, np.kron(np.identity(2), np.kron(
+    np.kron(one, one[np.newaxis].T), np.identity(2**4))))
                         
 larger_control_k_three = np.kron(np.identity(2**7), np.kron(np.identity(2**2), np.kron(np.kron(
-    zero, zero.T), np.identity(2**3)))) + np.kron(k_three, np.kron(np.identity(2**2), np.kron(np.kron(
-    one, one.T), np.identity(2**3))))
+    zero, zero[np.newaxis].T), np.identity(2**3)))) + np.kron(k_three, np.kron(np.identity(2**2), np.kron(np.kron(
+    one, one[np.newaxis].T), np.identity(2**3))))
 
 # bit correction gates
 larger_control_k_four = np.kron(np.identity(2**7), np.kron(np.identity(2**3), np.kron(
-    np.kron(zero, zero.T), np.identity(2**2)))) + np.kron(
-    k_four, np.kron(np.identity(2**3), np.kron(np.kron(one, one.T), np.identity(2**2))))
+    np.kron(zero, zero[np.newaxis].T), np.identity(2**2)))) + np.kron(
+    k_four, np.kron(np.identity(2**3), np.kron(np.kron(one, one[np.newaxis].T), np.identity(2**2))))
 
 larger_control_k_five = np.kron(np.identity(2**7), np.kron(np.identity(2**4), np.kron(np.kron(
-    zero, zero.T), np.identity(2)))) + np.kron(k_five, np.kron(np.identity(2**4), np.kron(
-    np.kron(one, one.T), np.identity(2))))
+    zero, zero[np.newaxis].T), np.identity(2)))) + np.kron(k_five, np.kron(np.identity(2**4), np.kron(
+    np.kron(one, one[np.newaxis].T), np.identity(2))))
 
-larger_control_k_six = np.kron(np.identity(2**7), np.kron(np.identity(2**5), np.kron(zero, zero.T))) + np.kron(
-    k_six, np.kron(np.identity(2**5), np.kron(one, one.T)))
+larger_control_k_six = np.kron(np.identity(2**7), np.kron(np.identity(2**5), np.kron(zero, zero[np.newaxis].T))) + np.kron(
+    k_six, np.kron(np.identity(2**5), np.kron(one, one[np.newaxis].T)))
 
 
 ### Initializes the 13 qubit (7 physical, 6 ancilla) qubit system ###
@@ -341,7 +342,7 @@ def initialize_larger_steane_code(initial_state):
     ancilla_hadamard = np.kron(np.identity(2**7), np.kron(
         np.kron(hadamard, np.kron(hadamard, hadamard)), np.identity(2**3)))
 
-    full_system = np.dot(ancilla_hadamard, full_system[0])
+    full_system = np.dot(ancilla_hadamard, full_system)
 
     # apply the control stabilizer gates to the full_system
     full_system = np.dot(larger_control_k_one, np.dot(larger_control_k_two, np.dot(larger_control_k_three, full_system)))
@@ -389,7 +390,7 @@ def initialize_larger_steane_code(initial_state):
     # Using this for superposition states, doesnt do anything for |0> initial states 
     # becuase they are already +1 eigenstates of Z
     if (initial_state != np.kron(zero, np.kron(zero, np.kron(zero, np.kron(
-        zero, np.kron(zero, np.kron(zero, zero))))))[0]).all():
+        zero, np.kron(zero, np.kron(zero, zero))))))).all():
             final_vector_state = steane_bit_correction(final_vector_state)
     
     # apply global phase correction:
@@ -442,17 +443,17 @@ def simultaneous_steane_code(logical_state):
     m_four = 0
     m_five = 0
     m_six = 0
-    if bits[j][7] == '1':
+    if bits[7] == '1':
         m_one = 1
-    if bits[j][8] == '1':
+    if bits[8] == '1':
         m_two = 1
-    if bits[j][9] == '1':
+    if bits[9] == '1':
         m_three = 1
-    if bits[j][10] == '1':
+    if bits[10] == '1':
         m_four = 1
-    if bits[j][11] == '1':
+    if bits[11] == '1':
         m_five = 1
-    if bits[j][12] == '1':
+    if bits[12] == '1':
         m_six = 1
 
     # Which qubit do we perform the Z gate on
@@ -511,19 +512,19 @@ def simultaneous_steane_code(logical_state):
 
 # Define the Stabilizer Operators as CNOT gates between line adjacent qubits 
 # (remember that the non-adj CNOT calculation is using line connectivity)
-K1_line_operation = np.dot(flipped_non_adj_CNOT(7, 3, 10), np.dot(flipped_non_adj_CNOT(7, 4, 10), np.dot(
-    flipped_non_adj_CNOT(7, 5, 10), flipped_adj_CNOT(7, 6, 10))))
-K2_line_operation = np.dot(flipped_non_adj_CNOT(8, 0, 10), np.dot(flipped_non_adj_CNOT(8, 2, 10), np.dot(
-    flipped_non_adj_CNOT(8, 4, 10), flipped_non_adj_CNOT(8, 6, 10))))
-K3_line_operation = np.dot(flipped_non_adj_CNOT(9, 1, 10), np.dot(flipped_non_adj_CNOT(9, 2, 10), np.dot(
-    flipped_non_adj_CNOT(9, 5, 10), flipped_non_adj_CNOT(9, 6, 10))))
+K1_line_operation = np.dot(CNOT(7, 3, 10), np.dot(CNOT(7, 4, 10), np.dot(
+    CNOT(7, 5, 10), CNOT(7, 6, 10))))
+K2_line_operation = np.dot(CNOT(8, 0, 10), np.dot(CNOT(8, 2, 10), np.dot(
+    CNOT(8, 4, 10), CNOT(8, 6, 10))))
+K3_line_operation = np.dot(CNOT(9, 1, 10), np.dot(CNOT(9, 2, 10), np.dot(
+    CNOT(9, 5, 10), CNOT(9, 6, 10))))
 
-K4_line_operation = np.dot(non_adj_CZ(7, 3, 10), np.dot(non_adj_CZ(7, 4, 10), np.dot(
-    non_adj_CZ(7, 5, 10), adj_CZ(7, 6, 10))))
-K5_line_operation =np.dot(non_adj_CZ(8, 0, 10), np.dot(non_adj_CZ(8, 2, 10), np.dot(
-    non_adj_CZ(8, 4, 10), non_adj_CZ(8, 6, 10))))
-K6_line_operation =np.dot(non_adj_CZ(9, 1, 10), np.dot(non_adj_CZ(9, 2, 10), np.dot(
-    non_adj_CZ(9, 5, 10), non_adj_CZ(9, 6, 10))))
+K4_line_operation = np.dot(CZ(7, 3, 10), np.dot(CZ(7, 4, 10), np.dot(
+    CZ(7, 5, 10), CZ(7, 6, 10))))
+K5_line_operation =np.dot(CZ(8, 0, 10), np.dot(CZ(8, 2, 10), np.dot(
+    CZ(8, 4, 10), CZ(8, 6, 10))))
+K6_line_operation =np.dot(CZ(9, 1, 10), np.dot(CZ(9, 2, 10), np.dot(
+    CZ(9, 5, 10), CZ(9, 6, 10))))
 
 
 ### Initializes the 10 qubit (7 physical, 3 ancilla) qubit system ###
@@ -535,7 +536,7 @@ def initialize_steane_line_conn(initial_state):
 
     # apply the first hadamard to the ancillas
     ancilla_hadamard = np.kron(np.identity(2**7), np.kron(hadamard, np.kron(hadamard, hadamard)))
-    full_system = np.dot(ancilla_hadamard, full_system[0])
+    full_system = np.dot(ancilla_hadamard, full_system)
 
     # apply the control stabilizer gates to the full_system
     full_system = np.dot(K1_line_operation, np.dot(K2_line_operation, np.dot(K3_line_operation, full_system)))
@@ -583,7 +584,7 @@ def initialize_steane_line_conn(initial_state):
     # Using this for superposition states, doesnt do anything for |0> initial states 
     # becuase they are already +1 eigenstates of Z
     if (initial_state != np.kron(zero, np.kron(zero, np.kron(zero, np.kron(
-        zero, np.kron(zero, np.kron(zero, zero))))))[0]).all():
+        zero, np.kron(zero, np.kron(zero, zero))))))).all():
             final_vector_state = steane_line_conn_bit_correction(final_vector_state)
     
     # apply global phase correction:
@@ -783,7 +784,7 @@ def initialize_steane_grid_conn(initial_state):
 
     # apply the first hadamard to the ancillas
     ancilla_hadamard = np.kron(np.identity(2**7), np.kron(hadamard, np.kron(hadamard, hadamard)))
-    full_system = np.dot(ancilla_hadamard, full_system[0])
+    full_system = np.dot(ancilla_hadamard, full_system)
 
     # apply the control stabilizer gates to the full_system
     full_system = np.dot(K1_grid_operation, np.dot(K2_grid_operation, np.dot(K3_grid_operation, full_system)))
@@ -831,7 +832,7 @@ def initialize_steane_grid_conn(initial_state):
     # Using this for superposition states, doesnt do anything for |0> initial states 
     # becuase they are already +1 eigenstates of Z
     if (initial_state != np.kron(zero, np.kron(zero, np.kron(zero, np.kron(
-        zero, np.kron(zero, np.kron(zero, zero))))))[0]).all():
+        zero, np.kron(zero, np.kron(zero, zero))))))).all():
             final_vector_state = steane_bit_correction(final_vector_state)
     
     # apply global phase correction:

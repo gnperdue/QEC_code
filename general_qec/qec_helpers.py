@@ -77,7 +77,9 @@ def collapse_ancilla(logical_state, k):
             all_organized_bits = [organized_bits]
         else:
             all_organized_bits = np.append(all_organized_bits, [organized_bits], axis = 0)
-         
+            
+    all_organized_bits = np.unique(all_organized_bits, axis=0)
+    
     # finding our probability for measurement
     rows, cols = np.shape(all_organized_bits)
     probs = np.array([])
@@ -88,10 +90,10 @@ def collapse_ancilla(logical_state, k):
         probs = np.append(probs, summation)
 
     # find which ancilla we will measure
-    x = random.choices(all_organized_bits, weights=probs, k=1)
-    x = np.where(all_organized_bits == x)[0][0]
+    index = random.choices(all_organized_bits, weights=probs, k=1)
+    index = np.where(all_organized_bits == index)[0][0]
     # set our collapsed state to that ancilla measurement
-    collapsed_bits = all_organized_bits[x]
+    collapsed_bits = all_organized_bits[index]
 
 
     # Here we take the vector state and separate it into vectors so that we can manipulate it
@@ -121,10 +123,22 @@ def collapse_ancilla(logical_state, k):
     collapsed_vector_state = np.zeros((2**(n),), dtype=complex)
     for j in range(num_rows):
         collapsed_vector_state = collapsed_vector_state + all_vector_states[j][:]
-        
+    
+    # normalizing our state
+    pop = 0
+    for i in range(len(probs)):
+        pop += probs[i]
+            
+    norm = np.linalg.norm(collapsed_vector_state)
+#     print_state_info(collapsed_vector_state, n)
+#     print('pop: ', pop, 'norm: ', norm)
+    collapsed_vector_state =  np.sqrt(pop) * (collapsed_vector_state/norm)
+
     return collapsed_vector_state
+
+
 # ### Collapse the ancilla qubits to one of their states and return the vector representation ###
-# def collapse_ancilla(logical_state, k):
+# def non_prob_collapse_ancilla(logical_state, k):
 #     # logical_state: The vector state representation of your full qubit system
 #     #k: number of ancillas in your system (at the end of the bit representation)
     
@@ -245,6 +259,15 @@ def remove_small_values(logical_state):
    
     return corrected_vector_state
 
+### Find out how many operations your CNOT gate is if it is line connected
+def CNOT_gate_tot(control, target):
+    if target < control:
+        tot_gates = np.abs(2*((control - target) + (control - target - 1)))
+    elif control < target:
+        tot_gates = np.abs(2*((target - control) + (target - control - 1)))
+
+    return tot_gates
+
 
 # ### Splits the state up into vectors and takes only those that have '0' as the ancilla measurement (using n-7 ancilla) ###
 # def format_state(logical_state):
@@ -294,5 +317,45 @@ def remove_small_values(logical_state):
 #         final_vector_state = final_vector_state + all_vector_states[j][:]
     
 #     return final_vector_state
+
+### Used to fully collapse the density matrix when measuring it
+def collapse_dm(rho):
+    # rho: The density matrix of your system
+    # Create Measurement operators for density matrix of 5 qubits
+    for i in range(len(rho)):
+        operator = np.zeros((len(rho), len(rho)))
+        operator[i][i] = 1
+        if i == 0:
+            meas_operators = np.array([operator])
+        else:
+            meas_operators = np.append(meas_operators, [operator], axis = 0)
+
+    # Measure probability of each measurement operator
+    meas_probs = np.array([])
+    for i in range(len(meas_operators)):
+        prob = np.trace(np.dot(meas_operators[i].conj().T, np.dot(meas_operators[i], rho)))
+        meas_probs = np.append(meas_probs, prob)
+
+    # find which measurement operator is measured based on their probabilities
+    index = random.choices(meas_probs, weights=meas_probs, k=1)
+    index = np.where(meas_probs == index)[0][0]
+
+    # apply correct measurement collapse of the density matrix
+    rho_prime = np.dot(meas_operators[index], np.dot(rho, meas_operators[index].conj().T))/(meas_probs[index])
+
+    # Now that we have completed our measurement we are in a pure state. 
+    # This can be checked if there is only 1 non-zero element.
+#     print('Non-zero elements in our density matrix: ', rho_prime[rho_prime!=0])
+
+    # Thus we can find the elemnts on the diagaonal as our final psi since rho = |psi><psi|
+    final_psi = np.array([])
+    for i in range(len(rho_prime)):
+        final_psi = np.append(final_psi, rho_prime[i][i])
+
+#     print('- - -')
+#     print('Final Measured State: ')
+#     print_state_info(final_psi, 5)
+    
+    return final_psi
     
     
