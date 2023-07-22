@@ -5,7 +5,7 @@ There are two ways in which you can use the files in this repository:
 
 1. If you would like to test the parameters of your qubit system implemented in a certain QEC algorithm you can use our **QEC Simulator** to do this. After you input the parameters of your qubits you will be able to see different information about your system including the logical T1, the distribution of times at which your circuit will fail, and the distribution of the estimated logical T1 of your system.
 
-**Some things to note about your system before jumping into this section.**
+	Some things to note about your system before jumping into this section.
 
 * You will need to know some of the error parameters that you want to simulate for your system. Not all need to be used, in fact none do, but then you would just simulate a perfect system which isn't very useful.
   - The **depolarization error probability** (each gate will implement the same probability of depolarization for all qubits). If you would like to specify each qubit to have a different depolarization probability you can, but you will need to set up your own simulation.
@@ -24,6 +24,7 @@ There are two ways in which you can use the files in this repository:
 2. If you would like an introduction for QEC then we have created many notebooks inside the folder **Implementation Knowledge Base**. In these files we go through the basics of QEC and introduce the math and physics behind quantum circuits as well as the errors that occur.
 
 * The topics which we currently cover are:
+  
 	- **01. Introduction to Quantum Error** - Here we introduce quantum errors and some of the basic math that we will use in further notebooks
  	- **02. 3-qubit Code Tutorial** - Here we introduce and work through the most basic QEC algorithm, the 3-qubit code.
 	- **02a. Short 3-qubit QEC** - If you want to skip the details of the 3-qubit code, you can just implement it here quickly and see how it works.
