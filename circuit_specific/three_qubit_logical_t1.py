@@ -48,7 +48,7 @@ def initialize_three_qubit_realisitc(initial_psi, t1=None, t2=None, tg=None, qub
 ### Implements the 3 qubit circuit with relaxation and dephasing errors, gate error probabilities, and spam errors. 
 ### Outputs the logical state with reset ancilla after correction
 def three_qubit_realistic(initial_rho, t1 = None, t2 = None, tg = None, qubit_error_probs = None, spam_prob = None):
-    # initial_rho: initial density matrix of your 10 qubit system (7 data, 3 ancilla)
+    # initial_rho: initial density matrix of your 5 qubit system
     # t1: The relaxation time of each physical qubit in your system
     # t2: The dephasing time of each physical qubit in your system
     # tg: The gate time of your gate operations 
@@ -57,11 +57,6 @@ def three_qubit_realistic(initial_rho, t1 = None, t2 = None, tg = None, qubit_er
     
     # total number of qubits in our system
     n = int(np.log(len(initial_rho))/np.log(2))
-    
-    # Apply state prep error if spam_probs is not empty
-    if spam_prob != None:
-        for index in range(n):
-            initial_rho = spam_error(initial_rho, spam_prob, index)
     
     # Apply CNOT gates depending on error parameters 
     if ((t1!=None) and (t2!=None) and (tg!=None)) and (qubit_error_probs is not None):
@@ -120,7 +115,8 @@ def three_qubit_realistic(initial_rho, t1 = None, t2 = None, tg = None, qubit_er
     # find which measurement operator is measured based on their probabilities
     index = random.choices(all_probs, weights=all_probs, k=1)
     index = np.where(all_probs == index)[0][0]
-    
+
+            
     # apply correct measurement collapse of the density matrix
     rho_prime = np.dot(all_meas[index], np.dot(detection_rho, all_meas[index].conj().T))/(all_probs[index])
     # Create our new density matrix after collapsing ancilla qubits
