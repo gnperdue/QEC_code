@@ -14,9 +14,10 @@ There are two ways in which you can use the files in this repository:
 
 	(b) How many qubits do you want to simulate. We currently have a few codes which can be impelemented in the simulation. Here is a little info about each
   	- **3-qubit code** - The most basic QEC algorithm, and it uses 5 qubits (3 data qubits and 2 ancilla qubits). The simulation is the fastest out of all the other codes, but it can only correct for a single error.
-  	- **7-qubit Steane code** - Implements stabilizer formalism and uses 10 qubits (7 data qubits and 3 ancilla qubits). This code can correct for a single bit and/or phase flip error in the data qubits. The simulation will take about 5 min per iteration.
-  	- **7-qubit Fault Tolerant Steane code** - Implements the stabilizer formalism and fault tolerance, and uses 12 qubits ((7 data qubits and 5 ancilla qubits). This code can correct for a single bit and/or phase flip error in the data qubits and can correct for certain bit and phase flip errors in the ancilla qubits. The simulation takes about 10-15 min per iteration.
+  	- **7-qubit Steane code** - Implements stabilizer formalism and uses 10 qubits (7 data qubits and 3 ancilla qubits). This code can correct for a single bit and/or phase flip error in the data qubits. The simulation will take about 20 min per iteration.
+  	- **7-qubit Fault Tolerant Steane code** - Implements the stabilizer formalism and fault tolerance, and uses 12 qubits ((7 data qubits and 5 ancilla qubits). This code can correct for a single bit and/or phase flip error in the data qubits and can correct for certain bit and phase flip errors in the ancilla qubits. The simulation has not been fully tested yet
   	- **9-qubit Shor code** - (cousin of the 3-qubit code) Implements the degenerate 9-qubit code and uses 11 qubits (9 data qubits and 2 ancilla qubits). This code can correct for a single bit and/or phase flip error in the data qubits and in some cases multiple bit flip errors. The simulation has not been tested yet.
+
     
 * *Note that these simulations were done on a 2020 MacBook Pro (M1) with 8GB RAM and macOS 13.4.1.*
 
