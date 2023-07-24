@@ -137,70 +137,6 @@ def collapse_ancilla(logical_state, k):
     return collapsed_vector_state
 
 
-# ### Collapse the ancilla qubits to one of their states and return the vector representation ###
-# def non_prob_collapse_ancilla(logical_state, k):
-#     # logical_state: The vector state representation of your full qubit system
-#     #k: number of ancillas in your system (at the end of the bit representation)
-    
-#     # How many total qubits are in our vector representation
-#     n = int(np.log(len(logical_state))/np.log(2))
-
-#     # Find all of the bit combinations that are in our vector state representation
-#     all_bits = vector_state_to_bit_state(logical_state, n)[0]
-
-#     # create two empty arrays to store information
-#     organized_bits = np.array([])
-#     all_organized_bits = np.array([[]])
-
-#     # loop over our bit representations and organize them based on 
-#     # whether or not they have the same ancilla qubits
-#     for j in range(int(len(all_bits)/2)):
-#         organized_bits = all_bits
-#         for i in range(len(all_bits)):
-#             if all_bits[j][n-k:] != all_bits[i][n-k:]:
-#                 organized_bits = np.delete(organized_bits, organized_bits == all_bits[i])
-#         if j == 0:
-#             all_organized_bits = [organized_bits]
-#         else:
-#             all_organized_bits = np.append(all_organized_bits, [organized_bits], axis = 0)
-
-#     # find which ancilla we will measure
-#     x = random.randint(0,len(all_organized_bits)-1)
-#     # set our collapsed state to that ancilla measurement
-#     collapsed_bits = all_organized_bits[x]
-
-
-#     # Here we take the vector state and separate it into vectors so that we can manipulate it
-#     x = 0 # used to keep track of first indice where vector_state is non-zero
-
-#     for i in range(len(logical_state)):
-#         if logical_state[i] != 0: 
-#             # initialize the vector that will hold the single non-zero value in the proper spot
-#             value_position = np.zeros((2**n,), dtype=complex) 
-#             value_position[i,] = logical_state[i] # insert the non-zero value in the correct spot
-#             # Add the value position vector to an array of all the error places
-#             if x == 0:
-#                 all_vector_states = [value_position]
-#             else:
-#                 all_vector_states = np.append(all_vector_states, [value_position] , axis=0)
-#             x+=1
-
-#     # find the number of rows and columns in the all error state array so that we can loop over the rows later
-#     num_rows, num_cols = np.array(all_vector_states).shape
-
-#     # take out the vectors that do not match our collapsed bit state
-#     for j in range(num_rows):
-#         if vector_state_to_bit_state(all_vector_states[j], n)[0] not in collapsed_bits : 
-#             all_vector_states[j][:].fill(0)
-
-#     # combine the vector states again
-#     collapsed_vector_state = np.zeros((2**(n),), dtype=complex)
-#     for j in range(num_rows):
-#         collapsed_vector_state = collapsed_vector_state + all_vector_states[j][:]
-
-#     return collapsed_vector_state
-
-
 ### Reset the ancilla qubits to '0' ###
 def ancilla_reset(logical_state, k):
     # logical_state: The vector state representation of your full qubit system
@@ -269,58 +205,10 @@ def CNOT_gate_tot(control, target):
     return tot_gates
 
 
-# ### Splits the state up into vectors and takes only those that have '0' as the ancilla measurement (using n-7 ancilla) ###
-# def format_state(logical_state):
-#     # logical_state: The logical state of the 10 qubit system
-    
-#     # How many total qubits are in our vector representation
-#     n = int(np.log(len(logical_state))/np.log(2))
-    
-#     # Take our vector and find the bit strings that represent it
-#     logical_bits, state_indices, logical_vector_state = vector_state_to_bit_state(logical_state, n)
-    
-#     # Finding the logical bits that contain '0' in the end
-#     x=0
-#     for j in range(len(logical_bits)):
-#         if logical_bits[j][7:n] == ('0' * (n-7)):
-#             if x == 0:
-#                 final_bits = logical_bits[j]
-#             else:
-#                 final_bits = np.append(final_bits, logical_bits[j])
-#             x+=1
-    
-#     # Take the vector and split it into individual vectors that contain only a single non zero value in the same spot
-#     x=0
-#     for j in range(len(logical_vector_state)):
-#         if logical_vector_state[j] != 0: 
-#             # initialize the vector that will hold the single non-zero value in the proper spot
-#             value_position = np.zeros((1,2**n), dtype=complex) 
-#             value_position[:,j] = logical_vector_state[j] # insert the non-zero value in the correct spot
-#             # Add the value position vector to an array of all the error places
-#             if x == 0:
-#                 all_vector_states = value_position
-#             else:
-#                 all_vector_states = np.append(all_vector_states, value_position , axis=0)
-#             x+=1
-
-#     # find the number of rows and columns in the all error state array so that we can loop over the rows later
-#     num_rows, num_cols = all_vector_states.shape
-
-#     # take out the vectors that do not have '0' as the 3 ancilla bits
-#     for j in range(num_rows):
-#         if vector_state_to_bit_state(all_vector_states[j][:], n)[0] not in final_bits : 
-#             all_vector_states[j][:].fill(0)
-
-#     # combine the vector states again
-#     final_vector_state = np.zeros((2**(n),), dtype=complex)
-#     for j in range(num_rows):
-#         final_vector_state = final_vector_state + all_vector_states[j][:]
-    
-#     return final_vector_state
-
 ### Used to fully collapse the density matrix when measuring it
 def collapse_dm(rho):
     # rho: The density matrix of your system
+    
     # Create Measurement operators for density matrix of 5 qubits
     for i in range(len(rho)):
         operator = np.zeros((len(rho), len(rho)))
@@ -344,18 +232,12 @@ def collapse_dm(rho):
     rho_prime = np.dot(meas_operators[index], np.dot(rho, meas_operators[index].conj().T))/(meas_probs[index])
 
     # Now that we have completed our measurement we are in a pure state. 
-    # This can be checked if there is only 1 non-zero element.
-#     print('Non-zero elements in our density matrix: ', rho_prime[rho_prime!=0])
-
+    
     # Thus we can find the elemnts on the diagaonal as our final psi since rho = |psi><psi|
     final_psi = np.array([])
     for i in range(len(rho_prime)):
         final_psi = np.append(final_psi, rho_prime[i][i])
 
-#     print('- - -')
-#     print('Final Measured State: ')
-#     print_state_info(final_psi, 5)
-    
     return final_psi
     
     
