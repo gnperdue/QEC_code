@@ -38,8 +38,10 @@ There are two ways in which you can use the files in this repository:
   	- **04a. Fault Tolerant Steane Code** - Here we implement the ideas of fault tolerance to the 7-qubit Steane code.
   	- **05. Error Models** - Here we derive and explain the various error models that we use in our realistic implementations of our circuits.
 
-**- - - - - - - - - - - - - - - - - - - - - -**
+- - - - - - - - - - - - - - - - - - - - - -
+
 **Please look below for the requirements to successfully run our programs:**
+
 - numpy: main mathematical resource
 - matplotlib: used for plotting
 - scipy: used for line fitting
