@@ -119,6 +119,11 @@ def three_qubit_realistic(initial_rho, t1 = None, t2 = None, tg = None, qubit_er
             
     # apply correct measurement collapse of the density matrix
     rho_prime = np.dot(all_meas[index], np.dot(detection_rho, all_meas[index].conj().T))/(all_probs[index])
+    
+    # apply rad error due to time taken to collapse
+    if ((t1!=None) and (t2!=None) and (tg!=None)):
+        rho_prime = rad_error(rho_prime, t1, t2, tg)
+        
     # Create our new density matrix after collapsing ancilla qubits
     detection_rho = rho_prime
     

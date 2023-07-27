@@ -1,8 +1,7 @@
+# import plotting and math tools
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-# using datetime module
-import datetime # used to see how long things take here
 
 # For fitting exponentials
 def exp_decay(x, a, b):
@@ -13,12 +12,24 @@ import warnings
 #suppress warnings
 warnings.filterwarnings('ignore')
 
+# for running qec and circuits
 from general_qec.qec_helpers import *
 from general_qec.errors import *
 from circuit_specific.realistic_three_qubit import *
 from circuit_specific.realistic_steane import *
 from circuit_specific.realistic_ft_steane import *
 
+# for data management and saving
+from data_management_and_analysis.datamanagement import *
+from data_management_and_analysis.dataanalysis import *
+from tabulate import tabulate
+import os
+
+# using datetime module
+import datetime # used to see how long things take here
+
+
+### - - - - - - - - - - SIMULATION INTERFACE - - - - - - - - - - ###
 ### Runs the top level simulation user interface and calls on simulation function
 def run_sim():
     print('Hello! Welcome to the quantum error correction simulator.')
@@ -26,11 +37,11 @@ def run_sim():
     print('Key Notes before beginning the simulation.')
     print('* Some error codes take some time to iterate depending on the parameters that you input.')
     print(' - a. 3-qubit code is the fastest and can usually iterate 1000 times in roughly 25 sec.')
-    print(' - b. 7-qubit Steane code usually takes about 5 min per iteration.')
-    print(' - c. 7-qubit Fault tolerant Steane code usually takes about 10-15 min per iteration.')
+    print(' - b. 7-qubit Steane code usually takes about 20 min per iteration.')
+    print(' - c. 7-qubit Fault tolerant Steane code has not been tested yet.')
     print(' - d. 9 qubit code has not been tested yet.')
     print('(This code was run using a 2020 MacBook Pro (M1) with 8GB RAM and macOS 13.4.1)')
-    print('* For more information on the physics and mathematics behind our simulation, you can visit the implementation knowledge folder.')
+    print('* For more information on the physics and mathematics behind our simulation, please read the readme or you can visit the implementation knowledge folder.')
     print('- - - - - - - - - - - - - - - - - - - - - - - - - - - - - ')
     while True:
         print('Please choose the circuit you would like to run: \n(type in the number as displayed in the list)')
@@ -175,100 +186,120 @@ def run_sim():
             break
         
     print('- - - - - - - - - -')
-    print('What would you like to do in this sample distribution?')
-    print('1. Check distribution of iteration at which circuit logical state failure occurs.')
-    print('2. Check distribution of the logical T1 of your circuit. (initial state will be changed to |1>)')
-    while True:
-            try:
-                selection = int(input('\nSelection: '))
-                if 1 <= selection <=2:
-                    break
-                else:
-                    print('Please input a valid value.')
+    while True: # sampling
+        while True:
+            print('How many samples would you like? (remember we will iteraate the circuit many times per sample) ')
+            try:           
+                samples = int(input())
+                break
             except ValueError:
                 print("Oops!  That was not a valid value.  Try again...")
-    
-    while True:
-        print('How many samples would you like? (remember we will iteraate the circuit many times per sample) ')
-        try:           
-            samples = int(input())
-            break
-        except ValueError:
-            print("Oops!  That was not a valid value.  Try again...")
 
-    # selected plotting the circuit failure iteration counts
-    if selection == 1:
+        # - Run the sampling that we want - #
+        if circuit == 1: # three qubit code
+            data_file = three_qubit_sample(initial_psi=psi, t1=t1, t2=t2, tg=tg, depolarization=dep, spam_prob=spam_prob, iterations=iterations, samples=samples)
+        elif circuit == 2: # Steane code
+            data_file = steane_sample(initial_psi=psi, t1=t1, t2=t2, tg=tg, depolarization=dep, spam_prob=spam_prob, iterations=iterations, samples=samples)
+        elif circuit == 3: # fault tolerant Steane code
+            data_file = ft_steane_sample(initial_psi=psi, t1=t1, t2=t2, tg=tg, depolarization=dep, spam_prob=spam_prob, iterations=iterations, samples=samples)
+        elif circuit == 4: # nine qubit code
+            data_file = nine_qubit_sample(initial_psi=psi, t1=t1, t2=t2, tg=tg, depolarization=dep, spam_prob=spam_prob, iterations=iterations, samples=samples)
+        
+        print('- - - - - - - - - - ')
+        print('How would you like to analyze your data?')
+        print('1. Check distribution of iteration at which circuit logical state failure occurs.')
+        print('2. Check distribution of the logical T1 of your circuit.')
         while True:
+                try:
+                    selection = int(input('\nSelection: '))
+                    if 1 <= selection <=2:
+                        break
+                    else:
+                        print('Please input a valid value.')
+                except ValueError:
+                    print("Oops!  That was not a valid value.  Try again...")
+
+        # selected plotting the circuit failure iteration counts
+        if selection == 1:
+           
             print('...')
             print('Creating distribution iteration at which circuit logical state failure occurs.')
-            
-            # - Run the simulation that we want - #
+
+            # - Plot the information that we want - #
             if circuit == 1: # three qubit code
-                three_qubit_sample_failure(initial_psi=psi, t1=t1, t2=t2, tg=tg, depolarization=dep, spam_prob=spam_prob, iterations=iterations, samples=samples)
+                three_qubit_plot_failure(data_file = data_file)
             elif circuit == 2: # Steane code
-                steane_sample_failure(initial_psi=psi, t1=t1, t2=t2, tg=tg, depolarization=dep, spam_prob=spam_prob, iterations=iterations, samples=samples)
+                steane_plot_failure(data_file = data_file)
             elif circuit == 3: # fault tolerant Steane code
-                ft_steane_sample_failure(initial_psi=psi, t1=t1, t2=t2, tg=tg, depolarization=dep, spam_prob=spam_prob, iterations=iterations, samples=samples)
+                ft_steane_plot_failure(data_file = data_file)
             elif circuit == 4: # nine qubit code
-                nine_qubit_sample_failure(initial_psi=psi, t1=t1, t2=t2, tg=tg, depolarization=dep, spam_prob=spam_prob, iterations=iterations, samples=samples)
-                
+                nine_qubit_plot_failure(data_file = data_file)
+
             print('- - - - - - - - - -')
-            selection = bool(input('Would you like to run again? (leave blank if not)'))
-            if not selection:
-                break
-    # selected plotting t1 time distributions
-    elif selection == 2:
-        print('...')
-
-        print('We will now create a distribution of the logical T1 of your circuit.')
-        print('Remember that the initial state will be changed to |1>.')
-        if (t1==None and t2==None and tg==None):
+        # selected plotting t1 time distributions
+        elif selection == 2:
             print('...')
-            print('For this simulation we will need you to select physical T1, T2, and gate time (Tg).')
-            print('...')
-            print('Relaxation and Dephasing. (For times please use the following format: ae-b or decimal representation)')
 
-            while True:
-                try:
-                    t1 = float(input('T1. relaxation time of your qubits (sec): '))
-                    break
-                except ValueError:
-                    print("Oops!  That was not a valid value.  Try again...")
+            print('We will now create a distribution of the logical T1 of your circuit.')
+            print('Remember that the initial state will be changed to |1>.')
+            if (t1==None and t2==None and tg==None):
+                print('...')
+                print('For this simulation we will need you to select physical T1, T2, and gate time (Tg).')
+                print('...')
+                print('Relaxation and Dephasing. (For times please use the following format: ae-b or decimal representation)')
 
-            while True:
-                try:
-                    t2 = float(input('T2. dephasing time of your qubits (sec): '))
-                    break
-                except ValueError:
-                    print("Oops!  That was not a valid value.  Try again...")
+                while True:
+                    try:
+                        t1 = float(input('T1. relaxation time of your qubits (sec): '))
+                        break
+                    except ValueError:
+                        print("Oops!  That was not a valid value.  Try again...")
 
+                while True:
+                    try:
+                        t2 = float(input('T2. dephasing time of your qubits (sec): '))
+                        break
+                    except ValueError:
+                        print("Oops!  That was not a valid value.  Try again...")
+
+                while True:
+                    try:
+                        tg = float(input('Tg. the gate time of all gate operations in the circuit (sec): '))
+                        break
+                    except ValueError:
+                        print("Oops!  That was not a valid value.  Try again...")
+                
+                print('Sampling with T1, T2, and Tg parameters.')
+                # - Run the sampling that we want - #
+                if circuit == 1: # three qubit code
+                    data_file = three_qubit_sample(initial_psi=psi, t1=t1, t2=t2, tg=tg, depolarization=dep, spam_prob=spam_prob, iterations=iterations, samples=samples)
+                elif circuit == 2: # Steane code
+                    data_file = steane_sample(initial_psi=psi, t1=t1, t2=t2, tg=tg, depolarization=dep, spam_prob=spam_prob, iterations=iterations, samples=samples)
+                elif circuit == 3: # fault tolerant Steane code
+                    data_file = ft_steane_sample(initial_psi=psi, t1=t1, t2=t2, tg=tg, depolarization=dep, spam_prob=spam_prob, iterations=iterations, samples=samples)
+                elif circuit == 4: # nine qubit code
+                    data_file = nine_qubit_sample(initial_psi=psi, t1=t1, t2=t2, tg=tg, depolarization=dep, spam_prob=spam_prob, iterations=iterations, samples=samples)
+                
             while True:
-                try:
-                    tg = float(input('Tg. the gate time of all gate operations in the circuit (sec): '))
-                    break
-                except ValueError:
-                    print("Oops!  That was not a valid value.  Try again...")
-        while True:
-            print('...')
-            print('Creating your distribution histogram for logical T1 of your system...')
+                print('...')
+                print('Creating your distribution histogram for logical T1 of your system...')
+
+                # - plot the infomration that we want - #
+                if circuit == 1: # three qubit code
+                    three_qubit_plot_t1(data_file = data_file)
+                elif circuit == 2: # Steane code
+                    steane_plot_t1(data_file = data_file)
+                elif circuit == 3: # fault tolerant Steane code
+                    ft_steane_plot_t1(data_file = data_file)
+                elif circuit == 4: # nine qubit code
+                    nine_qubit_plot_t1(data_file = data_file)
+
+                print('- - - - - - - - - -')
             
-            # - Run the simulation that we want - #
-            if circuit == 1: # three qubit code
-                three_qubit_sample_t1(initial_psi=psi, t1=t1, t2=t2, tg=tg, depolarization=dep, spam_prob=spam_prob, iterations=iterations, samples=samples)
-            elif circuit == 2: # Steane code
-                steane_sample_t1(initial_psi=psi, t1=t1, t2=t2, tg=tg, depolarization=dep, spam_prob=spam_prob, iterations=iterations, samples=samples)
-            elif circuit == 3: # fault tolerant Steane code
-                ft_steane_sample_t1(initial_psi=psi, t1=t1, t2=t2, tg=tg, depolarization=dep, spam_prob=spam_prob, iterations=iterations, samples=samples)
-            elif circuit == 4: # nine qubit code
-                nine_qubit_sample_t1(initial_psi=psi, t1=t1, t2=t2, tg=tg, depolarization=dep, spam_prob=spam_prob, iterations=iterations, samples=samples)
-                
-            print('- - - - - - - - - -')
-            selection = bool(input('Would you like to run again? (leave blank if not)'))
-            if not selection:
-                break
-    
-    
-    
+        selection = bool(input('Would you like to take another sample? (leave blank if not) '))
+        if not selection:
+            break
+            
     ### End the simulation
     print('- - - - - - - - - - - - - - - - - - -')
     print('Thank you for using our simulation! To simulate again, go ahead run the run_sim() cell again.')
@@ -312,6 +343,11 @@ def three_qubit_simulation(initial_psi, t1, t2, tg, depolarization, spam_prob, i
     # spam_prob: The pobability that you have a state prep or measurement error
     # iterations: number of times you want to run the circuit
     
+    if ((t1!=None) and (t2!=None) and (tg!=None)):
+        # the time taken in one iteration of the 3 qubit code (sec)
+        three_qubit_circuit_time = tg * (CNOT_gate_tot(0, 3) + CNOT_gate_tot(
+            1, 3) + CNOT_gate_tot(0, 4) + CNOT_gate_tot(2, 4) + 2)
+
     # ct stores current time
     ct = datetime.datetime.now()
     print('Start Time: ', ct)
@@ -401,7 +437,7 @@ def three_qubit_simulation(initial_psi, t1, t2, tg, depolarization, spam_prob, i
         circuit_runs = 1/popt[1]
         if tg!=None:
             print('Calculated Circuit iterations until logical failure: ', circuit_runs)
-            print('Calculated Logical T1: ', (((circuit_runs * 29) + 2) * tg), 'sec')
+            print('Calculated Logical T1: ', circuit_runs*three_qubit_circuit_time + 2*tg, 'sec')
         else:
             print('Calculated Circuit iterations until logical failure: ', circuit_runs)
     plt.ylim([-0.1, 1.1])
@@ -410,8 +446,8 @@ def three_qubit_simulation(initial_psi, t1, t2, tg, depolarization, spam_prob, i
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
     plt.show()
 
-### Create a plot that samples the state of logical failure for the 3 qubit code
-def three_qubit_sample_failure(initial_psi, t1, t2, tg, depolarization, spam_prob, iterations, samples):
+### Sample the 3 qubit code and save all of the data to a h5 file
+def three_qubit_sample(initial_psi, t1, t2, tg, depolarization, spam_prob, iterations, samples):
     # initial_psi: initial state of your system
     # t1: The relaxation time of each physical qubit in your system
     # t2: The dephasing time of each physical qubit in your system
@@ -421,11 +457,12 @@ def three_qubit_sample_failure(initial_psi, t1, t2, tg, depolarization, spam_pro
     # iterations: number of times you want to run the circuit
     # samples: number of times you want to sample your data
     
-    print('Working on calculating the probability of state measurements overtime...')
+    print('Working on sampling the circuit overtime...')
+    
     # ct stores current time
     ct = datetime.datetime.now()
     print('Start Time: ', ct)
-    
+   
     ideal_state = np.dot(CNOT(1, 2, 5), np.dot(CNOT(0, 1, 5), np.kron(
         initial_psi, np.kron(zero, np.kron(zero, np.kron(zero, zero))))))
     
@@ -438,30 +475,125 @@ def three_qubit_sample_failure(initial_psi, t1, t2, tg, depolarization, spam_pro
     else:
         qubit_error_probs = None
         
-    count = np.array([])
-    overall_count = np.array([])
     # Apply the circuit for (iteration) number of times (samples) times
     for k in range(samples):
         # Initialize our logical state depending on parameters
         rho = initialize_three_qubit_realisitc(
             initial_psi, t1 = t1, t2 = t2, tg = tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
-        overall_count = np.append(overall_count, k)
+        
         for i in range(iterations):
+            # append the density matrix to a running array of them for this sample
+            if i == 0:
+                rho_per_sample = [rho]
+            else:
+                rho_per_sample = np.append(rho_per_sample, [rho], axis = 0)
+        
             rho = three_qubit_realistic(
                 rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
-
-            # Check if we are still in our ideal state
-            collapsed_bits = vector_state_to_bit_state(collapse_dm(rho), 5)[0][0]
-            if collapsed_bits not in ideal_bits:
-                break
-
-        count = np.append(count, i)
-
+                
+        # append the density matrices for this sample to our total density matrices taken for all samples
+        if k == 0:
+            rho_overall = [rho_per_sample]
+        else:
+            rho_overall = np.append(rho_overall, [rho_per_sample], axis = 0)
+        
         if k == 0:
             # ct stores current time
             ct = datetime.datetime.now()
             print('Time after 1st sample: ', ct)
+        if k == 9:
+            # ct stores current time
+            ct = datetime.datetime.now()
+            print('Time after 10th sample: ', ct)
+        if k == 99:
+            # ct stores current time
+            ct = datetime.datetime.now()
+            print('Time after 100th sample: ', ct)
+            
+    ct = datetime.datetime.now()
+    print('End Time: ', ct)
     
+    print('Saving Data...')
+    # ----- Saves data to a file ----- #
+    expt_name = 'three_qubit_sample'
+    print('Experiment name: ' + expt_name)
+    
+    expt_path = os.getcwd()
+    print("Current working dir : %s" % expt_path)
+
+    if not os.path.exists('data/' + expt_name):
+        os.makedirs('data/' + expt_name)
+    data_path = expt_path + '/data/' + expt_name
+
+    fname = get_next_filename(data_path, expt_name, suffix='.h5')
+    print('Current data file: ' + fname)
+    print('Path to data file: ' + data_path)
+          
+    # save the parameters to a numpy array
+    params = np.array([t1, t2, tg, spam_prob, depolarization]).astype(np.float64)
+    
+    print('File contents:')
+    with SlabFile(data_path + '/' + fname, 'a') as f:
+        # 'a': read/write/create
+        # - Adds parameters to the file - #
+        f.append('params', params)
+
+        # - Adds data to the file - #
+        f.append('ideal_state', ideal_state)
+        f.append('rho_overall', rho_overall) # the denstiy matrix after every iteration divided into their samples
+        print(tabulate(list(f.items())))
+    print('..................')
+    print('Sampling complete.')
+    return data_path+'/'+fname
+    
+### Create a plot that samples the state of logical failure for the 3 qubit code
+def three_qubit_plot_failure(data_file):
+    # data_file: the path to your data file within your directory
+    
+    print('File contents:')
+    # import data from file
+    with SlabFile(r'' + data_file, 'r') as f:  
+        print(tabulate(list(f.items())))
+        params = array(f['params'])[0]    
+        rho_overall = array(f['rho_overall'])[0]
+        ideal_state = array(f['ideal_state'])[0]
+    
+    t1 = params[0]
+    t2 = params[1]
+    tg = params[2]
+    spam_prob = params[3]
+    depolarization = params[4]
+    
+    # ct stores current time
+    ct = datetime.datetime.now()
+    print('Start Time: ', ct)
+        
+    samples = len(rho_overall)
+    
+    count = np.array([])
+    overall_count = np.array([])
+    # Apply the circuit for (iteration) number of times (samples) times
+    for k in range(samples):
+        rho_per_sample = rho_overall[k] # list of rho for this sample
+        iterations = len(rho_per_sample)
+        overall_count = np.append(overall_count, k)
+        for i in range(iterations):
+            rho = rho_per_sample[i] # rho in this iteration
+            # expectation value when measuring our ideal state
+            expectation_val = np.dot(ideal_state[np.newaxis].conj(), np.dot(rho, ideal_state))
+            value = random.random() # number between 0 and 1 to use as a measure if we keep going or not
+            # compare to our expectation value
+            if value > expectation_val:
+                break
+        # append the count that we stopped at
+        count = np.append(count, i)
+
+    
+    if ((t1!=None) and (t2!=None) and (tg!=None)):
+        # the time taken in one iteration of the 3 qubit code (sec)
+        three_qubit_circuit_time = tg * (CNOT_gate_tot(0, 3) + CNOT_gate_tot(
+            1, 3) + CNOT_gate_tot(0, 4) + CNOT_gate_tot(2, 4) + 2)
+
     ct = datetime.datetime.now()
     print('End Time: ', ct)
     
@@ -477,7 +609,7 @@ def three_qubit_sample_failure(initial_psi, t1, t2, tg, depolarization, spam_pro
     print('Physical T2 range:', t2, ' sec')
     print('Gate time (Tg): ', tg, 'sec')
 
-    print('Depolarizing error by probability at each qubit: ', qubit_error_probs)
+    print('Depolarizing error by probability at each qubit: ', depolarization)
     print('SPAM error probability: ', spam_prob)
 
 
@@ -488,14 +620,13 @@ def three_qubit_sample_failure(initial_psi, t1, t2, tg, depolarization, spam_pro
     # Plotting the error state probabilities
     plt.figure(figsize=(10,4))# passing the histogram function
     
-        
     bin_num = int(samples/20) + 5
         
     n, bins, patches = plt.hist(
         count, bins = bin_num, label = 'Failure iteration Distribution', color = 'cornflowerblue')
     plt.title('Distribution of circuit failure after number of iterations')
     plt.xlabel('Iterations until logical state failure') 
-    plt.ylabel('Number of Samples') 
+    plt.ylabel('Number of Samples')
     # - - - Fitting a curve to our plot - - - #  
     xdata = (bins[1:])[n!=0]
     ydata = n[n!=0]
@@ -507,60 +638,61 @@ def three_qubit_sample_failure(initial_psi, t1, t2, tg, depolarization, spam_pro
 
     circuit_runs = 1/popt[1]
     print('Characteristic number of runs until failure: ', circuit_runs)
-
-    char_time = (((circuit_runs * 29) + 2) * tg)
-    print('Characteristic time until failure: ', char_time, 'sec')
+    
+    if tg != None:
+        char_time = circuit_runs*three_qubit_circuit_time + 2*tg
+        print('Characteristic time until failure: ', char_time, 'sec')
 
     print('... Number of bins:', len(bins)-1, '...')
     
     # Add a Legend
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
     plt.show()
+    
 
 ### Create a plot that samples the logical T1 of your system over many runs        
-def three_qubit_sample_t1(initial_psi, t1, t2, tg, depolarization, spam_prob, iterations, samples):        
-    # initial_psi: initial state of your system
-    # t1: The relaxation time of each physical qubit in your system
-    # t2: The dephasing time of each physical qubit in your system
-    # tg: The gate time of your gate operations 
-    # depolarization: the probability for errors of each qubit in your system
-    # spam_prob: The pobability that you have a state prep or measurement error
-    # iterations: number of times you want to run the circuit
-    # samples: number of times you want to sample your data
+def three_qubit_plot_t1(data_file):        
+    # data_file: the path to your data file within your directory
+    
+    print('File contents:')
+    # import data from file
+    with SlabFile(r'' + data_file, 'r') as f:  
+        print(tabulate(list(f.items())))
+        params = array(f['params'])[0]    
+        rho_overall = array(f['rho_overall'])[0]
+        ideal_state = array(f['ideal_state'])[0]
+    
+    t1 = params[0]
+    t2 = params[1]
+    tg = params[2]
+    spam_prob = params[3]
+    depolarization = params[4]
     
     # ct stores current time
     ct = datetime.datetime.now()
     print('Start Time: ', ct)
     
-    ideal_state = np.dot(CNOT(1, 2, 5), np.dot(CNOT(0, 1, 5), np.kron(
-        initial_psi, np.kron(zero, np.kron(zero, np.kron(zero, zero))))))
-    
-    ideal_bits = vector_state_to_bit_state(ideal_state, 5)[0]
-
-    if depolarization != None:
-        qubit_error_probs = np.array([])            
-        for i in range(5):
-            qubit_error_probs = np.append(qubit_error_probs, depolarization)
-    else:
-        qubit_error_probs = None
+    if ((t1!=None) and (t2!=None) and (tg!=None)):
+        # the time taken in one iteration of the 3 qubit code (sec)
+        three_qubit_circuit_time = tg * (CNOT_gate_tot(0, 3) + CNOT_gate_tot(
+            1, 3) + CNOT_gate_tot(0, 4) + CNOT_gate_tot(2, 4) + 2)
+        
     
     # Masurement operators for individual qubits
     zero_meas = np.kron(zero, zero[np.newaxis].conj().T)
     one_meas = np.kron(one, one[np.newaxis].conj().T)
 
+    samples = len(rho_overall)
     t1_times = np.array([])
+    # Apply the circuit for (iteration) number of times (samples) times
     for k in range(samples):
-        # initialize our logical state
-        rho = initialize_three_qubit_realisitc(
-            initial_psi, t1 = t1, t2 = t2, tg = tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
+        rho_per_sample = rho_overall[k] # list of rho for this sample
+        iterations = len(rho_per_sample)
         all_pops = np.array([])
         count = np.array([])
-        # run the circuit many times
         for i in range(iterations):
+            rho = rho_per_sample[i] # rho in this iteration
             count = np.append(count, i)
-            # apply circuit
-            rho = three_qubit_realistic(rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob) 
-
             # measure the probability of being in the state |111> from the density matrix
             M = np.kron(one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(np.identity(2), np.identity(2)))))
             pop = np.trace(np.dot(M.conj().T, np.dot(M, rho)))
@@ -571,17 +703,21 @@ def three_qubit_sample_t1(initial_psi, t1, t2, tg, depolarization, spam_prob, it
         ydata = all_pops
         popt, pcov = curve_fit(exp_decay, xdata, ydata)
         circuit_runs = 1/popt[1]
-        circuit_t1 = ((circuit_runs * 29 + 2) * tg)*1e6
+        circuit_t1 = circuit_runs*three_qubit_circuit_time + 2*tg
         t1_times = np.append(t1_times, circuit_t1)
-
+        
         if k == 0:
             # ct stores current time
             ct = datetime.datetime.now()
             print('Time after 1st sample: ', ct)
+        
     
     ct = datetime.datetime.now()
     print('End Time: ', ct)
     
+    # remove_oultiers in the data
+    real_t1_times = t1_times[t1_times >=0]
+
     print('Plotting...')
     print('Note that the fitted line may have errors')
 
@@ -594,7 +730,7 @@ def three_qubit_sample_t1(initial_psi, t1, t2, tg, depolarization, spam_prob, it
     print('Physical T2 range:', t2, ' sec')
     print('Gate time (Tg): ', tg, 'sec')
 
-    print('Depolarizing error by probability at each qubit: ', qubit_error_probs)
+    print('Depolarizing error by probability at each qubit: ', depolarization)
     print('SPAM error probability: ', spam_prob)
 
 
@@ -607,27 +743,25 @@ def three_qubit_sample_t1(initial_psi, t1, t2, tg, depolarization, spam_prob, it
     
     bins = 'auto'
 
-    n, bins, patches = plt.hist(t1_times, bins = bins, label = 'Logical T1 Distribution', color = 'cornflowerblue')
+    n, bins, patches = plt.hist(t1_times, bins = bins, label = 'Distribution of Logical T1', color = 'cornflowerblue')
     plt.title('Distribution of Logical T1')
-    plt.xlabel('Logical T1') 
+    plt.xlabel('Logical T1 (sec)') 
     plt.ylabel('Number of Samples') 
 
-    # - - - Fitting a curve to our plot - - - #
+    # Add a Legend
+    plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
+    plt.show()
+    
+    # Plotting the error state probabilities
+    plt.figure(figsize=(10,4))# passing the histogram function
+    
+    bins = 'auto'
 
-#     xdata = (bins[1:])[n!=0]
-#     ydata = n[n!=0]
-
-#     popt, pcov = curve_fit(exp_decay, xdata, ydata)
-
-#     plt.plot(xdata, exp_decay(xdata, *popt), 'black',
-#              label='fit: a=%5.3f, b=%5.3f' % tuple(popt), linestyle = 'dashed')
-#     print('- - -')
-
-#     circuit_runs = 1/popt[1]
-#     print('Characteristic number of runs until failure: ', circuit_runs)
-
-#     char_time = (((circuit_runs * 29) + 2) * tg)
-#     print('Characteristic time until failure: ', char_time, 'sec')
+    n, bins, patches = plt.hist(
+        real_t1_times, bins = bins, label = 'Distribution of Logical T1', color = 'cornflowerblue')
+    plt.title('Distribution of Logical T1 (Real Times only)')
+    plt.xlabel('Logical T1 (sec)') 
+    plt.ylabel('Number of Samples') 
 
     # Add a Legend
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
@@ -781,8 +915,8 @@ def steane_simulation(initial_psi, t1, t2, tg, depolarization, spam_prob, iterat
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
     plt.show()
 
-### Create a plot that samples the state of logical failure for the Steane code
-def steane_sample_failure(initial_psi, t1, t2, tg, depolarization, spam_prob, iterations, samples):
+### Sample the steane code and save all of the data to a h5 file
+def steane_sample(initial_psi, t1, t2, tg, depolarization, spam_prob, iterations, samples):
     # initial_psi: initial state of your system
     # t1: The relaxation time of each physical qubit in your system
     # t2: The dephasing time of each physical qubit in your system
@@ -792,12 +926,11 @@ def steane_sample_failure(initial_psi, t1, t2, tg, depolarization, spam_prob, it
     # iterations: number of times you want to run the circuit
     # samples: number of times you want to sample your data
     
-    print('Working on calculating the probability of state measurements overtime...')
-
+    print('Working on sampling the circuit overtime...')
     # ct stores current time
     ct = datetime.datetime.now()
     print('Start Time: ', ct)
-    
+   
     initial_state = np.kron(initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(
         initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(
             zero, np.kron(zero, zero)))))))))
@@ -811,8 +944,8 @@ def steane_sample_failure(initial_psi, t1, t2, tg, depolarization, spam_prob, it
             qubit_error_probs = np.append(qubit_error_probs, depolarization)
     else:
         qubit_error_probs = None
-    
-    
+        
+    # Apply the circuit for (iteration) number of times (samples) times
     initial_rho = np.kron(initial_state, initial_state[np.newaxis].conj().T)
 
     count = np.array([])
@@ -825,16 +958,128 @@ def steane_sample_failure(initial_psi, t1, t2, tg, depolarization, spam_prob, it
 
         overall_count = np.append(overall_count, k)
         for i in range(iterations):
+            # append the density matrix to a running array of them for this sample
+            if i == 0:
+                rho_per_sample = [rho]
+            else:
+                rho_per_sample = np.append(rho_per_sample, [rho], axis = 0)
+        
             rho = realistic_steane(
                 rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
 
-            # Check if we are still in our ideal state
-            collapsed_bits = vector_state_to_bit_state(collapse_dm(rho), 10)[0][0]
-            if collapsed_bits not in ideal_bits:
-                break
-
-        count = np.append(count, i)
+        # append the density matrices for this sample to our total density matrices taken for all samples
+        if k == 0:
+            rho_overall = [rho_per_sample]
+        else:
+            rho_overall = np.append(rho_overall, [rho_per_sample], axis = 0)
+        
+        if k == 0:
+            # ct stores current time
+            ct = datetime.datetime.now()
+            print('Time after 1st sample: ', ct)
+        if k == 9:
+            # ct stores current time
+            ct = datetime.datetime.now()
+            print('Time after 10th sample: ', ct)
+        if k == 99:
+            # ct stores current time
+            ct = datetime.datetime.now()
+            print('Time after 100th sample: ', ct)
+            
+    ct = datetime.datetime.now()
+    print('End Time: ', ct)
     
+    print('Saving Data...')
+    # ----- Saves data to a file ----- #
+    expt_name = 'steane_sample'
+    print('Experiment name: ' + expt_name)
+    
+    expt_path = os.getcwd()
+    print("Current working dir : %s" % expt_path)
+
+    if not os.path.exists('data/' + expt_name):
+        os.makedirs('data/' + expt_name)
+    data_path = expt_path + '/data/' + expt_name
+
+    fname = get_next_filename(data_path, expt_name, suffix='.h5')
+    print('Current data file: ' + fname)
+    print('Path to data file: ' + data_path)
+          
+    # save the parameters to a numpy array
+    params = np.array([t1, t2, tg, spam_prob, depolarization]).astype(np.float64)
+
+    print('File contents:')
+    with SlabFile(data_path + '/' + fname, 'a') as f:
+        # 'a': read/write/create
+        # - Adds parameters to the file - #
+        f.append('params', params)
+
+        # - Adds data to the file - #
+        f.append('ideal_state', ideal_state)
+        f.append('rho_overall', rho_overall) # the denstiy matrix after every iteration divided into their samples
+        print(tabulate(list(f.items())))
+    print('..................')
+    print('Sampling complete.')
+    return data_path+'/'+fname
+          
+### Create a plot that samples the state of logical failure for the Steane code
+def steane_plot_failure(data_file):
+    # data_file: the path to your data file within your directory
+    
+    # calculating the number of gates in the steane code
+    total_gates_z = 1 + CNOT_gate_tot(7, 3) + CNOT_gate_tot(7, 4) + CNOT_gate_tot(7, 5) + 1 + CNOT_gate_tot(
+        8, 0) + CNOT_gate_tot(8, 2) + CNOT_gate_tot(8, 4) + CNOT_gate_tot(8, 6) + CNOT_gate_tot(
+        9, 1) + CNOT_gate_tot(9, 2) + CNOT_gate_tot(9, 5) + CNOT_gate_tot(9, 6) + 1 + 2 #CNOT GATES
+
+    total_gates_x = total_gates_z + (2*12) # CZ gates
+    
+    total_gates = total_gates_x + total_gates_z
+          
+    if ((t1!=None) and (t2!=None) and (tg!=None)):
+        # the time taken in one iteration of the steane code (sec)
+        steane_circuit_time = (total_gates + 4)*tg
+
+    # ct stores current time
+    ct = datetime.datetime.now()
+    print('Start Time: ', ct)
+    
+    print('File contents:')
+    # import data from file
+    with SlabFile(r'' + data_file, 'r') as f:  
+        print(tabulate(list(f.items())))
+        params = array(f['params'])[0]    
+        rho_overall = array(f['rho_overall'])[0]
+        ideal_state = array(f['ideal_state'])[0]
+    
+    t1 = params[0]
+    t2 = params[1]
+    tg = params[2]
+    spam_prob = params[3]
+    depolarization = params[4]
+    
+    
+    samples = len(rho_overall)
+    count = np.array([])
+    overall_count = np.array([])
+    # Apply the circuit for (iteration) number of times (samples) times
+    for k in range(samples):
+        rho_per_sample = rho_overall[k] # list of rho for this sample
+        iterations = len(rho_per_sample)
+        
+        overall_count = np.append(overall_count, k)
+        for i in range(iterations):
+            rho = rho_per_sample[i] # rho in this iteration
+            
+            # expectation value when measuring our ideal state
+            expectation_val = np.dot(ideal_state[np.newaxis].conj(), np.dot(rho, ideal_state))
+            value = random.random() # number between 0 and 1 to use as a measure if we keep going or not
+            # compare to our expectation value
+            if value > expectation_val:
+                break
+                
+        # append the count that we stopped at
+        count = np.append(count, i)
+        
     
         if k == 0:
             # ct stores current time
@@ -856,7 +1101,7 @@ def steane_sample_failure(initial_psi, t1, t2, tg, depolarization, spam_prob, it
     print('Physical T2 range:', t2, ' sec')
     print('Gate time (Tg): ', tg, 'sec')
 
-    print('Depolarizing error by probability at each qubit: ', qubit_error_probs)
+    print('Depolarizing error by probability at each qubit: ', depolarization)
     print('SPAM error probability: ', spam_prob)
 
 
@@ -891,60 +1136,62 @@ def steane_sample_failure(initial_psi, t1, t2, tg, depolarization, spam_prob, it
 
     print('... Number of bins:', len(bins)-1, '...')
 
-    
     # Add a Legend
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
     plt.show()
 
+    
 ### Create a plot that samples the logical T1 of your steane code over many runs        
-def steane_sample_t1(initial_psi, t1, t2, tg, depolarization, spam_prob, iterations, samples):        
-    # initial_psi: initial state of your system
-    # t1: The relaxation time of each physical qubit in your system
-    # t2: The dephasing time of each physical qubit in your system
-    # tg: The gate time of your gate operations 
-    # depolarization: the probability for errors of each qubit in your system
-    # spam_prob: The pobability that you have a state prep or measurement error
-    # iterations: number of times you want to run the circuit
-    # samples: number of times you want to sample your data
+def steane_plot_t1(data_file):        
+    # data_file: the path to your data file within your directory
     
     # ct stores current time
     ct = datetime.datetime.now()
     print('Start Time: ', ct)
     
-    initial_state = np.kron(initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(
-        initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(
-            zero, np.kron(zero, zero)))))))))
+    # calculating the number of gates in the steane code
+    total_gates_z = 1 + CNOT_gate_tot(7, 3) + CNOT_gate_tot(7, 4) + CNOT_gate_tot(7, 5) + 1 + CNOT_gate_tot(
+        8, 0) + CNOT_gate_tot(8, 2) + CNOT_gate_tot(8, 4) + CNOT_gate_tot(8, 6) + CNOT_gate_tot(
+        9, 1) + CNOT_gate_tot(9, 2) + CNOT_gate_tot(9, 5) + CNOT_gate_tot(9, 6) + 1 + 2 #CNOT GATES
+
+    total_gates_x = total_gates_z + (2*12) # CZ gates
     
-    ideal_state = initialize_steane_logical_state(initial_state)
-    ideal_bits = vector_state_to_bit_state(ideal_state, 10)[0]
+    total_gates = total_gates_x + total_gates_z
     
-    if depolarization != None:
-        qubit_error_probs = np.array([])            
-        for i in range(10):
-            qubit_error_probs = np.append(qubit_error_probs, depolarization)
-    else:
-        qubit_error_probs = None
+    if ((t1!=None) and (t2!=None) and (tg!=None)):
+        # the time taken in one iteration of the steane code (sec)
+        steane_circuit_time = (total_gates + 4)*tg
+
+    print('File contents:')
+    # import data from file
+    with SlabFile(r'' + data_file, 'r') as f:  
+        print(tabulate(list(f.items())))
+        params = array(f['params'])[0]    
+        rho_overall = array(f['rho_overall'])[0]
+        ideal_state = array(f['ideal_state'])[0]
     
-    initial_rho = np.kron(initial_state, initial_state[np.newaxis].conj().T)
+    t1 = params[0]
+    t2 = params[1]
+    tg = params[2]
+    spam_prob = params[3]
+    depolarization = params[4]
     
     # Masurement operators for individual qubits
     zero_meas = np.kron(zero, zero[np.newaxis].conj().T)
     one_meas = np.kron(one, one[np.newaxis].conj().T)
     
+    samples = len(rho_overall)        
     t1_times = np.array([])
     for k in range(samples):
-        # initialize our logical state
-        rho = realistic_steane(
-            initial_rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
+        rho_per_sample = rho_overall[k] # list of rho for this sample
+        iterations = len(rho_per_sample)
         all_pops = np.array([])
         count = np.array([])
         # run the circuit many times
         for i in range(iterations):
+            rho = rho_per_sample[i] # rho in this iteration
             count = np.append(count, i)
-            # apply circuit
-            rho = realistic_steane(
-                rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
-
+            
             # measure the probability of being in the Logical |1> state from the density matrix
             M = np.kron(one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
                 one_meas, np.kron(one_meas, np.kron(one_meas, np.identity(2**3)))))))) + np.kron(
@@ -972,7 +1219,7 @@ def steane_sample_t1(initial_psi, t1, t2, tg, depolarization, spam_prob, iterati
         ydata = all_pops
         popt, pcov = curve_fit(exp_decay, xdata, ydata)
         circuit_runs = 1/popt[1]
-        circuit_t1 = ((circuit_runs * 29 + 2) * tg)*1e6
+        circuit_t1 = (total_gates * tg)
         t1_times = np.append(t1_times, circuit_t1)
 
         if k == 0:
@@ -983,6 +1230,9 @@ def steane_sample_t1(initial_psi, t1, t2, tg, depolarization, spam_prob, iterati
     ct = datetime.datetime.now()
     print('End Time: ', ct)
     
+    # remove_oultiers in the data
+    real_t1_times = t1_times[t1_times >=0]
+
     print('Plotting...')
     print('Note that the fitted line may have errors')
 
@@ -995,7 +1245,7 @@ def steane_sample_t1(initial_psi, t1, t2, tg, depolarization, spam_prob, iterati
     print('Physical T2 range:', t2, ' sec')
     print('Gate time (Tg): ', tg, 'sec')
 
-    print('Depolarizing error by probability at each qubit: ', qubit_error_probs)
+    print('Depolarizing error by probability at each qubit: ', depolarization)
     print('SPAM error probability: ', spam_prob)
 
 
@@ -1005,35 +1255,33 @@ def steane_sample_t1(initial_psi, t1, t2, tg, depolarization, spam_prob, iterati
 
     # Plotting the error state probabilities
     plt.figure(figsize=(10,4))# passing the histogram function
-    bins = int(samples/20) + 5
+    
+    bins = 'auto'
 
-    n, bins, patches = plt.hist(count, bins = bins, label = 'Failure iteration Distribution', color = 'cornflowerblue')
-    plt.title('Distribution of circuit failure after number of iterations')
-    plt.xlabel('Iterations until logical state failure') 
+    n, bins, patches = plt.hist(t1_times, bins = bins, label = 'Distribution of Logical T1', color = 'cornflowerblue')
+    plt.title('Distribution of Logical T1')
+    plt.xlabel('Logical T1 (sec)') 
     plt.ylabel('Number of Samples') 
-
-    # - - - Fitting a curve to our plot - - - #
-
-    xdata = (bins[1:])[n!=0]
-    ydata = n[n!=0]
-
-    popt, pcov = curve_fit(exp_decay, xdata, ydata)
-
-    plt.plot(xdata, exp_decay(xdata, *popt), 'black',
-             label='fit: a=%5.3f, b=%5.3f' % tuple(popt), linestyle = 'dashed')
-    print('- - -')
-
-    circuit_runs = 1/popt[1]
-    print('Characteristic number of runs until failure: ', circuit_runs)
-
-    char_time = (((circuit_runs * 29) + 2) * tg)
-    print('Characteristic time until failure: ', char_time, 'sec')
 
     # Add a Legend
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
     plt.show()
-
     
+    # Plotting the error state probabilities
+    plt.figure(figsize=(10,4))# passing the histogram function
+    
+    bins = 'auto'
+
+    n, bins, patches = plt.hist(
+        real_t1_times, bins = bins, label = 'Distribution of Logical T1', color = 'cornflowerblue')
+    plt.title('Distribution of Logical T1 (Real Times only)')
+    plt.xlabel('Logical T1 (sec)') 
+    plt.ylabel('Number of Samples') 
+
+    # Add a Legend
+    plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
+    plt.show()
+        
 ### - - - - - - Fault Tolerant Steane Code simulation functions - - - - - - ###
 
 ### Run the Steane code simulation realistically with paramters and a certain number of iterations.       
@@ -1190,8 +1438,9 @@ def ft_steane_simulation(initial_psi, t1, t2, tg, depolarization, spam_prob, ite
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
     plt.show()
 
-### Create a plot that samples the state of logical failure for the Steane code
-def ft_steane_sample_failure(initial_psi, t1, t2, tg, depolarization, spam_prob, iterations, samples):
+
+### Sample the fault tolerant steane code and save all of the data to a h5 file
+def ft_steane_sample(initial_psi, t1, t2, tg, depolarization, spam_prob, iterations, samples):
     # initial_psi: initial state of your system
     # t1: The relaxation time of each physical qubit in your system
     # t2: The dephasing time of each physical qubit in your system
@@ -1201,18 +1450,20 @@ def ft_steane_sample_failure(initial_psi, t1, t2, tg, depolarization, spam_prob,
     # iterations: number of times you want to run the circuit
     # samples: number of times you want to sample your data
     
-    print('Working on calculating the probability of state measurements overtime...')
-
+    print('Working on sampling the circuit overtime...')
+    
     # ct stores current time
     ct = datetime.datetime.now()
     print('Start Time: ', ct)
-    
+   
     initial_state = np.kron(initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(
         initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(
             zero, np.kron(zero, zero)))))))))
     
-    ideal_state = initialize_ft_steane_logical_state(initial_state)
-    ideal_bits = vector_state_to_bit_state(ideal_state, 10)[0]
+    # to save time we will just calculate the normal steane and add 2 ancillas
+    ideal_state = initialize_steane_logical_state(initial_state)
+    ideal_state = np.kron(ideal_state, np.kron(zero, zero))
+    ideal_state = ancilla_reset(ideal_state, 5)
     
     if depolarization != None:
         qubit_error_probs = np.array([])            
@@ -1221,29 +1472,114 @@ def ft_steane_sample_failure(initial_psi, t1, t2, tg, depolarization, spam_prob,
     else:
         qubit_error_probs = None
     
-    
+    initial_state = np.kron(initial_state, np.kron(zero, zero)) # add 2 ancillas to initial state
     initial_rho = np.kron(initial_state, initial_state[np.newaxis].conj().T)
 
-    count = np.array([])
-    overall_count = np.array([])
     # Apply the circuit for (iteration) number of times (samples) times
     for k in range(samples):
         # Initialize our logical state depending on parameters
         rho = realistic_ft_steane(
             initial_rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
 
-        overall_count = np.append(overall_count, k)
         for i in range(iterations):
             rho = realistic_ft_steane(
                 rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
 
-            # Check if we are still in our ideal state
-            collapsed_bits = vector_state_to_bit_state(collapse_dm(rho), 12)[0][0]
-            if collapsed_bits not in ideal_bits:
+        if k == 0:
+            # ct stores current time
+            ct = datetime.datetime.now()
+            print('Time after 1st sample: ', ct)
+        if k == 9:
+            # ct stores current time
+            ct = datetime.datetime.now()
+            print('Time after 10th sample: ', ct)
+        if k == 99:
+            # ct stores current time
+            ct = datetime.datetime.now()
+            print('Time after 100th sample: ', ct)
+            
+    ct = datetime.datetime.now()
+    print('End Time: ', ct)
+    
+    print('Saving Data...')
+    # ----- Saves data to a file ----- #
+    expt_name = 'ft_staene_sample'
+    print('Experiment name: ' + expt_name)
+    
+    expt_path = os.getcwd()
+    print("Current working dir : %s" % expt_path)
+
+    if not os.path.exists('data/' + expt_name):
+        os.makedirs('data/' + expt_name)
+    data_path = expt_path + '/data/' + expt_name
+
+    fname = get_next_filename(data_path, expt_name, suffix='.h5')
+    print('Current data file: ' + fname)
+    print('Path to data file: ' + data_path)
+          
+    # save the parameters to a numpy array
+    params = np.array([t1, t2, tg, spam_prob, depolarization]).astype(np.float64)
+
+    print('File contents:')
+    with SlabFile(data_path + '/' + fname, 'a') as f:
+        # 'a': read/write/create
+        # - Adds parameters to the file - #
+        f.append('params', params)
+
+        # - Adds data to the file - #
+        f.append('ideal_state', ideal_state)
+        f.append('rho_overall', rho_overall) # the denstiy matrix after every iteration divided into their samples
+        print(tabulate(list(f.items())))
+    print('..................')
+    print('Sampling complete.')
+    return data_path+'/'+fname
+
+### Create a plot that samples the state of logical failure for the Steane code
+def ft_steane_plot_failure(data_file):
+    # data_file: the path to your data file within your directory
+    
+    # ct stores current time
+    ct = datetime.datetime.now()
+    print('Start Time: ', ct)
+    
+    print('File contents:')
+   # import data from file
+    with SlabFile(r'' + data_file, 'r') as f:  
+        print(tabulate(list(f.items())))
+        params = array(f['params'])[0]    
+        rho_overall = array(f['rho_overall'])[0]
+        ideal_state = array(f['ideal_state'])[0]
+    
+    t1 = params[0]
+    t2 = params[1]
+    tg = params[2]
+    spam_prob = params[3]
+    depolarization = params[4]
+    
+    
+    samples = len(rho_overall)
+    count = np.array([])
+    overall_count = np.array([])
+    # Apply the circuit for (iteration) number of times (samples) times
+    for k in range(samples):
+        rho_per_sample = rho_overall[k] # list of rho for this sample
+        iterations = len(rho_per_sample)
+        
+        overall_count = np.append(overall_count, k)
+        for i in range(iterations):
+            rho = rho_per_sample[i] # rho in this iteration
+            
+            # expectation value when measuring our ideal state
+            expectation_val = np.dot(ideal_state[np.newaxis].conj(), np.dot(rho, ideal_state))
+            value = random.random() # number between 0 and 1 to use as a measure if we keep going or not
+            # compare to our expectation value
+            if value > expectation_val:
                 break
-
+                
+        # append the count that we stopped at
         count = np.append(count, i)
-
+        
+    
         if k == 0:
             # ct stores current time
             ct = datetime.datetime.now()
@@ -1258,13 +1594,13 @@ def ft_steane_sample_failure(initial_psi, t1, t2, tg, depolarization, spam_prob,
     print('- - -')
     # Plotting our data.
     print('The ideal state of our system:')
-    print_state_info(ideal_state, 12)
+    print_state_info(ideal_state, 10)
     print('- - -')
     print('Physical T1: ', t1, ' sec')
     print('Physical T2 range:', t2, ' sec')
     print('Gate time (Tg): ', tg, 'sec')
 
-    print('Depolarizing error by probability at each qubit: ', qubit_error_probs)
+    print('Depolarizing error by probability at each qubit: ', depolarization)
     print('SPAM error probability: ', spam_prob)
 
 
@@ -1293,65 +1629,53 @@ def ft_steane_sample_failure(initial_psi, t1, t2, tg, depolarization, spam_prob,
 
     circuit_runs = 1/popt[1]
     print('Characteristic number of runs until failure: ', circuit_runs)
-
-    char_time = (((circuit_runs * 29) + 2) * tg)
-    print('Characteristic time until failure: ', char_time, 'sec')
+    print('(Remember that the fault tolerant steane code has repititions within the circuit.)')
 
     print('... Number of bins:', len(bins)-1, '...')
-    
+
     # Add a Legend
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
     plt.show()
 
+
 ### Create a plot that samples the logical T1 of your steane code over many runs        
-def ft_steane_sample_t1(initial_psi, t1, t2, tg, depolarization, spam_prob, iterations, samples):        
-    # initial_psi: initial state of your system
-    # t1: The relaxation time of each physical qubit in your system
-    # t2: The dephasing time of each physical qubit in your system
-    # tg: The gate time of your gate operations 
-    # depolarization: the probability for errors of each qubit in your system
-    # spam_prob: The pobability that you have a state prep or measurement error
-    # iterations: number of times you want to run the circuit
-    # samples: number of times you want to sample your data
+def ft_steane_plot_t1(data_file):        
+    # data_file: the path to your data file within your directory
     
     # ct stores current time
     ct = datetime.datetime.now()
     print('Start Time: ', ct)
     
-    initial_state = np.kron(initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(
-        initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(
-            zero, np.kron(zero, zero)))))))))
+    print('File contents:')
+    # import data from file
+    with SlabFile(r'' + data_file, 'r') as f:  
+        print(tabulate(list(f.items())))
+        params = array(f['params'])[0]    
+        rho_overall = array(f['rho_overall'])[0]
+        ideal_state = array(f['ideal_state'])[0]
     
-    ideal_state = initialize_ft_steane_logical_state(initial_state)
-    ideal_bits = vector_state_to_bit_state(ideal_state, 10)[0]
-    
-    if depolarization != None:
-        qubit_error_probs = np.array([])            
-        for i in range(12):
-            qubit_error_probs = np.append(qubit_error_probs, depolarization)
-    else:
-        qubit_error_probs = None
-    
-    initial_rho = np.kron(initial_state, initial_state[np.newaxis].conj().T)
+    t1 = params[0]
+    t2 = params[1]
+    tg = params[2]
+    spam_prob = params[3]
+    depolarization = params[4]
     
     # Masurement operators for individual qubits
     zero_meas = np.kron(zero, zero[np.newaxis].conj().T)
     one_meas = np.kron(one, one[np.newaxis].conj().T)
-
+    
+    samples = len(rho_overall)        
     t1_times = np.array([])
     for k in range(samples):
-        # initialize our logical state
-        rho = realistic_ft_steane(
-            initial_rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
+        rho_per_sample = rho_overall[k] # list of rho for this sample
+        iterations = len(rho_per_sample)
         all_pops = np.array([])
         count = np.array([])
         # run the circuit many times
         for i in range(iterations):
+            rho = rho_per_sample[i] # rho in this iteration
             count = np.append(count, i)
-            # apply circuit
-            rho = realistic_ft_steane(
-                rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
-
+            
             # measure the probability of being in the Logical |1> state from the density matrix
             M = np.kron(one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
                 one_meas, np.kron(one_meas, np.kron(one_meas, np.identity(2**5)))))))) + np.kron(
@@ -1379,9 +1703,8 @@ def ft_steane_sample_t1(initial_psi, t1, t2, tg, depolarization, spam_prob, iter
         ydata = all_pops
         popt, pcov = curve_fit(exp_decay, xdata, ydata)
         circuit_runs = 1/popt[1]
-        circuit_t1 = ((circuit_runs * 29 + 2) * tg)*1e6
-        t1_times = np.append(t1_times, circuit_t1)
-        
+        t1_times = np.append(t1_times, circuit_runs)
+
         if k == 0:
             # ct stores current time
             ct = datetime.datetime.now()
@@ -1390,8 +1713,12 @@ def ft_steane_sample_t1(initial_psi, t1, t2, tg, depolarization, spam_prob, iter
     ct = datetime.datetime.now()
     print('End Time: ', ct)
     
+    # remove_oultiers in the data
+    real_t1_times = t1_times[t1_times >=0]
+
     print('Plotting...')
     print('Note that the fitted line may have errors')
+
     print('- - -')
     # plotting our information:
     print('The ideal state of our system:')
@@ -1401,7 +1728,7 @@ def ft_steane_sample_t1(initial_psi, t1, t2, tg, depolarization, spam_prob, iter
     print('Physical T2 range:', t2, ' sec')
     print('Gate time (Tg): ', tg, 'sec')
 
-    print('Depolarizing error by probability at each qubit: ', qubit_error_probs)
+    print('Depolarizing error by probability at each qubit: ', depolarization)
     print('SPAM error probability: ', spam_prob)
 
 
@@ -1411,34 +1738,33 @@ def ft_steane_sample_t1(initial_psi, t1, t2, tg, depolarization, spam_prob, iter
 
     # Plotting the error state probabilities
     plt.figure(figsize=(10,4))# passing the histogram function
-    bins = int(samples/20) + 5
+    
+    bins = 'auto'
 
-    n, bins, patches = plt.hist(count, bins = bins, label = 'Failure iteration Distribution', color = 'cornflowerblue')
-    plt.title('Distribution of circuit failure after number of iterations')
-    plt.xlabel('Iterations until logical state failure') 
+    n, bins, patches = plt.hist(t1_times, bins = bins, label = 'Distribution of Logical T1', color = 'cornflowerblue')
+    plt.title('Distribution of Logical T1 (In terms of circuit runs)')
+    plt.xlabel('Logical T1 (In terms of circuit runs)') 
     plt.ylabel('Number of Samples') 
-
-    # - - - Fitting a curve to our plot - - - #
-
-    xdata = (bins[1:])[n!=0]
-    ydata = n[n!=0]
-
-    popt, pcov = curve_fit(exp_decay, xdata, ydata)
-
-    plt.plot(xdata, exp_decay(xdata, *popt), 'black',
-             label='fit: a=%5.3f, b=%5.3f' % tuple(popt), linestyle = 'dashed')
-    print('- - -')
-
-    circuit_runs = 1/popt[1]
-    print('Characteristic number of runs until failure: ', circuit_runs)
-
-    char_time = (((circuit_runs * 29) + 2) * tg)
-    print('Characteristic time until failure: ', char_time, 'sec')
 
     # Add a Legend
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
     plt.show()
     
+    # Plotting the error state probabilities
+    plt.figure(figsize=(10,4))# passing the histogram function
+    
+    bins = 'auto'
+
+    n, bins, patches = plt.hist(
+        real_t1_times, bins = bins, label = 'Distribution of Logical T1', color = 'cornflowerblue')
+    plt.title('Distribution of Logical T1 (In terms of circuit runs) (Real Times only)')
+    plt.xlabel('Logical T1 (In terms of circuit runs)') 
+    plt.ylabel('Number of Samples') 
+
+    # Add a Legend
+    plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
+    plt.show()
+        
     
 ### - - - - - - 9-qubit Code simulation functions - - - - - - ###
 
@@ -1590,8 +1916,8 @@ def nine_qubit_simulation(initial_psi, t1, t2, tg, depolarization, spam_prob, it
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
     plt.show()
 
-### Create a plot that samples the state of logical failure for the Steane code
-def nine_qubit_sample_failure(initial_psi, t1, t2, tg, depolarization, spam_prob, iterations, samples):
+### Sample the nine qubit code and save all of the data to a h5 file
+def nine_qubit_sample(initial_psi, t1, t2, tg, depolarization, spam_prob, iterations, samples):
     # initial_psi: initial state of your system
     # t1: The relaxation time of each physical qubit in your system
     # t2: The dephasing time of each physical qubit in your system
@@ -1601,18 +1927,17 @@ def nine_qubit_sample_failure(initial_psi, t1, t2, tg, depolarization, spam_prob
     # iterations: number of times you want to run the circuit
     # samples: number of times you want to sample your data
     
-    print('Working on calculating the probability of state measurements overtime...')
-
+    print('Working on sampling the circuit overtime...')
+    
     # ct stores current time
     ct = datetime.datetime.now()
     print('Start Time: ', ct)
+   
+    initial_state = np.kron(initial_psi, np.kron(zero, np.kron(zero, np.kron(zero, np.kron(zero, np.kron(
+        zero, np.kron(zero, np.kron(zero, np.kron(zero, np.kron(zero, zero))))))))))
     
-    initial_state = np.kron(initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(
-        initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(
-            zero, np.kron(zero, zero)))))))))
-    
-    ideal_state = initialize_ft_steane_logical_state(initial_state)
-    ideal_bits = vector_state_to_bit_state(ideal_state, 11)[0]
+    # to save time we will just calculate the normal steane and add 2 ancillas
+    ideal_state = initialize_nine_qubit_logical_state(initial_state)
     
     if depolarization != None:
         qubit_error_probs = np.array([])            
@@ -1621,49 +1946,135 @@ def nine_qubit_sample_failure(initial_psi, t1, t2, tg, depolarization, spam_prob
     else:
         qubit_error_probs = None
     
-    
     initial_rho = np.kron(initial_state, initial_state[np.newaxis].conj().T)
 
-    count = np.array([])
-    overall_count = np.array([])
     # Apply the circuit for (iteration) number of times (samples) times
     for k in range(samples):
         # Initialize our logical state depending on parameters
-        rho = realistic_ft_steane(
+        rho = initialize_realistic_nine_qubit(
             initial_rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
 
-        overall_count = np.append(overall_count, k)
         for i in range(iterations):
-            rho = realistic_ft_steane(
+            rho = realistic_nine_qubit(
                 rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
-
-            # Check if we are still in our ideal state
-            collapsed_bits = vector_state_to_bit_state(collapse_dm(rho), 12)[0][0]
-            if collapsed_bits not in ideal_bits:
-                break
-
-        count = np.append(count, i)
 
         if k == 0:
             # ct stores current time
             ct = datetime.datetime.now()
             print('Time after 1st sample: ', ct)
+        if k == 9:
+            # ct stores current time
+            ct = datetime.datetime.now()
+            print('Time after 10th sample: ', ct)
+        if k == 99:
+            # ct stores current time
+            ct = datetime.datetime.now()
+            print('Time after 100th sample: ', ct)
+            
+    ct = datetime.datetime.now()
+    print('End Time: ', ct)
     
+    print('Saving Data...')
+    # ----- Saves data to a file ----- #
+    expt_name = 'nine_qubit_sample'
+    print('Experiment name: ' + expt_name)
+    
+    expt_path = os.getcwd()
+    print("Current working dir : %s" % expt_path)
+
+    if not os.path.exists('data/' + expt_name):
+        os.makedirs('data/' + expt_name)
+    data_path = expt_path + '/data/' + expt_name
+
+    fname = get_next_filename(data_path, expt_name, suffix='.h5')
+    print('Current data file: ' + fname)
+    print('Path to data file: ' + data_path)
+          
+    # save the parameters to a numpy array
+    params = np.array([t1, t2, tg, spam_prob, depolarization]).astype(np.float64)
+
+    print('File contents:')
+    with SlabFile(data_path + '/' + fname, 'a') as f:
+        # 'a': read/write/create
+        # - Adds parameters to the file - #
+        f.append('params', params)
+
+        # - Adds data to the file - #
+        f.append('ideal_state', ideal_state)
+        f.append('rho_overall', rho_overall) # the denstiy matrix after every iteration divided into their samples
+        print(tabulate(list(f.items())))
+    print('..................')
+    print('Sampling complete.')
+    return data_path+'/'+fname
+
+
+### Create a plot that samples the state of logical failure for the nine qubit code
+def nine_qubit_plot_failure(data_file):
+    # data_file: the path to your data file within your directory
+    
+    # ct stores current time
+    ct = datetime.datetime.now()
+    print('Start Time: ', ct)
+    
+    print('File contents:')
+    # import data from file
+    with SlabFile(r'' + data_file, 'r') as f:  
+        print(tabulate(list(f.items())))
+        params = array(f['params'])[0]    
+        rho_overall = array(f['rho_overall'])[0]
+        ideal_state = array(f['ideal_state'])[0]
+    
+    t1 = params[0]
+    t2 = params[1]
+    tg = params[2]
+    spam_prob = params[3]
+    depolarization = params[4]
+    
+    
+    samples = len(rho_overall)
+    count = np.array([])
+    overall_count = np.array([])
+    # Apply the circuit for (iteration) number of times (samples) times
+    for k in range(samples):
+        rho_per_sample = rho_overall[k] # list of rho for this sample
+        iterations = len(rho_per_sample)
+        
+        overall_count = np.append(overall_count, k)
+        for i in range(iterations):
+            rho = rho_per_sample[i] # rho in this iteration
+            
+            # expectation value when measuring our ideal state
+            expectation_val = np.dot(ideal_state[np.newaxis].conj(), np.dot(rho, ideal_state))
+            value = random.random() # number between 0 and 1 to use as a measure if we keep going or not
+            # compare to our expectation value
+            if value > expectation_val:
+                break
+                
+        # append the count that we stopped at
+        count = np.append(count, i)
+        
+    
+        if k == 0:
+            # ct stores current time
+            ct = datetime.datetime.now()
+            print('Time after 1st sample: ', ct)
+
     ct = datetime.datetime.now()
     print('End Time: ', ct)
     
     print('Plotting...')
     print('Note that the fitted line may have errors')
-    print('- - -')    
+
+    print('- - -')
     # Plotting our data.
     print('The ideal state of our system:')
-    print_state_info(ideal_state, 11)
+    print_state_info(ideal_state, 10)
     print('- - -')
     print('Physical T1: ', t1, ' sec')
     print('Physical T2 range:', t2, ' sec')
     print('Gate time (Tg): ', tg, 'sec')
 
-    print('Depolarizing error by probability at each qubit: ', qubit_error_probs)
+    print('Depolarizing error by probability at each qubit: ', depolarization)
     print('SPAM error probability: ', spam_prob)
 
 
@@ -1692,82 +2103,55 @@ def nine_qubit_sample_failure(initial_psi, t1, t2, tg, depolarization, spam_prob
 
     circuit_runs = 1/popt[1]
     print('Characteristic number of runs until failure: ', circuit_runs)
-
-    char_time = (((circuit_runs * 29) + 2) * tg)
-    print('Characteristic time until failure: ', char_time, 'sec')
+    print('(Remember that the fault tolerant steane code has repititions within the circuit.)')
 
     print('... Number of bins:', len(bins)-1, '...')
-    
+
     # Add a Legend
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
     plt.show()
+    
 
-### Create a plot that samples the logical T1 of your steane code over many runs        
-def nine_qubit_sample_t1(initial_psi, t1, t2, tg, depolarization, spam_prob, iterations, samples):        
-    # initial_psi: initial state of your system
-    # t1: The relaxation time of each physical qubit in your system
-    # t2: The dephasing time of each physical qubit in your system
-    # tg: The gate time of your gate operations 
-    # depolarization: the probability for errors of each qubit in your system
-    # spam_prob: The pobability that you have a state prep or measurement error
-    # iterations: number of times you want to run the circuit
-    # samples: number of times you want to sample your data
+### Create a plot that samples the logical T1 of your nine qubit code over many runs        
+def nine_qubit_plot_t1(data_file):        
+    # data_file: the path to your data file within your directory
     
     # ct stores current time
     ct = datetime.datetime.now()
     print('Start Time: ', ct)
     
-    initial_state = np.kron(initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(
-        initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(
-            zero, np.kron(zero, zero)))))))))
+    print('File contents:')
+    # import data from file
+    with SlabFile(r'' + data_file, 'r') as f:  
+        print(tabulate(list(f.items())))
+        params = array(f['params'])[0]    
+        rho_overall = array(f['rho_overall'])[0]
+        ideal_state = array(f['ideal_state'])[0]
     
-    ideal_state = initialize_ft_steane_logical_state(initial_state)
-    ideal_bits = vector_state_to_bit_state(ideal_state, 11)[0]
-    
-    if depolarization != None:
-        qubit_error_probs = np.array([])            
-        for i in range(11):
-            qubit_error_probs = np.append(qubit_error_probs, depolarization)
-    else:
-        qubit_error_probs = None
-    
-    initial_rho = np.kron(initial_state, initial_state[np.newaxis].conj().T)
+    t1 = params[0]
+    t2 = params[1]
+    tg = params[2]
+    spam_prob = params[3]
+    depolarization = params[4]
     
     # Masurement operators for individual qubits
     zero_meas = np.kron(zero, zero[np.newaxis].conj().T)
     one_meas = np.kron(one, one[np.newaxis].conj().T)
     
+    samples = len(rho_overall)        
     t1_times = np.array([])
     for k in range(samples):
-        # initialize our logical state
-        rho = realistic_ft_steane(
-            initial_rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
+        rho_per_sample = rho_overall[k] # list of rho for this sample
+        iterations = len(rho_per_sample)
         all_pops = np.array([])
         count = np.array([])
         # run the circuit many times
         for i in range(iterations):
+            rho = rho_per_sample[i] # rho in this iteration
             count = np.append(count, i)
-            # apply circuit
-            rho = realistic_ft_steane(
-                rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
-
+            
             # measure the probability of being in the Logical |1> state from the density matrix
-            M = np.kron(one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
-                one_meas, np.kron(one_meas, np.kron(one_meas, np.identity(2**5)))))))) + np.kron(
-                zero_meas, np.kron(one_meas, np.kron(zero_meas, np.kron(one_meas, np.kron(
-                zero_meas, np.kron(one_meas, np.kron(zero_meas, np.identity(2**5)))))))) + np.kron(
-                one_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(one_meas, np.kron(
-                one_meas, np.kron(zero_meas, np.kron(zero_meas, np.identity(2**5)))))))) + np.kron(
-                zero_meas, np.kron(zero_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
-                zero_meas, np.kron(zero_meas, np.kron(one_meas, np.identity(2**5)))))))) + np.kron(
-                one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(zero_meas, np.kron(
-                zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.identity(2**5)))))))) + np.kron(
-                zero_meas, np.kron(one_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
-                one_meas, np.kron(zero_meas, np.kron(one_meas, np.identity(2**5)))))))) + np.kron(
-                one_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
-                zero_meas, np.kron(one_meas, np.kron(one_meas, np.identity(2**5)))))))) + np.kron(
-                zero_meas, np.kron(zero_meas, np.kron(one_meas, np.kron(zero_meas, np.kron(
-                one_meas, np.kron(one_meas, np.kron(zero_meas, np.identity(2**5))))))))
+            M = 1 # need to find a proper measurement operator for this
         
             # probability of being in the 1 logical state
             pop = np.trace(np.dot(M.conj().T, np.dot(M, rho)))
@@ -1778,8 +2162,7 @@ def nine_qubit_sample_t1(initial_psi, t1, t2, tg, depolarization, spam_prob, ite
         ydata = all_pops
         popt, pcov = curve_fit(exp_decay, xdata, ydata)
         circuit_runs = 1/popt[1]
-        circuit_t1 = ((circuit_runs * 29 + 2) * tg)*1e6
-        t1_times = np.append(t1_times, circuit_t1)
+        t1_times = np.append(t1_times, circuit_runs)
 
         if k == 0:
             # ct stores current time
@@ -1789,9 +2172,13 @@ def nine_qubit_sample_t1(initial_psi, t1, t2, tg, depolarization, spam_prob, ite
     ct = datetime.datetime.now()
     print('End Time: ', ct)
     
+    # remove_oultiers in the data
+    real_t1_times = t1_times[t1_times >=0]
+
     print('Plotting...')
     print('Note that the fitted line may have errors')
-    print('- - -')    
+
+    print('- - -')
     # plotting our information:
     print('The ideal state of our system:')
     print_state_info(ideal_state, 11)
@@ -1800,7 +2187,7 @@ def nine_qubit_sample_t1(initial_psi, t1, t2, tg, depolarization, spam_prob, ite
     print('Physical T2 range:', t2, ' sec')
     print('Gate time (Tg): ', tg, 'sec')
 
-    print('Depolarizing error by probability at each qubit: ', qubit_error_probs)
+    print('Depolarizing error by probability at each qubit: ', depolarization)
     print('SPAM error probability: ', spam_prob)
 
 
@@ -1810,32 +2197,29 @@ def nine_qubit_sample_t1(initial_psi, t1, t2, tg, depolarization, spam_prob, ite
 
     # Plotting the error state probabilities
     plt.figure(figsize=(10,4))# passing the histogram function
-    bins = int(samples/20) + 5
+    
+    bins = 'auto'
 
-    n, bins, patches = plt.hist(count, bins = bins, label = 'Failure iteration Distribution', color = 'cornflowerblue')
-    plt.title('Distribution of circuit failure after number of iterations')
-    plt.xlabel('Iterations until logical state failure') 
+    n, bins, patches = plt.hist(t1_times, bins = bins, label = 'Distribution of Logical T1', color = 'cornflowerblue')
+    plt.title('Distribution of Logical T1')
+    plt.xlabel('Logical T1 (sec)') 
     plt.ylabel('Number of Samples') 
-
-    # - - - Fitting a curve to our plot - - - #
-
-    xdata = (bins[1:])[n!=0]
-    ydata = n[n!=0]
-
-    popt, pcov = curve_fit(exp_decay, xdata, ydata)
-
-    plt.plot(xdata, exp_decay(xdata, *popt), 'black',
-             label='fit: a=%5.3f, b=%5.3f' % tuple(popt), linestyle = 'dashed')
-    print('- - -')
-
-    circuit_runs = 1/popt[1]
-    print('Characteristic number of runs until failure: ', circuit_runs)
-
-    char_time = (((circuit_runs * 29) + 2) * tg)
-    print('Characteristic time until failure: ', char_time, 'sec')
 
     # Add a Legend
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
     plt.show()
     
+    # Plotting the error state probabilities
+    plt.figure(figsize=(10,4))# passing the histogram function
     
+    bins = 'auto'
+
+    n, bins, patches = plt.hist(
+        real_t1_times, bins = bins, label = 'Distribution of Logical T1', color = 'cornflowerblue')
+    plt.title('Distribution of Logical T1 (Real Times only)')
+    plt.xlabel('Logical T1 (sec)') 
+    plt.ylabel('Number of Samples') 
+
+    # Add a Legend
+    plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
+    plt.show()
