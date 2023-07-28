@@ -16,8 +16,11 @@ warnings.filterwarnings('ignore')
 from general_qec.qec_helpers import *
 from general_qec.errors import *
 from circuit_specific.realistic_three_qubit import *
+from circuit_specific.three_qubit_helpers import *
 from circuit_specific.realistic_steane import *
+from circuit_specific.steane_helpers import *
 from circuit_specific.realistic_ft_steane import *
+from circuit_specific.fault_tolerant_steane import *
 
 # for data management and saving
 from data_management_and_analysis.datamanagement import *
@@ -157,13 +160,18 @@ def run_sim():
                 break
             except ValueError:
                 print("Oops!  That was not a valid value.  Try again...")
-
-        print('. . . . . . . . . .')
-        print('Thank you, we will now output the information of your circuit.')
-
+        
         while True:
             print('. . . . . . . . . .')
+            selection = bool(
+                input('Would you like to go directly to the sampling portion so you can save data? (leave blank if not)\n [Note that for larger codes this may be the best way to do this since they take a long time but you will be able to save the data and only run a single sample if you wish.]\n'))
+            if selection:
+                break
+            
+            print('Thank you, we will now output the information of your circuit.')
 
+            print('. . . . . . . . . .')
+            
             simulate_qec(circuit, psi, depolarization=dep, spam_prob=spam_prob, t1=t1, t2=t2, tg=tg, iterations=iterations)
             print('\n')
             print('- - - - - - - - - -')
@@ -785,10 +793,13 @@ def steane_simulation(initial_psi, t1, t2, tg, depolarization, spam_prob, iterat
     print('Start Time: ', ct)
     
     initial_state = np.kron(initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(
-        initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(
-            zero, np.kron(zero, zero)))))))))
+        initial_psi, np.kron(initial_psi, np.kron(initial_psi, initial_psi))))))
     
     ideal_state = initialize_steane_logical_state(initial_state)
+    ideal_bits = vector_state_to_bit_state(ideal_state, 10)[0]
+    
+    # add ancilla bits
+    initial_state = np.kron(initial_state, np.kron(zero, np.kron(zero, zero)))
     
     qubit_error_probs = np.array([])
     
@@ -932,11 +943,13 @@ def steane_sample(initial_psi, t1, t2, tg, depolarization, spam_prob, iterations
     print('Start Time: ', ct)
    
     initial_state = np.kron(initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(
-        initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(initial_psi, np.kron(
-            zero, np.kron(zero, zero)))))))))
+        initial_psi, np.kron(initial_psi, np.kron(initial_psi, initial_psi))))))
     
     ideal_state = initialize_steane_logical_state(initial_state)
     ideal_bits = vector_state_to_bit_state(ideal_state, 10)[0]
+    
+    # add ancilla bits
+    initial_state = np.kron(initial_state, np.kron(zero, np.kron(zero, zero)))
     
     if depolarization != None:
         qubit_error_probs = np.array([])            
