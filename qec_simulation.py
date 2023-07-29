@@ -474,8 +474,6 @@ def three_qubit_sample(initial_psi, t1, t2, tg, depolarization, spam_prob, itera
     ideal_state = np.dot(CNOT(1, 2, 5), np.dot(CNOT(0, 1, 5), np.kron(
         initial_psi, np.kron(zero, np.kron(zero, np.kron(zero, zero))))))
     
-    ideal_bits = vector_state_to_bit_state(ideal_state, 5)[0]
-
     if depolarization != None:
         qubit_error_probs = np.array([])            
         for i in range(5):
@@ -490,15 +488,15 @@ def three_qubit_sample(initial_psi, t1, t2, tg, depolarization, spam_prob, itera
             initial_psi, t1 = t1, t2 = t2, tg = tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
         
         for i in range(iterations):
+            rho = three_qubit_realistic(
+                rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
+                
             # append the density matrix to a running array of them for this sample
             if i == 0:
                 rho_per_sample = [rho]
             else:
                 rho_per_sample = np.append(rho_per_sample, [rho], axis = 0)
         
-            rho = three_qubit_realistic(
-                rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
-                
         # append the density matrices for this sample to our total density matrices taken for all samples
         if k == 0:
             rho_overall = [rho_per_sample]
@@ -961,25 +959,23 @@ def steane_sample(initial_psi, t1, t2, tg, depolarization, spam_prob, iterations
     # Apply the circuit for (iteration) number of times (samples) times
     initial_rho = np.kron(initial_state, initial_state[np.newaxis].conj().T)
 
-    count = np.array([])
-    overall_count = np.array([])
     # Apply the circuit for (iteration) number of times (samples) times
     for k in range(samples):
-        # Initialize our logical state depending on parameters
-        rho = realistic_steane(
-            initial_rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
-
-        overall_count = np.append(overall_count, k)
         for i in range(iterations):
+            rho = realistic_steane(
+                rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
+            
             # append the density matrix to a running array of them for this sample
             if i == 0:
                 rho_per_sample = [rho]
             else:
                 rho_per_sample = np.append(rho_per_sample, [rho], axis = 0)
         
-            rho = realistic_steane(
-                rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
-
+            # for larger circuits this will be useful to know
+            if (i == 0) and (k == 0):
+                # ct stores current time
+                ct = datetime.datetime.now()
+                print('Time after 1st iteration: ', ct)
         # append the density matrices for this sample to our total density matrices taken for all samples
         if k == 0:
             rho_overall = [rho_per_sample]
@@ -1490,14 +1486,28 @@ def ft_steane_sample(initial_psi, t1, t2, tg, depolarization, spam_prob, iterati
 
     # Apply the circuit for (iteration) number of times (samples) times
     for k in range(samples):
-        # Initialize our logical state depending on parameters
-        rho = realistic_ft_steane(
-            initial_rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
-
         for i in range(iterations):
             rho = realistic_ft_steane(
                 rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
-
+            
+            # append the density matrix to a running array of them for this sample
+            if i == 0:
+                rho_per_sample = [rho]
+            else:
+                rho_per_sample = np.append(rho_per_sample, [rho], axis = 0)
+        
+            # for larger circuits this will be useful to know
+            if (i == 0) and (k == 0):
+                # ct stores current time
+                ct = datetime.datetime.now()
+                print('Time after 1st iteration: ', ct)
+         
+        # append the density matrices for this sample to our total density matrices taken for all samples
+        if k == 0:
+            rho_overall = [rho_per_sample]
+        else:
+            rho_overall = np.append(rho_overall, [rho_per_sample], axis = 0)
+        
         if k == 0:
             # ct stores current time
             ct = datetime.datetime.now()
@@ -1968,9 +1978,27 @@ def nine_qubit_sample(initial_psi, t1, t2, tg, depolarization, spam_prob, iterat
             initial_rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
 
         for i in range(iterations):
+            # append the density matrix to a running array of them for this sample
+            if i == 0:
+                rho_per_sample = [rho]
+            else:
+                rho_per_sample = np.append(rho_per_sample, [rho], axis = 0)
+        
             rho = realistic_nine_qubit(
                 rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
-
+            
+            # for larger circuits this will be useful to know
+            if (i == 0) and (k == 0):
+                # ct stores current time
+                ct = datetime.datetime.now()
+                print('Time after 1st iteration: ', ct)
+                
+        # append the density matrices for this sample to our total density matrices taken for all samples
+        if k == 0:
+            rho_overall = [rho_per_sample]
+        else:
+            rho_overall = np.append(rho_overall, [rho_per_sample], axis = 0)
+            
         if k == 0:
             # ct stores current time
             ct = datetime.datetime.now()
