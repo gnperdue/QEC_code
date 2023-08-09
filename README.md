@@ -46,6 +46,7 @@ There are two ways in which you can use the files in this repository:
 - matplotlib: used for plotting
 - scipy: used for line fitting
 - qiskit: for drawing some of the circuits in **Implementation Knowledge Base**
+- qiskit-aer: for drawing some of the circuits in **Implementation Knowledge Base**
 - prettytable: used to output some tables in **Implementation Knowledge Base**
 - h5py: used for saving and managing data files
 - tabulate: used to output some tables for data management
