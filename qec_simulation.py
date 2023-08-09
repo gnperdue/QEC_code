@@ -487,15 +487,15 @@ def three_qubit_sample(initial_psi, t1, t2, tg, depolarization, spam_prob, itera
         rho = initialize_three_qubit_realisitc(
             initial_psi, t1 = t1, t2 = t2, tg = tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
         
+        # append the density matrix to a running array of them for this sample
+        rho_per_sample = [rho]
+
         for i in range(iterations):
             rho = three_qubit_realistic(
                 rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
                 
             # append the density matrix to a running array of them for this sample
-            if i == 0:
-                rho_per_sample = [rho]
-            else:
-                rho_per_sample = np.append(rho_per_sample, [rho], axis = 0)
+            rho_per_sample = np.append(rho_per_sample, [rho], axis = 0)
         
         # append the density matrices for this sample to our total density matrices taken for all samples
         if k == 0:
@@ -961,21 +961,27 @@ def steane_sample(initial_psi, t1, t2, tg, depolarization, spam_prob, iterations
 
     # Apply the circuit for (iteration) number of times (samples) times
     for k in range(samples):
-        for i in range(iterations):
-            rho = realistic_steane(
-                rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
-            
-            # append the density matrix to a running array of them for this sample
-            if i == 0:
-                rho_per_sample = [rho]
-            else:
-                rho_per_sample = np.append(rho_per_sample, [rho], axis = 0)
+        rho = realistic_steane(
+                initial_rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
         
+        # append the density matrix to a running array of them for this sample
+        rho_per_sample = [rho]
+
+        for i in range(iterations-1):
+            
             # for larger circuits this will be useful to know
             if (i == 0) and (k == 0):
                 # ct stores current time
                 ct = datetime.datetime.now()
                 print('Time after 1st iteration: ', ct)
+                
+            rho = realistic_steane(
+                rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
+            
+            # append the density matrix to a running array of them for this sample
+            rho_per_sample = np.append(rho_per_sample, [rho], axis = 0)
+        
+        
         # append the density matrices for this sample to our total density matrices taken for all samples
         if k == 0:
             rho_overall = [rho_per_sample]
@@ -1044,10 +1050,6 @@ def steane_plot_failure(data_file):
     
     total_gates = total_gates_x + total_gates_z
           
-    if ((t1!=None) and (t2!=None) and (tg!=None)):
-        # the time taken in one iteration of the steane code (sec)
-        steane_circuit_time = (total_gates + 4)*tg
-
     # ct stores current time
     ct = datetime.datetime.now()
     print('Start Time: ', ct)
@@ -1066,7 +1068,10 @@ def steane_plot_failure(data_file):
     spam_prob = params[3]
     depolarization = params[4]
     
-    
+    if ((t1!=None) and (t2!=None) and (tg!=None)):
+        # the time taken in one iteration of the steane code (sec)
+        steane_circuit_time = (total_gates + 4)*tg
+
     samples = len(rho_overall)
     count = np.array([])
     overall_count = np.array([])
@@ -1167,10 +1172,7 @@ def steane_plot_t1(data_file):
     
     total_gates = total_gates_x + total_gates_z
     
-    if ((t1!=None) and (t2!=None) and (tg!=None)):
-        # the time taken in one iteration of the steane code (sec)
-        steane_circuit_time = (total_gates + 4)*tg
-
+    
     print('File contents:')
     # import data from file
     with SlabFile(r'' + data_file, 'r') as f:  
@@ -1185,6 +1187,10 @@ def steane_plot_t1(data_file):
     spam_prob = params[3]
     depolarization = params[4]
     
+    if ((t1!=None) and (t2!=None) and (tg!=None)):
+        # the time taken in one iteration of the steane code (sec)
+        steane_circuit_time = (total_gates + 4)*tg
+
     # Masurement operators for individual qubits
     zero_meas = np.kron(zero, zero[np.newaxis].conj().T)
     one_meas = np.kron(one, one[np.newaxis].conj().T)
@@ -1483,25 +1489,28 @@ def ft_steane_sample(initial_psi, t1, t2, tg, depolarization, spam_prob, iterati
     
     initial_state = np.kron(initial_state, np.kron(zero, zero)) # add 2 ancillas to initial state
     initial_rho = np.kron(initial_state, initial_state[np.newaxis].conj().T)
-
+    
     # Apply the circuit for (iteration) number of times (samples) times
     for k in range(samples):
+        rho = realistic_ft_steane(
+                initial_rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
+        # append the density matrix to a running array of them for this sample
+        rho_per_sample = [rho]
         for i in range(iterations):
-            rho = realistic_ft_steane(
-                rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
             
-            # append the density matrix to a running array of them for this sample
-            if i == 0:
-                rho_per_sample = [rho]
-            else:
-                rho_per_sample = np.append(rho_per_sample, [rho], axis = 0)
-        
             # for larger circuits this will be useful to know
             if (i == 0) and (k == 0):
                 # ct stores current time
                 ct = datetime.datetime.now()
                 print('Time after 1st iteration: ', ct)
          
+            rho = realistic_ft_steane(
+                rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
+            
+            # append the density matrix to a running array of them for this sample
+            rho_per_sample = np.append(rho_per_sample, [rho], axis = 0)
+        
+            
         # append the density matrices for this sample to our total density matrices taken for all samples
         if k == 0:
             rho_overall = [rho_per_sample]
