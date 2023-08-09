@@ -8,3 +8,7 @@ extras.ipynb
 debugging.ipynb
 debugging.ipynb
 .ipynb_checkpoints/debugging-checkpoint.ipynb
+__pycache__/
+circuit_specific/__pycache__/
+data_management_and_analysis/__pycache__/
+general_qec/__pycache__/
