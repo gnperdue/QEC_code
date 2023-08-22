@@ -45,6 +45,7 @@ def draw_three_qubit_code():
     error_table.add_row(["Qubit 1 (|0⟩_0)", "alpha |010⟩|10⟩ + beta|101⟩|10⟩"])
     error_table.add_row(["Qubit 2 (|0⟩_1)", "alpha |001⟩|01⟩ + beta|110⟩|01⟩"])
 
-    print(qc.draw())
+    qc.draw()
     print(error_table.get_string())
-    
+
+    return qc
