@@ -406,7 +406,7 @@ def initialize_larger_steane_code(initial_state):
 def simultaneous_steane_code(logical_state):
     # logical_state: the full logical state of the 13 qubit system
 
-    n = 13 # Total number of qubits in our system
+    n_qubits = 13 # Total number of qubits in our system
 
     full_system = logical_state
     
@@ -425,10 +425,10 @@ def simultaneous_steane_code(logical_state):
 
 
     # Find the bit representation of our full system
-    bits, index, vector_state = vector_state_to_bit_state(full_system, 10)
+    bits, index, vector_state = vector_state_to_bit_state(full_system, n_qubits)
     
     # Measure and collapse our ancilla qubits
-    collapsed_state = collapse_ancilla(vector_state, 3)
+    collapsed_state = collapse_ancilla(vector_state, 6)
     
     # How many total qubits are in our vector representation
     n = int(np.log(len(full_system))/np.log(2))
