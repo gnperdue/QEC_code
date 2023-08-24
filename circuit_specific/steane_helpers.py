@@ -406,10 +406,10 @@ def initialize_larger_steane_code(initial_state):
 def simultaneous_steane_code(logical_state):
     # logical_state: the full logical state of the 13 qubit system
 
-    n_qubits = 13 # Total number of qubits in our system
-
     full_system = logical_state
     
+    n = int(np.log(len(full_system))/np.log(2)) # Total number of qubits in our system
+
     # apply the first hadamard to the ancillas
     ancilla_hadamard = np.kron(np.identity(2**7), np.kron(
         np.kron(hadamard, np.kron(hadamard, hadamard)), np.kron(hadamard, np.kron(hadamard, hadamard))))
@@ -425,13 +425,14 @@ def simultaneous_steane_code(logical_state):
 
 
     # Find the bit representation of our full system
-    bits, index, vector_state = vector_state_to_bit_state(full_system, n_qubits)
+    bits, index, vector_state = vector_state_to_bit_state(full_system, 13)
     
+    vector_state = remove_small_values(vector_state)
+
     # Measure and collapse our ancilla qubits
     collapsed_state = collapse_ancilla(vector_state, 6)
     
-    # How many total qubits are in our vector representation
-    n = int(np.log(len(full_system))/np.log(2))
+    print_state_info(collapsed_state, 13)
     
     # Measure the 6 ancilla qubits
     # Applying the X gate operation on a qubit depending on the ancilla measuremnts
@@ -504,7 +505,7 @@ def simultaneous_steane_code(logical_state):
     final_vector_state = np.dot(z_bar, final_vector_state)
     
     corrected_vector_state = remove_small_values(final_vector_state)
-
+    
     return corrected_vector_state
 
 
