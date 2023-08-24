@@ -13,3 +13,4 @@ circuit_specific/__pycache__/
 data_management_and_analysis/__pycache__/
 general_qec/__pycache__/
 .DS_Store
+log*txt
