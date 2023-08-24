@@ -51,6 +51,7 @@ There are two ways in which you can use the files in this repository:
 - prettytable: used to output some tables in **Implementation Knowledge Base**
 - h5py: used for saving and managing data files
 - tabulate: used to output some tables for data management
+- coverage: used only for checking unit test coverage, not required for general use
 
 *The data management section was taken from Ma Quantum Lab at Purdue University, which adopted it from https://github.com/SchusterLab/slab/tree/master/slab*
 
