@@ -126,7 +126,7 @@ def initialize_steane_logical_state(initial_state):
 # - - - - - - - - - -  Errors - - - - - - - - - - #
 
 ### Applies a random Z rotation to one of the physical qubits in your system (randomly) (works for both n= 10 and 13 qubits) ###
-def phase_flip_error(logical_state, n):
+def phase_flip_error(logical_state, n, verbose=False):
     # logical_state: The logical state of the three qubit system you wish to apply the error to
     # n: The number of qubits in your logical system
     
@@ -136,21 +136,22 @@ def phase_flip_error(logical_state, n):
     if error_index == -1:
         # No error occurs in this case
         errored_logical_state = logical_state
-        print('No phase flip error occured.')
+        if verbose:
+            print('No phase flip error occured.')
     else:
         # Create the error as a gate operation
         error_gate = np.kron(np.identity(2**(error_index)), np.kron(sigma_z, np.identity(2**(n-error_index-1))))
 
         # Apply the error to the qubit (no error may occur)
         errored_logical_state = np.dot(error_gate, logical_state)
-    
-        print('Phase flip error on qubit: ', error_index)
+        if verbose:
+            print('Phase flip error on qubit: ', error_index)
 
     return errored_logical_state, error_index
 
 
 ### Applies a random X rotation to one of the physical qubits in your system (randomly) (works for both n= 10 and 13 qubits) ###
-def bit_flip_error(logical_state, n):
+def bit_flip_error(logical_state, n, verbose=False):
     # logical_state: The logical state of the three qubit system you wish to apply the error to
     # n: The number of qubits in your logical system
     
@@ -160,7 +161,8 @@ def bit_flip_error(logical_state, n):
     if error_index == -1:
         # No error occurs in this case
         errored_logical_state = logical_state
-        print('No bit flip error occured.')
+        if verbose:
+            print('No bit flip error occured.')
 
     else:
         # Create the error as a gate operation
@@ -168,7 +170,8 @@ def bit_flip_error(logical_state, n):
         
         # Apply the error to the qubit (no error may occur)
         errored_logical_state = np.dot(error_gate, logical_state)
-        print('Bit flip error on qubit: ', error_index)
+        if verbose:
+            print('Bit flip error on qubit: ', error_index)
         
     return errored_logical_state, error_index
 
