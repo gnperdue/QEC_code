@@ -35,7 +35,7 @@ def main(pattern, verbosity):
 
     pattern = pattern + '*.py'
     suite = unittest.TestLoader().discover('./tests/', pattern=pattern)
-    unittest.TextTestRunner(verbosity=verbosity).run(suite)
+    unittest.TextTestRunner(verbosity=verbosity,warnings='once').run(suite)
 
 
 if __name__ == '__main__':

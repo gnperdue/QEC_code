@@ -10,11 +10,22 @@ from general_qec.errors import *
 zero_meas = np.kron(zero, zero[np.newaxis].conj().T)
 one_meas = np.kron(one, one[np.newaxis].conj().T)
 
-### Initialized your 3 qubit logical state realistically and return the density matrix and state
-def initialize_three_qubit_realisitc(initial_psi, t1=None, t2=None, tg=None, qubit_error_probs=None, spam_prob=None):    
-    # Initialize the 3 qubit logical state
-    initial_state = np.kron(initial_psi, np.kron(zero, np.kron(zero, np.kron(zero, zero))))
-    
+
+def initialize_three_qubit_realisitc(
+        initial_psi, t1=None, t2=None, tg=None,
+        qubit_error_probs=None, spam_prob=None
+    ):
+    """
+    Initialize a 3 qubit logical state "realistically" and return the density
+    matrix and state.
+
+    * initial_psi: a valid single qubit state vector
+    """
+    # Initialize the 3 qubit logical state and 2 qubit ancilla pair
+    initial_state = np.kron(
+        initial_psi, np.kron(zero, np.kron(zero, np.kron(zero, zero)))
+    )
+
     n = 5
     
     # Find the density matrix of our logical system
@@ -24,22 +35,47 @@ def initialize_three_qubit_realisitc(initial_psi, t1=None, t2=None, tg=None, qub
         for index in range(n):
             initial_rho = spam_error(initial_rho, spam_prob, index)
     
-    if (qubit_error_probs is not None) and (t1!=None and t2!=None and tg!=None):
-        # Apply the CNOT gates to the kronecker product of the current 3 qubit density matrix
-        rho = prob_line_rad_CNOT(initial_rho, 0, 1, t1, t2, tg, qubit_error_probs, form = 'rho') # first CNOT gate
-        rho = prob_line_rad_CNOT(rho, 1, 2, t1, t2, tg, qubit_error_probs, form = 'rho') # second CNOT gate
-    elif (qubit_error_probs is None) and (t1!=None and t2!=None and tg!=None):
-        # Apply the CNOT gates to the kronecker product of the current 3 qubit density matrix
-        rho = line_rad_CNOT(initial_rho, 0, 1, t1, t2, tg, form = 'rho') # first CNOT gate
-        rho = line_rad_CNOT(rho, 1, 2, t1, t2, tg, form = 'rho') # second CNOT gate
-    elif (qubit_error_probs is not None) and (t1==None and t2==None and tg==None):
-        # Apply the CNOT gates to the kronecker product of the current 3 qubit density matrix
-        rho = line_errored_CNOT(initial_rho, 0, 1, qubit_error_probs, form = 'rho') # first CNOT gate
-        rho = line_errored_CNOT(rho, 1, 2, qubit_error_probs, form = 'rho') # second CNOT gate
+    # Apply the CNOT gates to the kronecker product of the current 3 qubit
+    # density matrix
+    if (qubit_error_probs is not None) and \
+            (t1!=None and t2!=None and tg!=None):
+        # first CNOT gate
+        rho = prob_line_rad_CNOT(
+            initial_rho, 0, 1, t1, t2, tg, qubit_error_probs, form = 'rho'
+        )
+        # second CNOT gate
+        rho = prob_line_rad_CNOT(
+            rho, 1, 2, t1, t2, tg, qubit_error_probs, form = 'rho'
+        )
+    elif (qubit_error_probs is None) and \
+            (t1!=None and t2!=None and tg!=None):
+        # first CNOT gate
+        rho = line_rad_CNOT(
+            initial_rho, 0, 1, t1, t2, tg, form = 'rho'
+        )
+        # second CNOT gate
+        rho = line_rad_CNOT(
+            rho, 1, 2, t1, t2, tg, form = 'rho'
+        )
+    elif (qubit_error_probs is not None) and \
+            (t1==None and t2==None and tg==None):
+        # first CNOT gate
+        rho = line_errored_CNOT(
+            initial_rho, 0, 1, qubit_error_probs, form = 'rho'
+        )
+        # second CNOT gate
+        rho = line_errored_CNOT(
+            rho, 1, 2, qubit_error_probs, form = 'rho'
+        )
     else:
-        # Apply the CNOT gates to the kronecker product of the current 3 qubit density matrix
-        rho = np.dot(CNOT(0, 1, 5), np.dot(initial_rho, CNOT(0, 1, 5).conj().T)) # first CNOT gate
-        rho = np.dot(CNOT(1, 2, 5), np.dot(rho, CNOT(1, 2, 5).conj().T)) # second CNOT gate
+        # first CNOT gate
+        rho = np.dot(
+            CNOT(0, 1, 5), np.dot(initial_rho, CNOT(0, 1, 5).conj().T)
+        )
+        # second CNOT gate
+        rho = np.dot(
+            CNOT(1, 2, 5), np.dot(rho, CNOT(1, 2, 5).conj().T)
+        )
     
     return rho
 
