@@ -127,7 +127,7 @@ def collapse_ancilla(logical_state, k):
             # want to write a few more tests before changing.
             summation += np.abs(
                 logical_state[
-                    int(indices[all_bits == all_organized_bits[k][j]])
+                    int(indices[all_bits == all_organized_bits[k][j]][0])
                 ]
             )**2
         probs = np.append(probs, summation)
@@ -288,12 +288,17 @@ def collapse_dm(rho):
     for i in range(len(meas_operators)):
         prob = np.trace(
             np.dot(meas_operators[i].conj().T, np.dot(meas_operators[i], rho))
-        )
+        ).real   # GP: diagonals should be real -- enforce to suppress warning
         meas_probs = np.append(meas_probs, prob)
 
     # find which measurement operator is measured based on their probabilities
-    index = random.choices(meas_probs, weights=meas_probs, k=1)
-    index = np.where(meas_probs == index)[0][0]
+    # GP: pretty sure these two lines are bugged - will not work for the case
+    # -- where all meas probs are the same, e.g. [0.25,0.25,0.25,0.25] - you
+    # -- will always get index 0, and it should be an even pick across the
+    # -- values.
+    # index = random.choices(meas_probs, weights=meas_probs, k=1)
+    # index = np.where(meas_probs == index)[0][0]
+    index = random.choices(list(range(len(rho))), weights=meas_probs, k=1)[0]
 
     # apply correct measurement collapse of the density matrix
     rho_prime = np.dot(
