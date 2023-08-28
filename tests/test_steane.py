@@ -131,8 +131,8 @@ class TestSteaneCode(unittest.TestCase):
         error_state = phase_flip_error(
             bit_flip_error(final_vector_state, n_qtotal)[0], n_qtotal)[0]
         self.assertEqual(error_state.shape, (2**n_qtotal,))
-#         corrected_vector_state = simultaneous_steane_code(error_state)
-        # TODO: add some good tests
+        corrected_vector_state = simultaneous_steane_code(error_state)
+        # TODO: add some good tests checking the states
 
 
 if __name__ == '__main__':
