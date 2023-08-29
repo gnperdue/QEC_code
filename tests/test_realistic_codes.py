@@ -3,29 +3,29 @@ Usage:
     python test_realistic_codes.py
 '''
 import unittest
-import random
-
 import logging
-LOGGER = logging.getLogger(__name__)
-
 import sys
-sys.path.append('..')   # the `general_qec` package sits above us
-
 import numpy as np
-from general_qec.qec_helpers import one, zero, superpos
+from general_qec.qec_helpers import one
 from general_qec.qec_helpers import collapse_dm
 from circuit_specific.realistic_three_qubit import initialize_three_qubit_realisitc
 from circuit_specific.realistic_three_qubit import three_qubit_realistic
 
+LOGGER = logging.getLogger(__name__)
+sys.path.append('..')   # the `general_qec` package sits above us
+
 
 class TestRealisticThreeQubit(unittest.TestCase):
+    """Tests for the `realistic_three_qubit` module."""
 
     def test_three_qubit_realistic_full(self):
+        """Pseudo-functional test of `three_qubit_realistic_full()`"""
+        LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
         initial_psi = one # initialize our psi
-        # timing parameters
-        t1 = 200 * 10**-6 # 200 us
-        t2 = 150 * 10**-6 # 150 us
-        tg = 20 * 10**-9 # 20 ns
+        # timing parameters in microseconds
+        t1 = 200 * 10**-6 # pylint: disable=invalid-name
+        t2 = 150 * 10**-6 # pylint: disable=invalid-name
+        tg = 20 * 10**-9  # pylint: disable=invalid-name
         # probability of gate error for each of five qubits
         p_q0 = 0.0001
         p_q1 = 0.0001
@@ -52,3 +52,6 @@ class TestRealisticThreeQubit(unittest.TestCase):
         collapsed_state = collapse_dm(rho)
         # TODO - need to test the states...
 
+
+if __name__ == '__main__':
+    unittest.main()
