@@ -8,6 +8,7 @@ import sys
 import logging
 import numpy as np
 from general_qec.errors import gate_error
+from general_qec.errors import errored_adj_CNOT, errored_non_adj_CNOT
 from general_qec.errors import random_qubit_x_error, random_qubit_z_error
 from general_qec.gates import sigma_y
 from general_qec.qec_helpers import one, zero, superpos
@@ -77,6 +78,25 @@ class TestErrors(unittest.TestCase): # pylint: disable=too-many-instance-attribu
         rho_prime = gate_error(rho, 0.1, 1, 3)
         self.assertAlmostEqual(np.trace(rho_prime.real), 1) # pylint: disable=no-member
         self.assertAlmostEqual(rho_prime[0][0], 1./8 + 0j)
+
+    def test_errored_cnots(self):
+        """Test various errored cnot functions"""
+        LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
+        psi = np.kron(one, zero)
+        rho = np.outer(psi, psi.conj().T)
+        # apply a zero-error CNOT gate
+        errored_rho = errored_adj_CNOT(rho, 0, 1, [0., 0.])
+        self.assertAlmostEqual(errored_rho[3][3], 1+0j)
+        # apply a high-error CNOT gate
+        errored_rho = errored_adj_CNOT(rho, 0, 1, [0., 0.5])
+        self.assertAlmostEqual(errored_rho[3][3], 2./3.+0j)
+        psi = np.kron(np.kron(one, zero), zero)
+        print(psi)
+        rho = np.outer(psi, psi.conj().T)
+        print(rho)
+        # apply a zero-error CNOT gate
+        errored_rho = errored_non_adj_CNOT(rho, 0, 2, [0., 0., 0.])
+        print(errored_rho)
 
 
 if __name__ == '__main__':
