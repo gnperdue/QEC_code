@@ -4,13 +4,8 @@ Usage:
 '''
 import unittest
 import random
-
 import logging
-LOGGER = logging.getLogger(__name__)
-
 import sys
-sys.path.append('..')   # the `general_qec` package sits above us
-
 import numpy as np
 from general_qec.qec_helpers import zero
 from general_qec.qec_helpers import ancilla_reset
@@ -27,8 +22,11 @@ from circuit_specific.steane_helpers import phase_flip_error
 from circuit_specific.steane_helpers import simultaneous_steane_code
 from circuit_specific.steane_helpers import steane_phase_correction
 
+LOGGER = logging.getLogger(__name__)
 
-class TestFiveQubitStabilizer(unittest.TestCase):
+
+class TestFiveQubitStabilizer(unittest.TestCase): # pylint: disable=too-many-instance-attributes
+    """Tests for the five qubit stabilizer functions."""
 
     def setUp(self) -> None:
         self.zero_state = np.kron(
@@ -65,7 +63,7 @@ class TestFiveQubitStabilizer(unittest.TestCase):
             sigma_z, np.kron(
             sigma_z, np.kron(
             sigma_z, sigma_z))))
-        
+
         # Create and apply the stebilizer operation on the 5 qubit system
         self.operation = np.dot(
             (np.identity(2**5) + self.k_one), np.dot(
@@ -76,7 +74,8 @@ class TestFiveQubitStabilizer(unittest.TestCase):
         return super().setUp()
 
     def test_vector_state_to_bit_state(self):
-        LOGGER.info(sys._getframe().f_code.co_name)
+        """Tests for `vector_state_to_bit_state()`"""
+        LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
         bits, indexes, state = vector_state_to_bit_state(self.initialized_state, 5)
         self.assertAlmostEqual(np.sum(state**2), 1.0)
         self.assertEqual(bits.shape, (16,))
@@ -88,6 +87,7 @@ class TestFiveQubitStabilizer(unittest.TestCase):
 
 
 class TestSteaneCode(unittest.TestCase):
+    """Tests for Steane code functions."""
 
     def setUp(self) -> None:
         self.zero_state = np.kron(
@@ -101,19 +101,21 @@ class TestSteaneCode(unittest.TestCase):
         self.initialized_zero_state = ancilla_reset(
             self.initialized_zero_state, 3)
         return super().setUp()
-    
+
     def test_phase_flip_error_correction(self):
-        LOGGER.info(sys._getframe().f_code.co_name)
+        """Test `phase_flip_error()`"""
+        LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
         random.seed(11)
         phase_error_state = phase_flip_error(self.initialized_zero_state, 10)[0]
-        # TODO - try to think of a good test on the phase flip error state, but 
+        # TODO - try to think of a good test on the phase flip error state, but
         # whether and where there is an error is sensiive to the seed value
         corrected_state = steane_phase_correction(phase_error_state)
         corrected_state = ancilla_reset(corrected_state, 3)
         self.assertTrue(np.allclose(self.initialized_zero_state, corrected_state))
-    
+
     def test_simultaneous_steane_code(self):
-        LOGGER.info(sys._getframe().f_code.co_name)
+        """Test `simultaneous_steane_code()`"""
+        LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
         random.seed(10)
         n_qubits = 7  # number of data qubits in our system
         n_ancilla = 6 # for "simultaneous" Steane
@@ -127,7 +129,7 @@ class TestSteaneCode(unittest.TestCase):
         self.assertEqual(initial_state.shape, (2**n_qubits,))
         final_vector_state = initialize_larger_steane_code(
             np.sqrt(8) * initial_state)
-        self.assertEqual(final_vector_state.shape, (2**n_qtotal,))
+        self.assertEqual(final_vector_state.shape, (2**n_qtotal,)) # pylint: disable=no-member
         error_state = phase_flip_error(
             bit_flip_error(final_vector_state, n_qtotal)[0], n_qtotal)[0]
         self.assertEqual(error_state.shape, (2**n_qtotal,))

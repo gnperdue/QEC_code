@@ -4,13 +4,8 @@ Usage:
 '''
 import unittest
 import random
-
 import logging
-LOGGER = logging.getLogger(__name__)
-
 import sys
-sys.path.append('..')   # the `general_qec` package sits above us
-
 import numpy as np
 from general_qec.qec_helpers import one, zero, superpos
 from general_qec.gates import sigma_y
@@ -21,13 +16,15 @@ from general_qec.qec_helpers import remove_small_values
 from general_qec.qec_helpers import vector_state_to_bit_state
 from general_qec.qec_helpers import CNOT_gate_tot
 
+LOGGER = logging.getLogger(__name__)
+
 
 class TestHelpers(unittest.TestCase):
+    """Tests for the `qec_helpers` module."""
 
-    def setUp(self) -> None:
-        return super().setUp()
-    
     def test_vector_state_to_bit_state(self):
+        """Tests for the `vector_state_to_bit_state()`"""
+        LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
         test_state1 = np.kron(one, zero)
         log_bit, index_of_element, logical_state = vector_state_to_bit_state(test_state1, 2)
         self.assertEqual(log_bit.shape, (1,))
@@ -44,6 +41,8 @@ class TestHelpers(unittest.TestCase):
         self.assertAlmostEqual(logical_state[1], 0.5)
 
     def test_ancilla_functions(self):
+        """Tests for various ancilla manipulation functions"""
+        LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
         test_state1 = np.kron(np.kron(superpos, superpos), superpos)
         random.seed(10)  # fix the collapsed state
         collapsed_vector_state = collapse_ancilla(test_state1, 1)
@@ -63,16 +62,22 @@ class TestHelpers(unittest.TestCase):
         self.assertAlmostEqual(reset_state[0], 1.0+0.0j)
 
     def test_remove_small_values(self):
-        x = np.array([1, 1e-16, 1e-16, 1e-16])
-        y = np.array([1, 0, 0, 0])
+        """Tests for `remove_small_values()`"""
+        LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
+        x = np.array([1, 1e-16, 1e-16, 1e-16])      # pylint: disable=invalid-name
+        y = np.array([1, 0, 0, 0])                  # pylint: disable=invalid-name
         self.assertTrue(np.all(remove_small_values(x) == y))
         self.assertTrue(np.all(remove_small_values(x, tolerance=1e-17) == x))
 
-    def test_CNOT_gate_tot(self):
+    def test_cnot_gate_tot(self):
+        """Tests for `CNOT_gate_tot()`"""
+        LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
         self.assertEqual(CNOT_gate_tot(5, 3), 6)
         self.assertEqual(CNOT_gate_tot(3, 7), 14)
 
     def test_collapse_dm(self):
+        """Tests for `collapse_dm()`"""
+        LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
         random.seed(13)  # fix the collapsed state
         initial_state = np.kron(superpos, superpos)
         initial_rho = np.kron(initial_state, initial_state[np.newaxis].conj().T)
