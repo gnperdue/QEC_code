@@ -1,5 +1,8 @@
-import numpy as np
+"""
+QEC Helpers
+"""
 import random
+import numpy as np
 from general_qec.gates import sigma_x
 
 # A few helpful states to use in initializing a single qubit (they have an exra
@@ -21,9 +24,9 @@ def vector_state_to_bit_state(logical_state, k):
 
     TODO: `k` is a confusing argument here...
     """
-    # used to keep an index of where the non-zero element is in the vector 
+    # used to keep an index of where the non-zero element is in the vector
     # representation
-    index_of_element = np.array([]) 
+    index_of_element = np.array([])
     for i in range(logical_state.size):
         if logical_state[i] != 0:
             index_of_element = np.append(index_of_element, i)
@@ -31,12 +34,12 @@ def vector_state_to_bit_state(logical_state, k):
     # How many total qubits are in our vector representation
     n = int(np.log(len(logical_state))/np.log(2))
 
-    # Keeps track of the logical bits needed 
+    # Keeps track of the logical bits needed
     # (i.e. a|000> + b|111> : 000 and 111 are considered separate and we will
     # combine them)
     log_bit = np.array([])
 
-    # Create the bits and make sure they have the correct number of '0's in front 
+    # Create the bits and make sure they have the correct number of '0's in front
     for j in range(index_of_element.size):
         bits = bin(index_of_element[j].astype(int))
         bits = bits[2:]  # Remove the '0b' prefix
@@ -68,7 +71,7 @@ def print_state_info(logical_state, k):
     bit_states, index, vector_state = \
         vector_state_to_bit_state(logical_state, k)
     non_zero_vector_state = vector_state[vector_state != 0]
-    
+
     for j in range(len(bit_states)):
         print(bit_states[j], ': ', non_zero_vector_state[j])
 
@@ -95,7 +98,7 @@ def collapse_ancilla(logical_state, k):
     organized_bits = np.array([])
     all_organized_bits = np.array([[]])
 
-    # loop over our bit representations and organize them based on 
+    # loop over our bit representations and organize them based on
     # whether or not they have the same ancilla qubits
     for j in range(int(len(all_bits))):
         organized_bits = all_bits
@@ -108,16 +111,16 @@ def collapse_ancilla(logical_state, k):
         else:
             all_organized_bits = np.append(
                 all_organized_bits, [organized_bits], axis = 0)
-            
+
     all_organized_bits = np.unique(all_organized_bits, axis=0)
-    
+
     # finding our probability for measurement
     rows, cols = np.shape(all_organized_bits)
     probs = np.array([])
     for k in range(rows):
         summation = 0
         for j in range(cols):
-            # TODO: `int(indices[all_bits == all_organized_bits[k][j]])` 
+            # TODO: `int(indices[all_bits == all_organized_bits[k][j]])`
             # --> generates a warning:
             # "DeprecationWarning: Conversion of an array with ndim > 0 to a
             # scalar is deprecated, and will error in future. Ensure you
@@ -143,10 +146,10 @@ def collapse_ancilla(logical_state, k):
     x = 0 # used to track first index where vector_state is non-zero
 
     for i in range(len(logical_state)):
-        if logical_state[i] != 0: 
+        if logical_state[i] != 0:
             # initialize the vector that will hold the single non-zero value
             # in the proper spot
-            value_position = np.zeros((2**n,), dtype=complex) 
+            value_position = np.zeros((2**n,), dtype=complex)
             # insert the non-zero value in the correct spot
             value_position[i,] = logical_state[i]
             # Add the value position vector to an array of all the error places
@@ -164,7 +167,7 @@ def collapse_ancilla(logical_state, k):
     # take out the vectors that do not match our collapsed bit state
     for j in range(num_rows):
         if vector_state_to_bit_state(all_vector_states[j], n)[0] \
-            not in collapsed_bits: 
+            not in collapsed_bits:
             all_vector_states[j][:].fill(0)
 
     # combine the vector states again
@@ -172,12 +175,12 @@ def collapse_ancilla(logical_state, k):
     for j in range(num_rows):
         collapsed_vector_state = collapsed_vector_state + \
             all_vector_states[j][:]
-    
+
     # normalizing our state
     pop = 0
     for i in range(len(probs)):
         pop += probs[i]
-            
+
     norm = np.linalg.norm(collapsed_vector_state)
 #     print_state_info(collapsed_vector_state, n)
 #     print('pop: ', pop, 'norm: ', norm)
@@ -191,23 +194,23 @@ def ancilla_reset(logical_state, k):
     Reset the ancilla qubits to '0'
 
     * logical_state: The vector state representation of your full qubit system
-    * k: number of ancillas in your system (at the end of the bit 
+    * k: number of ancillas in your system (at the end of the bit
     representation)
     """
     # How many total qubits are in our vector representation
     n = int(np.log(len(logical_state))/np.log(2))
-    
+
     reset_state = logical_state
 
     all_ancilla_bits = vector_state_to_bit_state(reset_state, n)[0]
-    
+
     for j in range(len(all_ancilla_bits)):
         ancilla_bits = vector_state_to_bit_state(reset_state, n)[0][j]
         for i in range(n):
             if i >= n-k:
                 if ancilla_bits[i] == '1':
                     reset_gate = np.kron(
-                        np.identity(2**(i)), 
+                        np.identity(2**(i)),
                         np.kron(sigma_x, np.identity(2**(n-i-1)))
                     )
 
@@ -225,10 +228,10 @@ def remove_small_values(logical_state, tolerance=1e-15):
     """
     # How many total qubits are in our vector representation
     n = int(np.log(len(logical_state))/np.log(2))
-    
+
     x=0
     for j in range(len(logical_state)):
-        if (abs(logical_state[j]) > tolerance): 
+        if (abs(logical_state[j]) > tolerance):
             # initialize the vector that will hold the single non-zero value in
             # the proper spot
             value_position = np.zeros((1,2**n), dtype=complex)
@@ -251,7 +254,7 @@ def remove_small_values(logical_state, tolerance=1e-15):
     for j in range(num_rows):
         corrected_vector_state = \
             corrected_vector_state + all_vector_states[j][:]
-   
+
     return corrected_vector_state
 
 
@@ -305,14 +308,12 @@ def collapse_dm(rho):
         meas_operators[index], np.dot(rho, meas_operators[index].conj().T)
     )/(meas_probs[index])
 
-    # Now that we have completed our measurement we are in a pure state. 
-    
-    # Thus we can find the elemnts on the diagaonal as our final psi since 
+    # Now that we have completed our measurement we are in a pure state.
+
+    # Thus we can find the elemnts on the diagaonal as our final psi since
     # rho = |psi><psi|
     final_psi = np.array([])
-    for i in range(len(rho_prime)):
+    for i in range(len(rho_prime)): # pylint: disable=consider-using-enumerate
         final_psi = np.append(final_psi, rho_prime[i][i])
 
     return final_psi
-    
-    
