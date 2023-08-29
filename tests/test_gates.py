@@ -13,10 +13,9 @@ from general_qec.gates import cnot, flipped_cnot
 from general_qec.gates import adj_CZ, non_adj_CZ, CZ
 
 LOGGER = logging.getLogger(__name__)
-sys.path.append('..')   # the `general_qec` package sits above us
 
 
-class TestGates(unittest.TestCase):
+class TestGates(unittest.TestCase): # pylint: disable=too-many-instance-attributes
     """Tests for the `gates` module."""
 
     def setUp(self) -> None:

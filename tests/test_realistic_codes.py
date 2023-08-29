@@ -12,7 +12,6 @@ from circuit_specific.realistic_three_qubit import initialize_three_qubit_realis
 from circuit_specific.realistic_three_qubit import three_qubit_realistic
 
 LOGGER = logging.getLogger(__name__)
-sys.path.append('..')   # the `general_qec` package sits above us
 
 
 class TestRealisticThreeQubit(unittest.TestCase):

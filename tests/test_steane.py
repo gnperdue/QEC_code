@@ -23,7 +23,6 @@ from circuit_specific.steane_helpers import simultaneous_steane_code
 from circuit_specific.steane_helpers import steane_phase_correction
 
 LOGGER = logging.getLogger(__name__)
-sys.path.append('..')   # the `general_qec` package sits above us
 
 
 class TestFiveQubitStabilizer(unittest.TestCase): # pylint: disable=too-many-instance-attributes

@@ -17,7 +17,6 @@ from general_qec.qec_helpers import vector_state_to_bit_state
 from general_qec.qec_helpers import CNOT_gate_tot
 
 LOGGER = logging.getLogger(__name__)
-sys.path.append('..')   # the `general_qec` package sits above us
 
 
 class TestHelpers(unittest.TestCase):
