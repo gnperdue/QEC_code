@@ -3,22 +3,21 @@ Usage:
     python test_gates.py
 '''
 import unittest
-
-import logging
-LOGGER = logging.getLogger(__name__)
-
 import sys
-sys.path.append('..')   # the `general_qec` package sits above us
-
+import logging
 import numpy as np
-from general_qec.gates import sigma_I, sigma_x, sigma_y, sigma_z
+from general_qec.gates import sigma_x, sigma_y, sigma_z
 from general_qec.gates import adj_CNOT, flipped_adj_CNOT, small_non_adj_CNOT
 from general_qec.gates import non_adj_CNOT, flipped_non_adj_CNOT, CNOT
 from general_qec.gates import cnot, flipped_cnot
 from general_qec.gates import adj_CZ, non_adj_CZ, CZ
 
+LOGGER = logging.getLogger(__name__)
+sys.path.append('..')   # the `general_qec` package sits above us
+
 
 class TestGates(unittest.TestCase):
+    """Tests for the `gates` module."""
 
     def setUp(self) -> None:
         self.three_qubit000 = np.array([[1], [0], [0], [0], [0], [0], [0], [0]])
@@ -33,7 +32,8 @@ class TestGates(unittest.TestCase):
         return super().setUp()
 
     def test_commutators(self):
-        LOGGER.info(sys._getframe().f_code.co_name)
+        """Test commutator relationships for Pauli matrices"""
+        LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
         self.assertTrue(np.all(
             np.matmul(sigma_x, sigma_y) - np.matmul(sigma_y, sigma_x) == -2j*sigma_z
         ))
@@ -44,8 +44,9 @@ class TestGates(unittest.TestCase):
             np.matmul(sigma_z, sigma_x) - np.matmul(sigma_x, sigma_z) == -2j*sigma_y
         ))
 
-    def test_CNOT(self):
-        LOGGER.info(sys._getframe().f_code.co_name)
+    def test_cnot(self):
+        """Test the various CNOT functions"""
+        LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
         self.assertEqual(adj_CNOT(0, 1, 4).shape, (16, 16))
         self.assertEqual(adj_CNOT(2, 3, 4).shape, (16, 16))
         self.assertTrue(np.all(
@@ -96,8 +97,9 @@ class TestGates(unittest.TestCase):
             flipped_non_adj_CNOT(4, 0, 5) == CNOT(4, 0, 5)
         ))
 
-    def test_CZ(self):
-        LOGGER.info(sys._getframe().f_code.co_name)
+    def test_cz(self):
+        """Test CZ from `gates` module."""
+        LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
         self.assertTrue(np.all(
             adj_CZ(0, 1, 2) == CZ(0, 1, 2)
         ))
@@ -114,5 +116,3 @@ class TestGates(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
-
