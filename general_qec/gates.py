@@ -22,7 +22,7 @@ cnot = np.array([[1, 0, 0, 0],[0, 1, 0, 0],[0, 0, 0, 1],[0, 0, 1, 0]])
 flipped_cnot = np.array([[1, 0, 0, 0],[0, 0, 0, 1],[0, 0, 1, 0],[0, 1, 0, 0]])
 
 
-def adj_CNOT(control, target, tot_qubits):
+def adj_CNOT(control, target, tot_qubits): # pylint: disable=invalid-name
     """
     Implement a CNOT gate between 2 adjacent qubits in a system
 
@@ -34,9 +34,9 @@ def adj_CNOT(control, target, tot_qubits):
     """
     assert target - control == 1, "target - control != 1"
     # exponent used to tensor the left side identity matrix for our full system
-    n1 = control
+    n1 = control                    # pylint: disable=invalid-name
     # exponent used to tensor the right side ident matrix for our full system
-    n2 = tot_qubits - target - 1
+    n2 = tot_qubits - target - 1    # pylint: disable=invalid-name
     final_gate = np.kron(
         np.identity(2**(n1)), np.kron(cnot, np.identity(2**(n2)))
     )
@@ -44,7 +44,7 @@ def adj_CNOT(control, target, tot_qubits):
     return final_gate
 
 
-def flipped_adj_CNOT(control, target, tot_qubits):
+def flipped_adj_CNOT(control, target, tot_qubits): # pylint: disable=invalid-name
     """
     Implement a flipped CNOT gate between 2 adjacent qubits in a system
 
@@ -56,9 +56,9 @@ def flipped_adj_CNOT(control, target, tot_qubits):
     """
     assert control - target == 1, "control - target != 1"
     # exponent used to tensor the left side identity matrix for our full system
-    n1 = target
+    n1 = target                      # pylint: disable=invalid-name
     # exponent used to tensor the right side ident matrix for our full system
-    n2 = tot_qubits - control - 1
+    n2 = tot_qubits - control - 1    # pylint: disable=invalid-name
     final_gate = np.kron(
         np.identity(2**(n1)), np.kron(flipped_cnot, np.identity(2**(n2)))
     )
@@ -66,20 +66,21 @@ def flipped_adj_CNOT(control, target, tot_qubits):
     return final_gate
 
 
-def small_non_adj_CNOT():
+def small_non_adj_CNOT(): # pylint: disable=invalid-name
     """
     Used to quickly perform a CNOT gate on 2 non-adjacent qubits (i.e. |psi>
     and |q_1>) --- for 3 qubits
     """
-    cnot = np.identity(8)
-    cnot[4:] = 0
-    cnot[4][5] = 1
-    cnot[5][4] = 1
-    cnot[7][6] = 1
-    cnot[6][7] = 1
-    return cnot
+    small_non_adj_cnot = np.identity(8)
+    small_non_adj_cnot[4:] = 0
+    small_non_adj_cnot[4][5] = 1
+    small_non_adj_cnot[5][4] = 1
+    small_non_adj_cnot[7][6] = 1
+    small_non_adj_cnot[6][7] = 1
+    return small_non_adj_cnot
 
-def non_adj_CNOT(control, target, tot_qubits):
+
+def non_adj_CNOT(control, target, tot_qubits): # pylint: disable=invalid-name
     """
     Implement a non-adjacent CNOT gate between 2 qubits in a system
 
@@ -91,7 +92,7 @@ def non_adj_CNOT(control, target, tot_qubits):
     """
     assert target - control > 1, "(target - control) must be greater than 1"
     # used to index over all gates neeeded to compose final gate
-    p = target - control
+    p = target - control   # pylint: disable=invalid-name
     # array used to keep track of the components we will combine at the end
     all_dots = np.array([[]])
 
@@ -118,15 +119,16 @@ def non_adj_CNOT(control, target, tot_qubits):
     final_gate = np.dot(gate, gate)
 
     # exponent used to tensor the left side identity matrix for our full system
-    n1 = control
+    n1 = control                    # pylint: disable=invalid-name
     # exponent used to tensor the right side ident matrix for our full system
-    n2 = tot_qubits - target - 1
+    n2 = tot_qubits - target - 1    # pylint: disable=invalid-name
     final_total_gate = np.kron(
         np.identity(2**(n1)), np.kron(final_gate, np.identity(2**(n2)))
     )
     return final_total_gate
 
-def flipped_non_adj_CNOT(control, target, tot_qubits):
+
+def flipped_non_adj_CNOT(control, target, tot_qubits): # pylint: disable=invalid-name
     """
     Implement a flipped non-adjacent CNOT gate between 2 qubits in a system
 
@@ -138,7 +140,7 @@ def flipped_non_adj_CNOT(control, target, tot_qubits):
     """
     assert control - target > 1, "(control - target) must be greater than 1"
     # used to index over all gates neeeded to compose final gate
-    p = np.abs(target - control)
+    p = np.abs(target - control)  # pylint: disable=invalid-name
     # array used to keep track of the components we will combine at the end
     all_dots = np.array([[]])
 
@@ -166,9 +168,9 @@ def flipped_non_adj_CNOT(control, target, tot_qubits):
     final_gate = np.dot(gate, gate)
 
     # exponent used to tensor the left side identity matrix for our full system
-    n1 = target
+    n1 = target                     # pylint: disable=invalid-name
     # exponent used to tensor the right side ident matrix for our full system
-    n2 = tot_qubits - control - 1
+    n2 = tot_qubits - control - 1   # pylint: disable=invalid-name
     final_total_gate = np.kron(
         np.identity(2**(n1)), np.kron(final_gate, np.identity(2**(n2)))
     )
@@ -176,12 +178,11 @@ def flipped_non_adj_CNOT(control, target, tot_qubits):
     return final_total_gate
 
 
-def CNOT(control, target, tot_qubits):
+def CNOT(control, target, tot_qubits): # pylint: disable=invalid-name
     """
     Implement a CNOT gate between 2 qubits depending on your control and
     target qubit.
     """
-
     # First check if it is a normal CNOT or a flipped CNOT gate
     if control < target:
         # Check if adjacent
@@ -214,7 +215,7 @@ cz = np.dot(
     np.dot(cnot, np.kron(np.identity(2), hadamard))).round().astype(int)
 
 
-def adj_CZ(control, target, tot_qubits):
+def adj_CZ(control, target, tot_qubits): # pylint: disable=invalid-name
     """
     Implement a CZ gate between 2 adjacent qubits in a system
 
@@ -226,14 +227,14 @@ def adj_CZ(control, target, tot_qubits):
     # Adds the dimensions needed depending on the tot_qubits
     if control < target:
         # exponent used to tensor the left side iden matrix for our full system
-        n1 = control
+        n1 = control                   # pylint: disable=invalid-name
         # exponent used to tensor the right side iden matrix for full system
-        n2 = tot_qubits - target - 1
+        n2 = tot_qubits - target - 1   # pylint: disable=invalid-name
     else:
         # exponent used to tensor the left side iden matrix for our full system
-        n1 = target
+        n1 = target                    # pylint: disable=invalid-name
         # exponent used to tensor the right side iden matrix for full system
-        n2 = tot_qubits - control - 1
+        n2 = tot_qubits - control - 1  # pylint: disable=invalid-name
 
     final_gate = np.kron(
         np.identity(2**(n1)), np.kron(cz, np.identity(2**(n2)))
@@ -245,7 +246,7 @@ def adj_CZ(control, target, tot_qubits):
     return final_gate
 
 
-def non_adj_CZ(control, target, tot_qubits):
+def non_adj_CZ(control, target, tot_qubits): # pylint: disable=invalid-name
     """
     Implement a non-adjacent CZ gate between 2 qubits in a system ###
 
@@ -255,7 +256,7 @@ def non_adj_CZ(control, target, tot_qubits):
     """
     assert target != control, "target must not equal control"
     # used to index over all gates neeeded to compose final gate
-    p = np.abs(target - control)
+    p = np.abs(target - control)  # pylint: disable=invalid-name
     # array used to keep track of the components we will combine at the end
     all_dots = np.array([[]])
     # Indexing over the values of p to get the first half of the formula
@@ -319,8 +320,7 @@ def non_adj_CZ(control, target, tot_qubits):
     return final_total_gate
 
 
-
-def CZ(control, target, tot_qubits):
+def CZ(control, target, tot_qubits): # pylint: disable=invalid-name
     """
     Implement a Control-Z gate between 2 qubits depending on your parameters
     """
