@@ -467,6 +467,7 @@ def errored_non_adj_CZ(rho, control, target, qubit_error_probs): # pylint: disab
             next_dot = np.kron(np.identity(2**(n1)), np.kron(next_dot, np.identity(2**(n2))))
 
             # compute an index to track local targets during swaps
+            # TODO: check the logic here more carefully.
             if control < target:
                 index = control + j + 1
             else:
