@@ -8,10 +8,11 @@ import sys
 import logging
 import numpy as np
 from general_qec.errors import gate_error
-from general_qec.errors import errored_adj_CNOT, errored_non_adj_CNOT
+from general_qec.errors import line_errored_CNOT
 from general_qec.errors import random_qubit_x_error, random_qubit_z_error
 from general_qec.gates import sigma_y
 from general_qec.qec_helpers import one, zero, superpos
+from general_qec.qec_helpers import collapse_dm
 
 LOGGER = logging.getLogger(__name__)
 
@@ -80,23 +81,65 @@ class TestErrors(unittest.TestCase): # pylint: disable=too-many-instance-attribu
         self.assertAlmostEqual(rho_prime[0][0], 1./8 + 0j)
 
     def test_errored_cnots(self):
-        """Test various errored cnot functions"""
+        """Test various errored cnot functions (line connectivity)"""
         LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
+        # --
+        # first -- adjacent cnot -> test through wrapper
         psi = np.kron(one, zero)
         rho = np.outer(psi, psi.conj().T)
         # apply a zero-error CNOT gate
-        errored_rho = errored_adj_CNOT(rho, 0, 1, [0., 0.])
+        errored_rho = line_errored_CNOT(rho, 0, 1, [0., 0.], form='rho')
+        errored_psi = collapse_dm(errored_rho)
         self.assertAlmostEqual(errored_rho[3][3], 1+0j)
+        self.assertTrue(np.all(errored_psi == np.kron(one, one)))
         # apply a high-error CNOT gate
-        errored_rho = errored_adj_CNOT(rho, 0, 1, [0., 0.5])
+        errored_rho = line_errored_CNOT(psi, 0, 1, [0., 0.5])
+        random.seed(13)  # seed chosen to find a gate error
+        errored_psi = collapse_dm(errored_rho)
         self.assertAlmostEqual(errored_rho[3][3], 2./3.+0j)
+        self.assertTrue(np.all(errored_psi == np.kron(one, zero)))
+        # --
+        # second -- non-adjacent cnot -> test through wrapper
         psi = np.kron(np.kron(one, zero), zero)
-        print(psi)
-        rho = np.outer(psi, psi.conj().T)
-        print(rho)
         # apply a zero-error CNOT gate
-        errored_rho = errored_non_adj_CNOT(rho, 0, 2, [0., 0., 0.])
-        print(errored_rho)
+        errored_rho = line_errored_CNOT(psi, 0, 2, [0., 0., 0.])
+        errored_psi = collapse_dm(errored_rho)
+        self.assertAlmostEqual(errored_rho[5][5], 1+0j)
+        self.assertTrue(np.all(errored_psi == np.kron(np.kron(one, zero), one)))
+        # apply a high-error CNOT gate
+        random.seed(10)
+        errored_rho = line_errored_CNOT(psi, 0, 2, [0., 0., 0.5])
+        errored_psi = collapse_dm(errored_rho)
+        self.assertAlmostEqual(errored_rho[4][4], 4./9.+0j)
+        self.assertTrue(np.all(errored_psi == np.kron(np.kron(one, zero), one)))
+        # --
+        # third -- flipped adj CNOT -> test through wrapper
+        psi = np.kron(zero, one)
+        # apply a zero-error CNOT gate
+        errored_rho = line_errored_CNOT(psi, 1, 0, [0., 0.])
+        errored_psi = collapse_dm(errored_rho)
+        self.assertAlmostEqual(errored_rho[3][3], 1+0j)
+        self.assertTrue(np.all(errored_psi == np.kron(one, one)))
+        # apply a high-error CNOT gate
+        errored_rho = line_errored_CNOT(psi, 1, 0, [0.5, 0.0])
+        random.seed(13)  # seed chosen to find a gate error
+        errored_psi = collapse_dm(errored_rho)
+        self.assertAlmostEqual(errored_rho[1][1], 1./3.+0j)
+        self.assertTrue(np.all(errored_psi == np.kron(zero, one)))
+        # --
+        # fourth -- flipped non-adj CNOT -> test through wrapper
+        psi = np.kron(np.kron(zero, zero), one)
+        # apply a zero-error CNOT gate
+        errored_rho = line_errored_CNOT(psi, 2, 0, [0.0, 0., 0.])
+        errored_psi = collapse_dm(errored_rho)
+        self.assertAlmostEqual(errored_rho[5][5], 1.+0j)
+        self.assertTrue(np.all(errored_psi == np.kron(np.kron(one, zero), one)))
+        # apply a high-error CNOT gate
+        errored_rho = line_errored_CNOT(psi, 2, 0, [0.5, 0., 0.])
+        random.seed(10)  # seed chosen for no error
+        errored_psi = collapse_dm(errored_rho)
+        self.assertAlmostEqual(errored_rho[1][1], 4./9.+0j)
+        self.assertTrue(np.all(errored_psi == np.kron(np.kron(one, zero), one)))
 
 
 if __name__ == '__main__':

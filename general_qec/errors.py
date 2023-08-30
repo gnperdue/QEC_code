@@ -4,7 +4,7 @@ This file contains different universal error operations that can be used on any 
 import random
 import numpy as np
 from general_qec.qec_helpers import *
-from general_qec.gates import cnot
+from general_qec.gates import cnot, flipped_cnot
 from general_qec.gates import sigma_x, sigma_y, sigma_z, sigma_I
 
 # TODO: make a `random_qubit_gate_error()` that accepts a unitary as an
@@ -225,52 +225,70 @@ def errored_non_adj_CNOT(rho, control, target, qubit_error_probs): # pylint: dis
     return error_rho # returns the density matrix of your system
 
 
-### Apply an adjacent flipped CNOT gate between 2 qubits in a system with line connectivity and errors ###
-def errored_flipped_adj_CNOT(rho, control, target, qubit_error_probs):
-    # rho: the density matrix representation of your system
-    # control: control qubit index (starting from 0)
-    # target: target qubit index (starting from 0) (must be a larger index than control)
-    # qubit_error_probs: an array of the probability for errors of each qubit in your system
+def errored_flipped_adj_CNOT(rho, control, target, qubit_error_probs): # pylint: disable=invalid-name
+    """
+    Apply an adjacent flipped CNOT gate between 2 qubits in a system with line
+    connectivity and Krauss errors. The Krauss error is applied to the
+    target qubit only.
 
-    # find our density matrix
-#     rho = np.kron(psi, psi[np.newaxis].conj().T)
-
+    * rho: the density matrix representation of your system
+    * control: control qubit index (starting from 0)
+    * target: target qubit index (starting from 0) (must be > control)
+    * qubit_error_probs: an array of the probability for errors of each qubit
+    in your system
+    """
+    # TODO: make the error random between targtet and control? Or keep it always target?
     # How many total qubits are in our vector representation
     tot_qubits = int(np.log(len(rho))/np.log(2))
 
     # Adds the dimensions needed depending on the tot_qubits
-    n1 = target # exponent used to tensor the left side identity matrix for our full system
-    n2 = tot_qubits - control - 1 # exponent used to tensor the right side identity matrix for our full system
+    # exponent used to tensor the left side identity matrix for our full system
+    n1 = target                    # pylint: disable=invalid-name
+    # exponent used to tensor the right side identity matrix for our full system
+    n2 = tot_qubits - control - 1  # pylint: disable=invalid-name
 
-    gate = np.kron(np.identity(2**(n1)), np.kron(flipped_cnot, np.identity(2**(n2))))
+    gate = np.kron(
+        np.identity(2**(n1)),
+        np.kron(flipped_cnot, np.identity(2**(n2)))
+    )
 
     # applies the perfect gate to our density matrix
     perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T))
     # apply our error gate and find the new density matrix
-    error_rho = gate_error(perfect_gate_rho, qubit_error_probs[target], target, tot_qubits)
+    error_rho = gate_error(
+        perfect_gate_rho, qubit_error_probs[target], target, tot_qubits
+    )
 
     return error_rho
 
 
-### Apply a non-adjacent flipped CNOT gate between 2 qubits in a system with line connectivity and errors ###
-def errored_flipped_non_adj_CNOT(rho, control, target, qubit_error_probs):
-    # rho: the density matrix representation of your system
-    # control: control qubit index (starting from 0)
-    # target: target qubit index (starting from 0) (must be a larger index than control)
-    # qubit_error_probs: an array of the probability for errors of each qubit in your system
+def errored_flipped_non_adj_CNOT(rho, control, target, qubit_error_probs): # pylint: disable=invalid-name
+    """
+    Apply a non-adjacent flipped CNOT gate between 2 qubits in a system with
+    line connectivity and Krauss errors. The Krauss error is applied to the
+    target qubit only, but it may be applied for every CNOT in the swap
+    operations.
 
-    # find our density matrix
-#     rho = np.kron(psi, psi[np.newaxis].conj().T)
-
+    * rho: the density matrix representation of your system
+    * control: control qubit index (starting from 0)
+    * target: target qubit index (starting from 0) (must be > control)
+    * qubit_error_probs: an array of the probability for errors of each qubit
+    in your system
+    """
+    # TODO: make the error random between targtet and control? Or keep it always target?
     # How many total qubits are in our vector representation
     tot_qubits = int(np.log(len(rho))/np.log(2))
 
-    p = np.abs(target - control) # used to index over all gates neeeded to compose final gate
-    all_dots = np.array([[]]) # array used to keep track of the components we will combine at the end
+    # used to index over all gates neeeded to compose final gate
+    p = np.abs(target - control)  # pylint: disable=invalid-name
+    # array used to keep track of the components we will combine at the end
+    all_dots = np.array([[]])
 
     # Adds the dimensions needed depending on the tot_qubits
-    n1 = target # exponent used to tensor the left side identity matrix for our full system
-    n2 = tot_qubits - control - 1 # exponent used to tensor the right side identity matrix for our full system
+    # exponent used to tensor the left side identity matrix for our full system
+    n1 = target                     # pylint: disable=invalid-name
+    # exponent used to tensor the right side identity matrix for our full system
+    n2 = tot_qubits - control - 1   # pylint: disable=invalid-name
 
     # Applies the gates twice (square in our formula)
     for k in range(0,2):
@@ -293,7 +311,7 @@ def errored_flipped_non_adj_CNOT(rho, control, target, qubit_error_probs):
                     perfect_gate_rho, qubit_error_probs[control-j-1], control-j-1, tot_qubits)
 
             else:
-                all_dots = np.append(all_dots, [next_dot], axis = 0) # adds the perfect gate to an array
+                all_dots = np.append(all_dots, [next_dot], axis = 0) # adds perfect gate
                 gate = all_dots[j] # sets the current gate
                 # applies the perfect gate to our density matrix
                 perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T))
@@ -307,18 +325,30 @@ def errored_flipped_non_adj_CNOT(rho, control, target, qubit_error_probs):
             # applies the perfect gate to our density matrix
             perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T))
             # apply our error gate and find the new density matrix
-            error_rho = gate_error(perfect_gate_rho, qubit_error_probs[target+j], target+j, tot_qubits)
-
+            error_rho = gate_error(
+                perfect_gate_rho, qubit_error_probs[target+j], target+j, tot_qubits
+            )
 
     return error_rho # returns the density matrix of your system
 
-### Implement an errored CNOT gate between 2 qubits depending on your control and target qubit
-def line_errored_CNOT(state, control, target, qubit_error_probs, form = 'psi'):
-    # state: the vector state representation or density matrix representation of your system
-    # control: control qubit index (starting from 0)
-    # target: target qubit index (starting from 0)
-    # qubit_error_probs: an array of the probability for errors of each qubit in your system
-    # form: either 'psi' for vector representation or 'rho' for density matrix that user inputs
+
+def line_errored_CNOT(state, control, target, qubit_error_probs, form='psi'): # pylint: disable=invalid-name
+    """
+    Apply an arbitrary CNOT gate between 2 qubits in a system with line
+    connectivity and Krauss errors. The Krauss error is applied to the target
+    qubit only, but it may be applied for every CNOT in the swap operations.
+
+    * state: the vector state representation or density matrix representation
+    of your system (default is state vector, see `form` arg for more)
+    * control: control qubit index (starting from 0)
+    * target: target qubit index (starting from 0)
+    * qubit_error_probs: an array of the probability for errors of each qubit
+    in your system
+    * form: if 'psi' we compute the density matrix on the fly, else we assume
+    we were passed density matrix.
+    """
+    # TODO: make the error random between targtet and control? Or keep it always target?
+    assert target != control, "target cannot equal control in `line_errored_CNOT`"
 
     # if the form is 'psi' find the density matrix
     if form == 'psi':
@@ -333,8 +363,7 @@ def line_errored_CNOT(state, control, target, qubit_error_probs, form = 'psi'):
             final_rho = errored_adj_CNOT(rho, control, target, qubit_error_probs)
         else:
             final_rho = errored_non_adj_CNOT(rho, control, target, qubit_error_probs)
-
-    #Check if it is a normal CNOT or a flipped CNOT gate
+    # Check if it is a normal CNOT or a flipped CNOT gate
     elif control > target:
         # Check if adjacent
         if control - target == 1:
@@ -348,7 +377,7 @@ def line_errored_CNOT(state, control, target, qubit_error_probs, form = 'psi'):
 ### - - - - - CZ Gates - - - - - ###
 
 ### Implement a CZ gate between 2 adjacent qubits in a system ###
-def errored_adj_CZ(rho, control, target, qubit_error_probs):
+def errored_adj_CZ(rho, control, target, qubit_error_probs): # pylint: disable=invalid-name
     # rho: the density matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0) (must be a larger index than control)
@@ -378,7 +407,7 @@ def errored_adj_CZ(rho, control, target, qubit_error_probs):
 
 
 ### Implement a non-adjacent CZ gate between 2 qubits in a system ###
-def errored_non_adj_CZ(rho, control, target, qubit_error_probs):
+def errored_non_adj_CZ(rho, control, target, qubit_error_probs): # pylint: disable=invalid-name
     # rho: the density matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0) (must be a larger index than control)
@@ -463,7 +492,7 @@ def errored_non_adj_CZ(rho, control, target, qubit_error_probs):
 
 
 ### Implement a CNOT gate between 2 qubits depending on your control and target qubit
-def line_errored_CZ(state, control, target, qubit_error_probs, form = 'psi'):
+def line_errored_CZ(state, control, target, qubit_error_probs, form='psi'): # pylint: disable=invalid-name
     # state: the vector state representation or density matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0)
@@ -541,16 +570,16 @@ def line_errored_CZ(state, control, target, qubit_error_probs, form = 'psi'):
 #     return final_rho
 
 
-### Takes the density matrix after a perfect operation and applies an error gate based on t1, t2, and tg ###
-def rad_error(rho, t1, t2, tg):
-    # rho: density matrix of qubit system after perfect gate was applied
-    # t1: the relaxation time of the qubits
-    # t2: the dephasing time of the qubits
-    # tg: time of the gate you are applying
+def rad_error(rho, t1, t2, tg): # pylint: disable=invalid-name,too-many-locals
+    """
+    Takes the density matrix after a perfect operation and applies a relaxation
+    and dephasing (rad) error gate based on t1, t2, and tg (gate length).
 
-    zero = np.array([1, 0])
-    one = np.array([0, 1])
-
+    * rho: density matrix of qubit system after perfect gate was applied
+    * t1: the relaxation time of the qubits
+    * t2: the dephasing time of the qubits
+    * tg: length in time of the logical gate you are applying
+    """
     # total number of qubits in your system
     tot_qubits = int(np.log(len(rho))/np.log(2))
 
@@ -591,7 +620,7 @@ def rad_error(rho, t1, t2, tg):
 
 
 ### Apply an adjacent CNOT gate between 2 qubits in a system with line connectivity and rad errors ###
-def rad_adj_CNOT(rho, control, target, t1, t2, tg):
+def rad_adj_CNOT(rho, control, target, t1, t2, tg): # pylint: disable=invalid-name
     # rho: the desnity matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0) (must be a larger index than control)
@@ -620,7 +649,7 @@ def rad_adj_CNOT(rho, control, target, t1, t2, tg):
 
 
 ### Apply a non-adjacent CNOT gate between 2 qubits in a system with line connectivity and rad errors ###
-def rad_non_adj_CNOT(rho, control, target, t1, t2, tg):
+def rad_non_adj_CNOT(rho, control, target, t1, t2, tg): # pylint: disable=invalid-name
     # rho: the density matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0) (must be a larger index than control)
@@ -680,7 +709,7 @@ def rad_non_adj_CNOT(rho, control, target, t1, t2, tg):
 
 
 ### Apply an adjacent flipped CNOT gate between 2 qubits in a system with line connectivity and rad errors ###
-def rad_flipped_adj_CNOT(rho, control, target, t1, t2, tg):
+def rad_flipped_adj_CNOT(rho, control, target, t1, t2, tg): # pylint: disable=invalid-name
     # rho: the density matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0) (must be a larger index than control)
@@ -709,7 +738,7 @@ def rad_flipped_adj_CNOT(rho, control, target, t1, t2, tg):
 
 
 ### Apply a non-adjacent flipped CNOT gate between 2 qubits in a system with line connectivity and rad errors ###
-def rad_flipped_non_adj_CNOT(rho, control, target, t1, t2, tg):
+def rad_flipped_non_adj_CNOT(rho, control, target, t1, t2, tg): # pylint: disable=invalid-name
     # rho: the density matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0) (must be a larger index than control)
@@ -769,7 +798,7 @@ def rad_flipped_non_adj_CNOT(rho, control, target, t1, t2, tg):
     return error_rho # returns the density matrix of your system
 
 ### Implement a rad CNOT gate between 2 qubits depending on your control and target qubit
-def line_rad_CNOT(state, control, target, t1, t2, tg, form = 'psi'):
+def line_rad_CNOT(state, control, target, t1, t2, tg, form = 'psi'): # pylint: disable=invalid-name
     # state: the vector state representation or density matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0)
@@ -805,7 +834,7 @@ def line_rad_CNOT(state, control, target, t1, t2, tg, form = 'psi'):
 ### - - - CZ GATES - - - ###
 
 ### Implement a rad CZ gate between 2 adjacent qubits in a system ###
-def rad_adj_CZ(rho, control, target, t1, t2, tg):
+def rad_adj_CZ(rho, control, target, t1, t2, tg): # pylint: disable=invalid-name
     # rho: the density matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0) (must be a larger index than control)
@@ -838,7 +867,7 @@ def rad_adj_CZ(rho, control, target, t1, t2, tg):
 
 
 ### Implement a non-adjacent rad CZ gate between 2 qubits in a system ###
-def rad_non_adj_CZ(rho, control, target, t1, t2, tg):
+def rad_non_adj_CZ(rho, control, target, t1, t2, tg): # pylint: disable=invalid-name
     # rho: the density matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0) (must be a larger index than control)
@@ -916,7 +945,7 @@ def rad_non_adj_CZ(rho, control, target, t1, t2, tg):
 
 
 ### Implement a CNOT gate between 2 qubits depending on your control and target qubit
-def line_rad_CZ(state, control, target, t1, t2, tg, form = 'psi'):
+def line_rad_CZ(state, control, target, t1, t2, tg, form = 'psi'): # pylint: disable=invalid-name
     # state: the vector state representation or density matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0)
@@ -944,7 +973,7 @@ def line_rad_CZ(state, control, target, t1, t2, tg, form = 'psi'):
 ### - - - CNOT GATES - - - ###
 
 ### Apply a adjacent CNOT gate between 2 qubits in system with line connectivity (probability of error and rad errors) ###
-def prob_rad_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs):
+def prob_rad_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs): # pylint: disable=invalid-name
     # rho: the desnity matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0) (must be a larger index than control)
@@ -952,9 +981,6 @@ def prob_rad_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs):
     # t2: The dephasing time of each physical qubit in your system
     # tg: The gate time of your gate operations
     # qubit_error_probs: an array of the probability for errors of each qubit in your system
-
-    # find our density matrix
-#     rho = np.kron(psi, psi[np.newaxis].conj().T)
 
     # How many total qubits are in our vector representation
     tot_qubits = int(np.log(len(rho))/np.log(2))
@@ -976,7 +1002,7 @@ def prob_rad_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs):
 
 
 ### Apply a non-adjacent CNOT gate between 2 qubits in system with line connectivity (probability of error and rad errors) ###
-def prob_rad_non_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs):
+def prob_rad_non_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs): # pylint: disable=invalid-name
     # rho: the density matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0) (must be a larger index than control)
@@ -1043,7 +1069,7 @@ def prob_rad_non_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs):
 
 
 ### Apply a adjacent flipped CNOT gate between 2 qubits in system with line connectivity (probability of error and rad errors) ###
-def prob_rad_flipped_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs):
+def prob_rad_flipped_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs): # pylint: disable=invalid-name
     # rho: the density matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0) (must be a larger index than control)
@@ -1074,7 +1100,7 @@ def prob_rad_flipped_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_prob
 
 
 ### Apply a non-adjacent flipped CNOT gate between 2 qubits in system with line connectivity (probability of error and rad errors) ###
-def prob_rad_flipped_non_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs):
+def prob_rad_flipped_non_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_probs): # pylint: disable=invalid-name
     # rho: the density matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0) (must be a larger index than control)
@@ -1142,7 +1168,7 @@ def prob_rad_flipped_non_adj_CNOT(rho, control, target, t1, t2, tg, qubit_error_
 
 
 ### Implement a CNOT gate between 2 qubits in system with line connectivity (probability of error and rad errors) ###
-def prob_line_rad_CNOT(state, control, target, t1, t2, tg, qubit_error_probs, form = 'psi'):
+def prob_line_rad_CNOT(state, control, target, t1, t2, tg, qubit_error_probs, form='psi'): # pylint: disable=invalid-name
     # state: the vector state representation or density matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0)
@@ -1179,7 +1205,7 @@ def prob_line_rad_CNOT(state, control, target, t1, t2, tg, qubit_error_probs, fo
 ### - - - CZ GATES - - - ###
 
 ### Implement a rad CZ gate between 2 adjacent qubits in a system ###
-def prob_rad_adj_CZ(rho, control, target, t1, t2, tg, qubit_error_probs):
+def prob_rad_adj_CZ(rho, control, target, t1, t2, tg, qubit_error_probs): # pylint: disable=invalid-name
     # rho: the density matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0) (must be a larger index than control)
@@ -1212,7 +1238,7 @@ def prob_rad_adj_CZ(rho, control, target, t1, t2, tg, qubit_error_probs):
 
 
 ### Implement a non-adjacent rad CZ gate between 2 qubits in a system ###
-def prob_rad_non_adj_CZ(rho, control, target, t1, t2, tg, qubit_error_probs):
+def prob_rad_non_adj_CZ(rho, control, target, t1, t2, tg, qubit_error_probs): # pylint: disable=invalid-name
     # rho: the density matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0) (must be a larger index than control)
@@ -1315,7 +1341,7 @@ def prob_rad_non_adj_CZ(rho, control, target, t1, t2, tg, qubit_error_probs):
 
 
 ### Implement a CNOT gate between 2 qubits depending on your control and target qubit
-def prob_line_rad_CZ(state, control, target, t1, t2, tg, qubit_error_probs, form = 'psi'):
+def prob_line_rad_CZ(state, control, target, t1, t2, tg, qubit_error_probs, form = 'psi'): # pylint: disable=invalid-name
     # state: the vector state representation or density matrix representation of your system
     # control: control qubit index (starting from 0)
     # target: target qubit index (starting from 0)
