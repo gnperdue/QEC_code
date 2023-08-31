@@ -11,6 +11,7 @@ from general_qec.gates import adj_CNOT, flipped_adj_CNOT, small_non_adj_CNOT
 from general_qec.gates import non_adj_CNOT, flipped_non_adj_CNOT, CNOT
 from general_qec.gates import cnot, flipped_cnot
 from general_qec.gates import adj_CZ, non_adj_CZ, CZ
+from general_qec.qec_helpers import one, zero
 
 LOGGER = logging.getLogger(__name__)
 
@@ -111,6 +112,20 @@ class TestGates(unittest.TestCase): # pylint: disable=too-many-instance-attribut
         self.assertTrue(np.all(
             non_adj_CZ(3, 0, 5) == CZ(3, 0, 5)
         ))
+
+    def test_distant_nonadj_cnot(self):
+        """Test distant non-adjacent CNOT gates"""
+        LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
+        # larger system
+        orig_psi = np.kron(np.kron(np.kron(np.kron(np.kron(zero, one), zero), zero), zero), one)
+        targ_psi = np.kron(np.kron(np.kron(np.kron(np.kron(one, one), zero), zero), zero), one)
+        result = np.matmul(CNOT(5, 0, 6), orig_psi)
+        self.assertTrue(np.all(result == targ_psi))
+        # larger system
+        orig_psi = np.kron(np.kron(np.kron(np.kron(np.kron(zero, one), zero), zero), zero), one)
+        targ_psi = np.kron(np.kron(np.kron(np.kron(np.kron(zero, one), zero), zero), one), one)
+        result = np.matmul(CNOT(1, 4, 6), orig_psi)
+        self.assertTrue(np.all(result == targ_psi))
 
 
 if __name__ == '__main__':
