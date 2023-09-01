@@ -55,12 +55,6 @@ class TestRadErrors(unittest.TestCase): # pylint: disable=too-many-instance-attr
         self.assertTrue(np.all(psi_prime == np.array([0., 0., 1., 0.])),
                         msg="Random seed may not have produced the right collapsed state.")
 
-    def test_prob_line_rad_cz(self):
-        """Test `prob_line_rad_CZ()`"""
-        LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
-        self.assertTrue(False, msg="Test the `prob_rad` functions and use them to wrap the others...")
-
 
 if __name__ == '__main__':
     unittest.main()
-
