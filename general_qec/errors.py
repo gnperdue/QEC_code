@@ -552,59 +552,6 @@ def line_errored_CZ(state, control, target, qubit_error_probs, form='psi'): # py
 
 ### - Gates with rad (relaxation and dephasing) errors (line connectivity) - ###
 
-### - - - CNOT GATES - - - ###
-
-# ### Takes the density matrix after a perfect operation and applies an error gate based on t1, t2, and tg ###
-# def rad_error(rho, t1, t2, tg):
-#     # rho: density matrix of qubit system after perfect gate was applied
-#     # t1: the relaxation time of the qubits
-#     # t2: the dephasing time of the qubits
-#     # tg: time of the gate you are applying
-
-#     zero = np.array([1, 0])
-#     one = np.array([0, 1])
-
-#     # index: index of qubit that gate was applied (target qubit in this case)
-#     ### - can add this, but for now all have same t1 and t2
-
-#     # total number of qubits in your system
-#     tot_qubits = int(np.log(len(rho))/np.log(2))
-
-#     p_t1 = np.exp(-tg/t1) # find the probability of relaxation
-#     p_t2 = np.exp(-tg/t2) # find the probability of dephasing
-#     p_reset = 1 - p_t1 # find the probability of resetting to equilibrium
-
-
-#     # find the dephasing (phase flip) gate operation
-#     p_z = (1-p_reset) * (1- (p_t2/p_t1)) * 0.5
-#     k_z = np.sqrt(p_z) * sigma_z
-
-#     # find the relaxation/thermal decay gate operation
-#     k_reset = np.sqrt(p_reset) * np.kron(zero, zero[np.newaxis].conj().T)
-
-#     # find the identity transformation gate operation
-#     p_I = 1 - p_z - p_reset
-#     k_I = np.sqrt(p_I) * sigma_I
-
-#     # apply the same error to all of our qubits in our system
-#     for i in range(tot_qubits):
-#         if i == 0:
-#             z_gate = k_z
-#             reset_gate = k_reset
-#             I_gate = k_I
-#         else:
-#             z_gate = np.kron(z_gate, k_z)
-#             reset_gate = np.kron(reset_gate, k_reset)
-#             I_gate = np.kron(I_gate, k_I)
-
-#     # find the density matrix with the 3 types of error gates we found
-#     final_rho = np.dot(z_gate, np.dot(rho, z_gate.conj().T)) + np.dot(
-#         reset_gate, np.dot(rho, reset_gate.conj().T)) + np.dot(
-#         I_gate, np.dot(rho, I_gate.conj().T))
-
-#     return final_rho
-
-
 def rad_error(rho, t1, t2, tg): # pylint: disable=invalid-name,too-many-locals
     """
     Takes the density matrix after a perfect operation and applies a relaxation
@@ -651,6 +598,7 @@ def rad_error(rho, t1, t2, tg): # pylint: disable=invalid-name,too-many-locals
 
     return final_rho #np.round(final_rho, 9)
 
+### - - - CNOT GATES - - - ###
 
 def rad_adj_CNOT(rho, control, target, t1, t2, tg): # pylint: disable=invalid-name,too-many-arguments
     """
