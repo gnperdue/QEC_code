@@ -412,10 +412,10 @@ def line_rad_CNOT(state, control, target, t1, t2, tg, form='psi'): # pylint: dis
     * tg: The gate time of your gate operations
     * form: either 'psi' for vector representation or 'rho' for density matrix that user inputs
     """
-    tot_qubits = int(np.log(len(rho))/np.log(2))
+    tot_qubits = int(np.log(len(state))/np.log(2))
     qubit_error_probs = [0.] * tot_qubits
     error_rho = prob_line_rad_CNOT(
-        state, control, target, t1, t2, tg, qubit_error_probs
+        state, control, target, t1, t2, tg, qubit_error_probs, form
     )
     return error_rho
 
@@ -475,7 +475,7 @@ def line_rad_CZ(state, control, target, t1, t2, tg, form='psi'): # pylint: disab
     * form: either 'psi' for vector representation or 'rho' for density matrix
     that user inputs
     """
-    tot_qubits = int(np.log(len(rho))/np.log(2))
+    tot_qubits = int(np.log(len(state))/np.log(2))
     qubit_error_probs = [0.] * tot_qubits
     final_rho = prob_line_rad_CZ(
         state, control, target, t1, t2, tg, qubit_error_probs, form
