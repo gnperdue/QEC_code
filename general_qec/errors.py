@@ -556,7 +556,7 @@ def prob_rad_non_adj_CNOT(
     error_rho = rho
 
     # Applies the gates twice (square in our formula)
-    for k in range(0,2):
+    for _ in range(0,2):
         # Indexing over the values of p to get the first half of the formula
         for j in range(p):
             # Sets the next component of the matrix multiplication up
@@ -659,7 +659,7 @@ def prob_rad_flipped_non_adj_CNOT(
     error_rho = rho
 
     # Applies the gates twice (square in our formula)
-    for k in range(0,2):
+    for _ in range(0,2):
         # Indexing over the values of p to get the first half of the formula
         for j in range(p):
             # Sets the next component of the matrix multiplication up
@@ -844,7 +844,7 @@ def prob_rad_non_adj_CZ(
     error_rho = rho
 
     # Applies the gates twice (square in our formula)
-    for k in range(0,2):
+    for _ in range(0,2):
         # Indexing over the values of p to get the first half of the formula
         for j in range(p):
             # Sets the next component of the matrix multiplication up

@@ -17,7 +17,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class TestProbRadErrorsCZ(unittest.TestCase): # pylint: disable=too-many-instance-attributes
-    """Tests for the `errors` (noise model) module -- the "rad" functions."""
+    """Tests for the `errors` (noise model) module -- the Krauss+"RAD" CZ functions."""
 
     def test_adjacent_prob_line_rad_cz(self):
         """Test adjacent line-connected cz with krauss and RAD errors."""

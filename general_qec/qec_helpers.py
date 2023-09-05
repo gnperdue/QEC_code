@@ -32,7 +32,7 @@ def vector_state_to_bit_state(logical_state, k):
             index_of_element = np.append(index_of_element, i)
 
     # How many total qubits are in our vector representation
-    n = int(np.log(len(logical_state))/np.log(2))
+    n = int(np.log(len(logical_state))/np.log(2)) # pylint: disable=invalid-name
 
     # Keeps track of the logical bits needed
     # (i.e. a|000> + b|111> : 000 and 111 are considered separate and we will
@@ -65,15 +65,14 @@ def print_state_info(logical_state, k):
     reduce (2^n x 1) - e.g. np.kron(one, one)
     * k: the number of qubits you wish to reduce the system to (must be less
     than the full system size) - e.g. 2 for np.kron(one, one)
-
-    TODO: `k` is a confusing argument here...
     """
-    bit_states, index, vector_state = \
+    # TODO: `k` is a confusing argument here...
+    bit_states, _, vector_state = \
         vector_state_to_bit_state(logical_state, k)
     non_zero_vector_state = vector_state[vector_state != 0]
 
-    for j in range(len(bit_states)):
-        print(bit_states[j], ': ', non_zero_vector_state[j])
+    for idx, bit_state in enumerate(bit_states):
+        print(bit_state, ': ', non_zero_vector_state[idx])
 
 
 def collapse_ancilla(logical_state, k):
@@ -87,7 +86,7 @@ def collapse_ancilla(logical_state, k):
     representation)
     """
     # How many total qubits are in our vector representation
-    n = int(np.log(len(logical_state))/np.log(2))
+    n = int(np.log(len(logical_state))/np.log(2)) # pylint: disable=invalid-name
 
     # Find all of the bit combinations that are in our vector state
     # representation
@@ -102,7 +101,7 @@ def collapse_ancilla(logical_state, k):
     # whether or not they have the same ancilla qubits
     for j in range(int(len(all_bits))):
         organized_bits = all_bits
-        for i in range(len(all_bits)):
+        for i in range(len(all_bits)): # pylint: disable=consider-using-enumerate
             if all_bits[j][n-k:] != all_bits[i][n-k:]:
                 organized_bits = np.delete(
                     organized_bits, organized_bits == all_bits[i])
@@ -120,14 +119,6 @@ def collapse_ancilla(logical_state, k):
     for k in range(rows):
         summation = 0
         for j in range(cols):
-            # TODO: `int(indices[all_bits == all_organized_bits[k][j]])`
-            # --> generates a warning:
-            # "DeprecationWarning: Conversion of an array with ndim > 0 to a
-            # scalar is deprecated, and will error in future. Ensure you
-            # extract a single element from your array before performing this
-            # operation. (Deprecated NumPy 1.25.)" -> Think we fix this with:
-            # `int(indices[all_bits == all_organized_bits[k][j]][0])`, but I
-            # want to write a few more tests before changing.
             summation += np.abs(
                 logical_state[
                     int(indices[all_bits == all_organized_bits[k][j]][0])
@@ -142,27 +133,27 @@ def collapse_ancilla(logical_state, k):
     collapsed_bits = all_organized_bits[index]
 
     # Here we take the vector state and separate it into vectors so that we
-    # can manipulate it
-    x = 0 # used to track first index where vector_state is non-zero
+    # can manipulate it.
+    first_nonzero_idx = 0
 
-    for i in range(len(logical_state)):
-        if logical_state[i] != 0:
+    for idx, log_state in enumerate(logical_state):
+        if log_state != 0:
             # initialize the vector that will hold the single non-zero value
             # in the proper spot
             value_position = np.zeros((2**n,), dtype=complex)
             # insert the non-zero value in the correct spot
-            value_position[i,] = logical_state[i]
+            value_position[idx,] = log_state
             # Add the value position vector to an array of all the error places
-            if x == 0:
+            if first_nonzero_idx == 0:
                 all_vector_states = [value_position]
             else:
                 all_vector_states = np.append(
                     all_vector_states, [value_position] , axis=0)
-            x+=1
+            first_nonzero_idx += 1 # pylint: disable=invalid-name
 
     # find the number of rows and columns in the all error state array so that
     # we can loop over the rows later
-    num_rows, num_cols = np.array(all_vector_states).shape
+    num_rows, _ = np.array(all_vector_states).shape
 
     # take out the vectors that do not match our collapsed bit state
     for j in range(num_rows):
@@ -178,8 +169,8 @@ def collapse_ancilla(logical_state, k):
 
     # normalizing our state
     pop = 0
-    for i in range(len(probs)):
-        pop += probs[i]
+    for prob in probs:
+        pop += prob
 
     norm = np.linalg.norm(collapsed_vector_state)
 #     print_state_info(collapsed_vector_state, n)
@@ -198,8 +189,7 @@ def ancilla_reset(logical_state, k):
     representation)
     """
     # How many total qubits are in our vector representation
-    n = int(np.log(len(logical_state))/np.log(2))
-
+    n = int(np.log(len(logical_state))/np.log(2)) # pylint: disable=invalid-name
     reset_state = logical_state
 
     all_ancilla_bits = vector_state_to_bit_state(reset_state, n)[0]
@@ -213,7 +203,6 @@ def ancilla_reset(logical_state, k):
                         np.identity(2**(i)),
                         np.kron(sigma_x, np.identity(2**(n-i-1)))
                     )
-
                     # reset the ith ancilla qubit using the reset gate
                     reset_state = np.dot(reset_gate, reset_state)
 
@@ -227,27 +216,27 @@ def remove_small_values(logical_state, tolerance=1e-15):
     * logical_state: The vector state representation of your full qubit system
     """
     # How many total qubits are in our vector representation
-    n = int(np.log(len(logical_state))/np.log(2))
+    n = int(np.log(len(logical_state))/np.log(2)) # pylint: disable=invalid-name
 
-    x=0
-    for j in range(len(logical_state)):
-        if (abs(logical_state[j]) > tolerance):
+    first_nonzero_idx = 0
+    for idx, log_state in enumerate(logical_state):
+        if abs(log_state) > tolerance:
             # initialize the vector that will hold the single non-zero value in
             # the proper spot
             value_position = np.zeros((1,2**n), dtype=complex)
             # insert the non-zero value in the correct spot
-            value_position[:,j] = logical_state[j]
+            value_position[:,idx] = log_state
             # Add the value position vector to an array of all the error places
-            if x == 0:
+            if first_nonzero_idx == 0:
                 all_vector_states = value_position
             else:
                 all_vector_states = \
                     np.append(all_vector_states, value_position , axis=0)
-            x+=1
+            first_nonzero_idx += 1
 
     # find the number of rows and columns in the all error state array so that
     # we can loop over the rows later
-    num_rows, num_cols = all_vector_states.shape
+    num_rows, _ = all_vector_states.shape
 
     # combine the vector states again
     corrected_vector_state = np.zeros((2**(n),), dtype=complex)
@@ -258,8 +247,7 @@ def remove_small_values(logical_state, tolerance=1e-15):
     return corrected_vector_state
 
 
-
-def CNOT_gate_tot(control, target):
+def CNOT_gate_tot(control, target): # pylint: disable=invalid-name
     """
     Find out how many operations your CNOT gate is if it is line connected
     """
@@ -288,9 +276,9 @@ def collapse_dm(rho):
 
     # Measure probability of each measurement operator
     meas_probs = np.array([])
-    for i in range(len(meas_operators)):
+    for operator in meas_operators:
         prob = np.trace(
-            np.dot(meas_operators[i].conj().T, np.dot(meas_operators[i], rho))
+            np.dot(operator.conj().T, np.dot(operator, rho))
         ).real   # GP: diagonals should be real -- enforce to suppress warning
         meas_probs = np.append(meas_probs, prob)
 
