@@ -21,7 +21,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class TestErrors(unittest.TestCase): # pylint: disable=too-many-instance-attributes
-    """Tests for the `errors` (noise model) module."""
+    """Tests for the `errors` (noise model) module - Krauss error functions."""
 
     def test_random_qubit_x_error(self):
         """Test `random_qubit_x_error()`"""
