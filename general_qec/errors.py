@@ -6,8 +6,6 @@ import numpy as np
 from general_qec.gates import hadamard, cnot, flipped_cnot, cz
 from general_qec.gates import sigma_x, sigma_y, sigma_z, sigma_I
 
-# TODO: make a `random_qubit_gate_error()` that accepts a unitary as an
-# argument and use it to refactor `random_qubit_x_error`, z error, etc.
 
 def random_single_qubit_error(logical_state, single_qubit_unitary, qubit_range=None):
     """
