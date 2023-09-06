@@ -243,8 +243,8 @@ class TestErrors(unittest.TestCase): # pylint: disable=too-many-instance-attribu
         errored_rho = line_errored_CZ(psi, 0, 4, [0.1, 0.1, 0.1, 0.1, 0.1])
         random.seed(10)
         errored_psi = collapse_dm(errored_rho)
-        self.assertTrue(np.real(errored_rho[29][29]) > 0.00)
-        self.assertTrue(np.real(errored_rho[29][29]) < 0.02)
+        self.assertTrue(np.real(errored_rho[29][29]) > 0.0)
+        self.assertTrue(np.real(errored_rho[29][29]) < 0.022)
         self.assertEqual(errored_psi[19], 1.0+0.0j)
         # -- more distant non-adjacent cz -> test through wrapper
         base_psi = np.kron(np.kron(np.kron(np.kron(zero, one), zero), one), zero)

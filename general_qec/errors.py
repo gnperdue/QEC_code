@@ -9,14 +9,15 @@ from general_qec.gates import sigma_x, sigma_y, sigma_z, sigma_I
 # TODO: make a `random_qubit_gate_error()` that accepts a unitary as an
 # argument and use it to refactor `random_qubit_x_error`, z error, etc.
 
-def random_qubit_x_error(logical_state, qubit_range=None):
+def random_single_qubit_error(logical_state, single_qubit_unitary, qubit_range=None):
     """
-    Applies a random X rotation to one of the physical qubits in your system,
-    selected uniformly randomly - can choose "no error" with the same
-    probability as any given qubit.
+    Applies a single qubit unitary to a uniformly randomly selected qubit in the
+    range - can choose "no error" with the same probability as any given qubit
+    if a range is not specified (so, probability of no error falls like 1/n).
 
     * logical_state: The logical state of the N qubit system you wish to
     apply the error to - e.g. np.kron(one, zero)
+    * single_qubit_unitary: the gate applied
     * qubit_range: The indices you want to consider in your error application
     (starts at 0) - e.g., a *tuple* like (0, 2)
     """
@@ -35,44 +36,39 @@ def random_qubit_x_error(logical_state, qubit_range=None):
     if error_index > -1:
         error_gate = np.kron(
             np.identity(2**(error_index)),
-            np.kron(sigma_x, np.identity(2**(nqubits-error_index-1)))
+            np.kron(single_qubit_unitary, np.identity(2**(nqubits-error_index-1)))
         )
         errored_logical_state = np.dot(error_gate, logical_state)
 
     return errored_logical_state, error_index
+
+
+def random_qubit_x_error(logical_state, qubit_range=None):
+    """
+    Applies a Pauli X to a uniformly randomly selected qubit in the
+    range - can choose "no error" with the same probability as any given qubit
+    if a range is not specified (so, probability of no error falls like 1/n).
+
+    * logical_state: The logical state of the N qubit system you wish to
+    apply the error to - e.g. np.kron(one, zero)
+    * qubit_range: The indices you want to consider in your error application
+    (starts at 0) - e.g., a *tuple* like (0, 2)
+    """
+    return random_single_qubit_error(logical_state, sigma_x, qubit_range)
 
 
 def random_qubit_z_error(logical_state, qubit_range=None):
     """
-    Applies a random Z rotation to one of the physical qubits in your system,
-    selected uniformly randomly - can choose "no error" with the same
-    probability as any given qubit.
+    Applies a Pauli Z to a uniformly randomly selected qubit in the
+    range - can choose "no error" with the same probability as any given qubit
+    if a range is not specified (so, probability of no error falls like 1/n).
 
     * logical_state: The logical state of the N qubit system you wish to
     apply the error to - e.g. np.kron(one, zero)
     * qubit_range: The indices you want to consider in your error application
     (starts at 0) - e.g., a *tuple* like (0, 2)
     """
-    # total number of qubits in your system
-    nqubits = int(np.log(len(logical_state))/np.log(2))
-
-    # Choose the index of the qubit you want to apply the error to.
-    error_index = -1
-    if qubit_range is not None:
-        error_index = random.randint(qubit_range[0], qubit_range[1])
-    else:
-        error_index = random.randint(-1, nqubits-1)
-
-    # Apply the error depending on the index
-    errored_logical_state = logical_state
-    if error_index > -1:
-        error_gate = np.kron(
-            np.identity(2**(error_index)),
-            np.kron(sigma_z, np.identity(2**(nqubits-error_index-1)))
-        )
-        errored_logical_state = np.dot(error_gate, logical_state)
-
-    return errored_logical_state, error_index
+    return random_single_qubit_error(logical_state, sigma_z, qubit_range)
 
 
 ### - Gates which contain probability for errors (line connectivity) - ###
@@ -488,6 +484,16 @@ def line_rad_CZ(state, control, target, t1, t2, tg, form='psi'): # pylint: disab
 
 ### - Gates which contain Krauss and rad (relaxation & dephasing) errors (line connectivity) - ###
 
+def check_apply_krauss(qubit_error_probs):
+    """Check the Krauss error probabilities vector for error application conditions."""
+    return (qubit_error_probs is not None) and (sum(qubit_error_probs) > 0)
+
+
+def check_apply_rad(t1, t2, tg): # pylint: disable=invalid-name
+    """Check qubit and gate timing info for RAD error applicaiton conditions."""
+    return (t1 is not None) and (t2 is not None) and (tg is not None)
+
+
 ### - - - CNOT GATES - - - ###
 
 def prob_rad_adj_CNOT(
@@ -506,8 +512,8 @@ def prob_rad_adj_CNOT(
     * qubit_error_probs: an array of the probability for Krauss errors of each
     qubit in your system
     """
-    # TODO: handle `None`s in the error parameter arguments!
-    # How many total qubits are in our vector representation
+    apply_krauss_errors = check_apply_krauss(qubit_error_probs)
+    apply_rad_errors = check_apply_rad(t1, t2, tg)
     tot_qubits = int(np.log(len(rho))/np.log(2))
 
     # Adds the dimensions needed depending on the tot_qubits
@@ -519,12 +525,14 @@ def prob_rad_adj_CNOT(
     gate = np.kron(np.identity(2**(n1)), np.kron(cnot, np.identity(2**(n2))))
 
     # applies the perfect gate to our density matrix
-    perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T))
+    final_rho = np.dot(gate, np.dot(rho, gate.conj().T))
     # apply our error gates and find the new density matrix
-    error_rho = gate_error(perfect_gate_rho, qubit_error_probs[target], target, tot_qubits)
-    error_rho = rad_error(error_rho, t1, t2, tg)
+    if apply_krauss_errors:
+        final_rho = gate_error(final_rho, qubit_error_probs[target], target, tot_qubits)
+    if apply_rad_errors:
+        final_rho = rad_error(final_rho, t1, t2, tg)
 
-    return error_rho
+    return final_rho
 
 
 def prob_rad_non_adj_CNOT(
@@ -542,8 +550,8 @@ def prob_rad_non_adj_CNOT(
     * tg: The gate time of your gate operations
     * qubit_error_probs: an array of the probability for errors of each qubit in your system
     """
-    # TODO: handle `None`s in the error parameter arguments!
-    # How many total qubits are in our vector representation
+    apply_krauss_errors = check_apply_krauss(qubit_error_probs)
+    apply_rad_errors = check_apply_rad(t1, t2, tg)
     tot_qubits = int(np.log(len(rho))/np.log(2))
 
     # used to index over all gates neeeded to compose final gate
@@ -573,21 +581,25 @@ def prob_rad_non_adj_CNOT(
             # sets the current gate
             gate = all_dots[j]
             # applies the perfect gate to our density matrix
-            perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T))
+            error_rho = np.dot(gate, np.dot(error_rho, gate.conj().T))
             # apply our error gate and find the new density matrix
-            error_rho = gate_error(
-                perfect_gate_rho, qubit_error_probs[j+control+1], j+control+1, tot_qubits)
-            error_rho = rad_error(error_rho, t1, t2, tg)
+            if apply_krauss_errors:
+                error_rho = gate_error(
+                    error_rho, qubit_error_probs[j+control+1], j+control+1, tot_qubits)
+            if apply_rad_errors:
+                error_rho = rad_error(error_rho, t1, t2, tg)
 
         # Indexing over values of p such that we get the 2nd half of the equation together
         for j in range(p - 2):
             gate = all_dots[p-j-2] # sets the current gate
             # applies the perfect gate to our density matrix
-            perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T))
+            error_rho = np.dot(gate, np.dot(error_rho, gate.conj().T))
             # apply our error gate and find the new density matrix
-            error_rho = gate_error(
-                perfect_gate_rho, qubit_error_probs[target-j-2+1], target-j-2+1, tot_qubits)
-            error_rho = rad_error(error_rho, t1, t2, tg)
+            if apply_krauss_errors:
+                error_rho = gate_error(
+                    error_rho, qubit_error_probs[target-j-2+1], target-j-2+1, tot_qubits)
+            if apply_rad_errors:
+                error_rho = rad_error(error_rho, t1, t2, tg)
 
     return error_rho # returns the density matrix of your system
 
@@ -608,8 +620,8 @@ def prob_rad_flipped_adj_CNOT(
     * qubit_error_probs: an array of the probability for errors of each qubit
     in your system
     """
-    # TODO: handle `None`s in the error parameter arguments!
-    # How many total qubits are in our vector representation
+    apply_krauss_errors = check_apply_krauss(qubit_error_probs)
+    apply_rad_errors = check_apply_rad(t1, t2, tg)
     tot_qubits = int(np.log(len(rho))/np.log(2))
 
     # Adds the dimensions needed depending on the tot_qubits
@@ -621,12 +633,14 @@ def prob_rad_flipped_adj_CNOT(
     gate = np.kron(np.identity(2**(n1)), np.kron(flipped_cnot, np.identity(2**(n2))))
 
     # applies the perfect gate to our density matrix
-    perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T))
-    # apply our error gate and find the new density matrix
-    error_rho = gate_error(perfect_gate_rho, qubit_error_probs[target], target, tot_qubits)
-    error_rho = rad_error(error_rho, t1, t2, tg)
+    final_rho = np.dot(gate, np.dot(rho, gate.conj().T))
+    # apply errors and find the new density matrix
+    if apply_krauss_errors:
+        final_rho = gate_error(final_rho, qubit_error_probs[target], target, tot_qubits)
+    if apply_rad_errors:
+        final_rho = rad_error(final_rho, t1, t2, tg)
 
-    return error_rho
+    return final_rho
 
 
 def prob_rad_flipped_non_adj_CNOT(
@@ -645,8 +659,8 @@ def prob_rad_flipped_non_adj_CNOT(
     * qubit_error_probs: an array of the probability for errors of each qubit
     in your system
     """
-    # TODO: handle `None`s in the error parameter arguments!
-    # How many total qubits are in our vector representation
+    apply_krauss_errors = check_apply_krauss(qubit_error_probs)
+    apply_rad_errors = check_apply_rad(t1, t2, tg)
     tot_qubits = int(np.log(len(rho))/np.log(2))
 
     # used to index over all gates neeeded to compose final gate
@@ -676,32 +690,38 @@ def prob_rad_flipped_non_adj_CNOT(
                 all_dots = np.append(all_dots, [next_dot], axis = 0)
             gate = all_dots[j] # sets the current gate
             # applies the perfect gate to our density matrix
-            perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T))
+            error_rho = np.dot(gate, np.dot(error_rho, gate.conj().T))
             # apply our error gates and find the new density matrix
-            error_rho = gate_error(
-                perfect_gate_rho, qubit_error_probs[control-j-1], control-j-1, tot_qubits)
-            error_rho = rad_error(error_rho, t1, t2, tg)
+            if apply_krauss_errors:
+                error_rho = gate_error(
+                    error_rho, qubit_error_probs[control-j-1], control-j-1, tot_qubits)
+            if apply_rad_errors:
+                error_rho = rad_error(error_rho, t1, t2, tg)
 
         # Indexing over values of p such that we get the 2nd half of the equation together
         for j in range(p - 2):
             gate = all_dots[p-j-2] # sets the current gate
             # applies the perfect gate to our density matrix
-            perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T))
+            error_rho = np.dot(gate, np.dot(error_rho, gate.conj().T))
             # apply our error gates and find the new density matrix
-            error_rho = gate_error(
-                perfect_gate_rho, qubit_error_probs[target+j+1], target+j+1, tot_qubits)
-            error_rho = rad_error(error_rho, t1, t2, tg)
+            if apply_krauss_errors:
+                error_rho = gate_error(
+                    error_rho, qubit_error_probs[target+j+1], target+j+1, tot_qubits)
+            if apply_rad_errors:
+                error_rho = rad_error(error_rho, t1, t2, tg)
 
     return error_rho # returns the density matrix of your system
 
 
 def prob_line_rad_CNOT(
-        state, control, target, t1, t2, tg, qubit_error_probs, form='psi'
+        state, control, target, t1, t2, tg, qubit_error_probs,
+        form='psi', remove_small_values=True
     ): # pylint: disable=invalid-name,too-many-arguments
     """
     Implement a CNOT gate between 2 qubits in system with line
     connectivity with Krauss and relaxation and dephasing errors.
-    The Krauss error is applied to the target qubit only.
+    The Krauss error is applied to the target qubit only. Returns
+    the density matrix after the gate with appropriate errors.
 
     * state: the vector state representation or density matrix representation
     of your system (default assumes a state vector)
@@ -714,6 +734,8 @@ def prob_line_rad_CNOT(
     in your system
     * form: either 'psi' for vector representation or 'rho' for density matrix
     that user inputs
+    * remove_small_values: trim entries below 1e-15 from the output density
+    matrix
     """
     assert control != target, "Control cannot equal target in `prob_line_rad_CNOT()`"
     # if the form is 'psi' find the density matrix
@@ -744,10 +766,10 @@ def prob_line_rad_CNOT(
                 rho, control, target, t1, t2, tg, qubit_error_probs
             )
 
-    # TODO: make this optional? - remove small values
-    final_rho[np.abs(final_rho) < 1e-15] = 0
+    if remove_small_values:
+        final_rho[np.abs(final_rho) < 1e-15] = 0
 
-    return final_rho # output is always the density matrix after the operation
+    return final_rho
 
 
 ### - - - CZ GATES - - - ###
@@ -767,8 +789,8 @@ def prob_rad_adj_CZ(
     * tg: The gate time of your gate operations
     * qubit_error_probs: an array of the probability for errors of each qubit in your system
     """
-    # TODO: handle `None`s in the error parameter arguments!
-    # How many total qubits are in our vector representation
+    apply_krauss_errors = check_apply_krauss(qubit_error_probs)
+    apply_rad_errors = check_apply_rad(t1, t2, tg)
     tot_qubits = int(np.log(len(rho))/np.log(2))
 
     # Adds the dimensions needed depending on the tot_qubits
@@ -786,13 +808,15 @@ def prob_rad_adj_CZ(
     gate = np.kron(np.identity(2**(n1)), np.kron(cz, np.identity(2**(n2))))
     # remove small values
     gate[np.abs(gate) < 1e-15] = 0
-    perfect_gate_rho = np.dot(gate, np.dot(rho, gate.conj().T))
+    final_rho = np.dot(gate, np.dot(rho, gate.conj().T))
 
     # apply our error gate and find the new density matrix
-    error_rho = gate_error(perfect_gate_rho, qubit_error_probs[target], target, tot_qubits)
-    error_rho = rad_error(error_rho, t1, t2, tg)
+    if apply_krauss_errors:
+        final_rho = gate_error(final_rho, qubit_error_probs[target], target, tot_qubits)
+    if apply_rad_errors:
+        final_rho = rad_error(final_rho, t1, t2, tg)
 
-    return error_rho
+    return final_rho
 
 
 def prob_rad_non_adj_CZ(
@@ -811,8 +835,8 @@ def prob_rad_non_adj_CZ(
     * qubit_error_probs: an array of the probability for errors of each qubit
     in your system
     """
-    # TODO: handle `None`s in the error parameter arguments!
-    # How many total qubits are in our vector representation
+    apply_krauss_errors = check_apply_krauss(qubit_error_probs)
+    apply_rad_errors = check_apply_rad(t1, t2, tg)
     tot_qubits = int(np.log(len(rho))/np.log(2))
 
     # used to index over all gates neeeded to compose final gate
@@ -839,10 +863,8 @@ def prob_rad_non_adj_CZ(
         )
     )
     # apply the hadamard first to take it to the (+, -) basis
+    # no errors here - just changing basis (asserting our hardware can do native CZ)
     rho = np.dot(h_gate, np.dot(rho, h_gate.conj().T))
-    # TODO: should we apply these errors? I don't think so, just changing basis.
-    # rho = gate_error(rho, qubit_error_probs[target], target, tot_qubits)
-    # rho = rad_error(rho, t1, t2, tg)
     # accumulate errors
     error_rho = rho
 
@@ -861,39 +883,50 @@ def prob_rad_non_adj_CZ(
                 all_dots = np.append(all_dots, [next_dot], axis = 0) # adds perfect gate
             gate = all_dots[j] # sets the current gate
             # applies the perfect gate to our density matrix
-            perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T))
+            error_rho = np.dot(gate, np.dot(error_rho, gate.conj().T))
             # apply our error gate and find the new density matrix
-            error_rho = gate_error(
-                perfect_gate_rho, qubit_error_probs[index], index, tot_qubits
-            )
-            error_rho = rad_error(error_rho, t1, t2, tg)
+            if apply_krauss_errors:
+                error_rho = gate_error(
+                    error_rho, qubit_error_probs[index], index, tot_qubits
+                )
+            if apply_rad_errors:
+                error_rho = rad_error(error_rho, t1, t2, tg)
 
         # Indexing over values of p such that we get the 2nd half of the equation together
         for j in range(p - 2):
             index = target - j - 1 if (control < target) else target + j + 1
             gate = all_dots[p-j-2] # sets the current gate
             # applies the perfect gate to our density matrix
-            perfect_gate_rho = np.dot(gate, np.dot(error_rho, gate.conj().T))
+            error_rho = np.dot(gate, np.dot(error_rho, gate.conj().T))
             # apply our error gate and find the new density matrix
-            error_rho = gate_error(
-                perfect_gate_rho, qubit_error_probs[index], index, tot_qubits
-            )
-            error_rho = rad_error(error_rho, t1, t2, tg)
+            if apply_krauss_errors:
+                error_rho = gate_error(
+                    error_rho, qubit_error_probs[index], index, tot_qubits
+                )
+            if apply_rad_errors:
+                error_rho = rad_error(error_rho, t1, t2, tg)
 
-    # Calculate the final rho
+    # Calculate the final rho - return to original basis
+    # apply our "effective CZ" error here (returning to basis)
     error_rho = np.dot(h_gate, np.dot(error_rho, h_gate.conj().T))
-    error_rho = gate_error(error_rho, qubit_error_probs[target], target, tot_qubits)
-    error_rho = rad_error(error_rho, t1, t2, tg)
+    if apply_krauss_errors:
+        error_rho = gate_error(
+            error_rho, qubit_error_probs[index], index, tot_qubits
+        )
+    if apply_rad_errors:
+        error_rho = rad_error(error_rho, t1, t2, tg)
 
     return error_rho # returns the density matrix of your system
 
 
 def prob_line_rad_CZ(
-        state, control, target, t1, t2, tg, qubit_error_probs, form='psi'
+        state, control, target, t1, t2, tg, qubit_error_probs,
+        form='psi', remove_small_values=True
     ): # pylint: disable=invalid-name,too-many-arguments
     """
     Implement a CNOT gate between 2 qubits depending on your control and target
-    qubit with Krauss and relaxation and dephasing (RAD) errors.
+    qubit with Krauss and relaxation and dephasing (RAD) errors. Returns
+    the density matrix after the gate with appropriate errors.
 
     * state: the vector state representation or density matrix representation of
     your system (default is state vector)
@@ -906,6 +939,8 @@ def prob_line_rad_CZ(
     your system
     * form: either 'psi' for vector representation or 'rho' for density matrix
     that user inputs
+    * remove_small_values: trim entries below 1e-15 from the output density
+    matrix
     """
     # TODO: make the error random between targtet and control? Or keep it always target?
     assert target != control, "target cannot equal control in `prob_line_rad_CZ()`"
@@ -921,8 +956,8 @@ def prob_line_rad_CZ(
     else:
         final_rho = prob_rad_non_adj_CZ(rho, control, target, t1, t2, tg, qubit_error_probs)
 
-    # TODO: make this optional? - remove small values
-    final_rho[np.abs(final_rho) < 1e-15] = 0
+    if remove_small_values:
+        final_rho[np.abs(final_rho) < 1e-15] = 0
 
     return final_rho # output is always the density matrix after the operation
 
