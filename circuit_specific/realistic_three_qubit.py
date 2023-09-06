@@ -6,8 +6,9 @@ import random
 
 import numpy as np
 from general_qec.qec_helpers import one, zero
-from general_qec.gates import CNOT
-from general_qec.errors import *
+from general_qec.gates import CNOT, sigma_x
+from general_qec.errors import prob_line_rad_CNOT, line_rad_CNOT, line_errored_CNOT
+from general_qec.errors import spam_error, gate_error, rad_error
 
 # Masurement operators for individual qubits
 zero_meas = np.kron(zero, zero[np.newaxis].conj().T)
@@ -86,7 +87,7 @@ def initialize_three_qubit_realisitc(            # pylint: disable=too-many-argu
 def three_qubit_realistic(
         initial_rho, t1=None, t2=None, tg=None,
         qubit_error_probs=None, spam_prob=None
-    ): # pylint: disable=invalid-name,too-many-arguments,too-many-locals,too-many-statements,too-many-branches
+    ): # pylint: disable=invalid-name,too-many-arguments,too-many-locals,too-many-statements
     """
     Implements the 3 qubit circuit with relaxation and dephasing errors, gate
     error probabilities, and spam errors.
@@ -111,13 +112,6 @@ def three_qubit_realistic(
     measure10 = np.kron(np.identity(2**3), np.kron(one_meas, zero_meas))
     measure11 = np.kron(np.identity(2**3), np.kron(one_meas, one_meas))
     all_meas = np.array([measure00, measure01, measure10, measure11])
-
-    # measurement_ops = np.array([
-    #     [np.kron(np.identity(2**3), np.kron(zero_meas, zero_meas)),
-    #      np.kron(np.identity(2**3), np.kron(zero_meas, one_meas))],
-    #     [np.kron(np.identity(2**3), np.kron(one_meas, zero_meas)),
-    #      np.kron(np.identity(2**3), np.kron(one_meas, one_meas))]
-    # ]).flatten()
 
     # Apply the CNOT gates needed to change the state of the syndrome ancilla
     detection_rho = initial_rho
