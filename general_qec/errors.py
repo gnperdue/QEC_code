@@ -280,6 +280,9 @@ def rad_error(rho, t1, t2, tg): # pylint: disable=invalid-name,too-many-locals
     * t2: the dephasing time of the qubits
     * tg: length in time of the logical gate you are applying
     """
+    # TODO: we don't yet handle only depolarizing or dephasing... bail if one is None
+    if ((t1 is None) or (t2 is None) or (tg is None)):
+        return rho
     # total number of qubits in your system
     tot_qubits = int(np.log(len(rho))/np.log(2))
 
