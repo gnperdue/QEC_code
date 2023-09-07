@@ -43,6 +43,7 @@ class TestHelpers(unittest.TestCase):
     def test_ancilla_functions(self):
         """Tests for various ancilla manipulation functions"""
         LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
+        ## --
         test_state1 = np.kron(np.kron(superpos, superpos), superpos)
         random.seed(10)  # fix the collapsed state
         collapsed_vector_state = collapse_ancilla(test_state1, 1)
@@ -51,6 +52,7 @@ class TestHelpers(unittest.TestCase):
         reset_state = ancilla_reset(collapsed_vector_state, 1)
         self.assertEqual(reset_state.shape, (8,))
         self.assertAlmostEqual(reset_state[0], 0.5+0.0j)
+        # --
         three_qubit = np.kron(np.kron(zero, zero), zero)
         test_state2 = np.kron(np.kron(three_qubit, superpos), superpos)
         random.seed(10)  # fix the collapsed state
@@ -60,6 +62,16 @@ class TestHelpers(unittest.TestCase):
         reset_state = ancilla_reset(collapsed_vector_state, 2)
         self.assertEqual(reset_state.shape, (32,))
         self.assertAlmostEqual(reset_state[0], 1.0+0.0j)
+        # --
+        three_qubit = np.kron(np.kron(superpos, superpos), superpos)
+        test_state3 = np.kron(np.kron(three_qubit, superpos), superpos)
+        random.seed(10)  # fix the collapsed state
+        collapsed_vector_state = collapse_ancilla(test_state3, 2)
+        self.assertTrue(
+            False,
+            msg="Check the data qubits are still in superposition, but the anciall have collapsed"
+        )
+        reset_state = ancilla_reset(collapsed_vector_state, 2)
 
     def test_remove_small_values(self):
         """Tests for `remove_small_values()`"""

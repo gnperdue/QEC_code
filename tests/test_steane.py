@@ -90,12 +90,10 @@ class TestSteaneCode(unittest.TestCase):
     """Tests for Steane code functions."""
 
     def setUp(self) -> None:
-        self.zero_state = np.kron(
-            zero, np.kron(
-            zero, np.kron(
-            zero, np.kron(
-            zero, np.kron(
-            zero, np.kron(zero, zero))))))
+        # 7-qubit
+        self.zero_state = \
+            np.kron(zero, np.kron(zero, np.kron(zero, np.kron(zero, np.kron(zero, np.kron(zero, zero)))))
+        )
         self.initialized_zero_state = \
             initialize_steane_logical_state(self.zero_state)
         self.initialized_zero_state = ancilla_reset(

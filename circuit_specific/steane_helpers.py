@@ -28,33 +28,80 @@ k_six = np.kron(sigma_I, np.kron(sigma_z, np.kron(sigma_z, np.kron(
 ### Gate operations for steane code using 3 ancillas ###
 
 # phase correction gates
-control_k_one = np.kron(np.identity(2**7), np.kron(np.kron(zero, zero[np.newaxis].T), np.identity(2**2))) + np.kron(
-    k_one, np.kron(np.kron(one, one[np.newaxis].T), np.identity(2**2)))
+control_k_one = \
+    np.kron(
+        np.identity(2**7),
+        np.kron(
+            np.kron(zero, zero[np.newaxis].T),
+            np.identity(2**2)
+        )
+    ) + \
+    np.kron(
+        k_one,
+        np.kron(np.kron(one, one[np.newaxis].T), np.identity(2**2))
+    )
 
-control_k_two = np.kron(np.identity(2**7), np.kron(np.identity(2), np.kron(np.kron(
-    zero, zero[np.newaxis].T), np.identity(2)))) + np.kron(k_two, np.kron(np.identity(2), np.kron(
-    np.kron(one, one[np.newaxis].T), np.identity(2))))
+control_k_two = \
+    np.kron(
+        np.identity(2**7),
+        np.kron(np.identity(2), np.kron(np.kron(zero, zero[np.newaxis].T), np.identity(2)))
+    ) + \
+    np.kron(
+        k_two,
+        np.kron(np.identity(2), np.kron(np.kron(one, one[np.newaxis].T), np.identity(2)))
+    )
 
-control_k_three = np.kron(np.identity(2**7), np.kron(np.identity(2**2), np.kron(zero, zero[np.newaxis].T))) + np.kron(
-    k_three, np.kron(np.identity(2**2), np.kron(one, one[np.newaxis].T)))
+control_k_three = \
+    np.kron(
+        np.identity(2**7),
+        np.kron(np.identity(2**2), np.kron(zero, zero[np.newaxis].T))
+    ) + \
+    np.kron(
+        k_three,
+        np.kron(np.identity(2**2), np.kron(one, one[np.newaxis].T))
+    )
 
 # bit correction gates
-control_k_four = np.kron(np.identity(2**7), np.kron(np.kron(zero, zero[np.newaxis].T), np.identity(2**2))) + np.kron(
-    k_four, np.kron(np.kron(one, one[np.newaxis].T), np.identity(2**2)))
+control_k_four = \
+    np.kron(
+        np.identity(2**7),
+        np.kron(np.kron(zero, zero[np.newaxis].T), np.identity(2**2))
+    ) + \
+    np.kron(
+        k_four,
+        np.kron(np.kron(one, one[np.newaxis].T), np.identity(2**2))
+    )
 
-control_k_five = np.kron(np.identity(2**7), np.kron(np.identity(2), np.kron(np.kron(
-    zero, zero[np.newaxis].T), np.identity(2)))) + np.kron(k_five, np.kron(np.identity(2), np.kron(
-    np.kron(one, one[np.newaxis].T), np.identity(2))))
+control_k_five = \
+    np.kron(
+        np.identity(2**7),
+        np.kron(np.identity(2), np.kron(np.kron(zero, zero[np.newaxis].T), np.identity(2)))
+    ) + \
+    np.kron(
+        k_five,
+        np.kron(np.identity(2), np.kron(np.kron(one, one[np.newaxis].T), np.identity(2)))
+    )
 
-control_k_six = np.kron(np.identity(2**7), np.kron(np.identity(2**2), np.kron(zero, zero[np.newaxis].T))) + np.kron(
-    k_six, np.kron(np.identity(2**2), np.kron(one, one[np.newaxis].T)))
+control_k_six = \
+    np.kron(
+        np.identity(2**7),
+        np.kron(np.identity(2**2), np.kron(zero, zero[np.newaxis].T))
+    ) + \
+    np.kron(
+        k_six,
+        np.kron(np.identity(2**2), np.kron(one, one[np.newaxis].T))
+    )
 
 
 # - - - - - - - - - -  Initializations - - - - - - - - - - #
 
-### Initializes the 10 qubit (7 physical, 3 ancilla) qubit system ###
 def initialize_steane_logical_state(initial_state):
-    # initial_state: initial state of your 7 qubits qubit that you want to use as your logical state combined with ancillas
+    """
+    Initializes the 10 qubit (7 physical, 3 ancilla) qubit system.
+
+    * initial_state: initial state of your 7 qubits qubit that you want to use
+    as your logical state combined with ancillas
+    """
 
     ancilla_syndrome = np.kron(zero, np.kron(zero, zero))
     full_system = np.kron(initial_state, ancilla_syndrome)
@@ -76,7 +123,7 @@ def initialize_steane_logical_state(initial_state):
     collapsed_state = collapse_ancilla(full_system, 3)
 
     # How many total qubits are in our vector representation
-    n = int(np.log(len(full_system))/np.log(2))
+    n = int(np.log(len(full_system))/np.log(2)) # pylint: disable=invalid-name
 
     # Measure the three ancilla qubits
     # Applying the Z gate operation on a specific qubit
@@ -109,9 +156,11 @@ def initialize_steane_logical_state(initial_state):
 
     # Using this for superposition states, doesnt do anything for |0> initial states
     # becuase they are already +1 eigenstates of Z
-    if (initial_state != np.kron(zero, np.kron(zero, np.kron(zero, np.kron(
-        zero, np.kron(zero, np.kron(zero, zero))))))).all():
-            final_vector_state = steane_bit_correction(final_vector_state)
+    comparison_state = np.kron(
+        zero, np.kron(zero, np.kron(zero, np.kron(zero, np.kron(zero, np.kron(zero, zero)))))
+    )
+    if (initial_state != comparison_state).all():
+        final_vector_state = steane_bit_correction(final_vector_state)
 
     # apply global phase correction:
     z_bar = np.kron(sigma_z, np.kron(sigma_z, np.kron(sigma_z, np.kron(sigma_z, np.kron(
@@ -122,14 +171,16 @@ def initialize_steane_logical_state(initial_state):
     return final_vector_state
 
 
-
 # - - - - - - - - - -  Errors - - - - - - - - - - #
 
-### Applies a random Z rotation to one of the physical qubits in your system (randomly) (works for both n= 10 and 13 qubits) ###
-def phase_flip_error(logical_state, n, verbose=False):
-    # logical_state: The logical state of the three qubit system you wish to apply the error to
-    # n: The number of qubits in your logical system
+def phase_flip_error(logical_state, n, verbose=False): # pylint: disable=invalid-name
+    """
+    Applies a random Z rotation to one of the physical qubits in your system
+    (randomly) (works for both n = 10 and 13 qubits)
 
+    * logical_state: The logical state of the three qubit system you wish to apply the error to
+    * n: The number of qubits in your logical system
+    """
     # Choose the index of the qubit you want to apply the error to.
     error_index = random.randint(-1,6)
 
@@ -140,7 +191,9 @@ def phase_flip_error(logical_state, n, verbose=False):
             print('No phase flip error occured.')
     else:
         # Create the error as a gate operation
-        error_gate = np.kron(np.identity(2**(error_index)), np.kron(sigma_z, np.identity(2**(n-error_index-1))))
+        error_gate = np.kron(
+            np.identity(2**(error_index)), np.kron(sigma_z, np.identity(2**(n-error_index-1)))
+        )
 
         # Apply the error to the qubit (no error may occur)
         errored_logical_state = np.dot(error_gate, logical_state)

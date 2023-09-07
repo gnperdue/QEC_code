@@ -75,7 +75,7 @@ def print_state_info(logical_state, k):
         print(bit_state, ': ', non_zero_vector_state[idx])
 
 
-def collapse_ancilla(logical_state, k):
+def collapse_ancilla(logical_state, k): # pylint: disable=too-many-locals,too-many-branches
     """
     Collapse the ancilla qubits to one of their states and return the
     vector representation (probability taken in to account
@@ -116,12 +116,12 @@ def collapse_ancilla(logical_state, k):
     # finding our probability for measurement
     rows, cols = np.shape(all_organized_bits)
     probs = np.array([])
-    for k in range(rows):
+    for i in range(rows):
         summation = 0
         for j in range(cols):
             summation += np.abs(
                 logical_state[
-                    int(indices[all_bits == all_organized_bits[k][j]][0])
+                    int(indices[all_bits == all_organized_bits[i][j]][0])
                 ]
             )**2
         probs = np.append(probs, summation)
@@ -157,8 +157,8 @@ def collapse_ancilla(logical_state, k):
 
     # take out the vectors that do not match our collapsed bit state
     for j in range(num_rows):
-        if vector_state_to_bit_state(all_vector_states[j], n)[0] \
-            not in collapsed_bits:
+        bit_state = vector_state_to_bit_state(all_vector_states[j], n)[0]
+        if  bit_state not in collapsed_bits:
             all_vector_states[j][:].fill(0)
 
     # combine the vector states again
@@ -168,7 +168,7 @@ def collapse_ancilla(logical_state, k):
             all_vector_states[j][:]
 
     # normalizing our state
-    pop = 0
+    pop = 0    # should just be np.sum(probs)?
     for prob in probs:
         pop += prob
 
