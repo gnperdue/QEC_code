@@ -8,7 +8,7 @@ import logging
 import sys
 import numpy as np
 from general_qec.qec_helpers import one, zero, superpos
-from general_qec.gates import sigma_y
+from general_qec.gates import sigma_y, cnot
 from general_qec.qec_helpers import ancilla_reset
 from general_qec.qec_helpers import collapse_ancilla
 from general_qec.qec_helpers import collapse_dm
@@ -44,9 +44,10 @@ class TestHelpers(unittest.TestCase):
         """Tests for various ancilla manipulation functions"""
         LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
         ## --
-        test_state1 = np.kron(np.kron(superpos, superpos), superpos)
+        test_state = np.kron(np.kron(superpos, superpos), superpos)
         random.seed(10)  # fix the collapsed state
-        collapsed_vector_state = collapse_ancilla(test_state1, 1)
+        collapsed_vector_state = collapse_ancilla(test_state, 1)
+        self.assertAlmostEqual(np.sum(np.abs(collapsed_vector_state)**2), 1.0)
         self.assertEqual(collapsed_vector_state.shape, (8,))
         self.assertAlmostEqual(collapsed_vector_state[1], 0.5+0.0j)
         reset_state = ancilla_reset(collapsed_vector_state, 1)
@@ -54,9 +55,10 @@ class TestHelpers(unittest.TestCase):
         self.assertAlmostEqual(reset_state[0], 0.5+0.0j)
         # --
         three_qubit = np.kron(np.kron(zero, zero), zero)
-        test_state2 = np.kron(np.kron(three_qubit, superpos), superpos)
-        random.seed(10)  # fix the collapsed state
-        collapsed_vector_state = collapse_ancilla(test_state2, 2)
+        test_state = np.kron(np.kron(three_qubit, superpos), superpos)
+        random.seed(11)  # fix the collapsed state
+        collapsed_vector_state = collapse_ancilla(test_state, 2)
+        self.assertAlmostEqual(np.sum(np.abs(collapsed_vector_state)**2), 1.0)
         self.assertEqual(collapsed_vector_state.shape, (32,))
         self.assertAlmostEqual(collapsed_vector_state[2], 1.0+0.0j)
         reset_state = ancilla_reset(collapsed_vector_state, 2)
@@ -64,14 +66,23 @@ class TestHelpers(unittest.TestCase):
         self.assertAlmostEqual(reset_state[0], 1.0+0.0j)
         # --
         three_qubit = np.kron(np.kron(superpos, superpos), superpos)
-        test_state3 = np.kron(np.kron(three_qubit, superpos), superpos)
-        random.seed(10)  # fix the collapsed state
-        collapsed_vector_state = collapse_ancilla(test_state3, 2)
-        self.assertTrue(
-            False,
-            msg="Check the data qubits are still in superposition, but the anciall have collapsed"
-        )
+        test_state = np.kron(np.kron(three_qubit, superpos), superpos)
+        random.seed(12)  # fix the collapsed state
+        collapsed_vector_state = collapse_ancilla(test_state, 2)
+        self.assertAlmostEqual(np.sum(np.abs(collapsed_vector_state)**2), 1.0)
         reset_state = ancilla_reset(collapsed_vector_state, 2)
+        # --
+        three_qubit = np.kron(np.kron(superpos, superpos), one)
+        gate = np.kron(np.identity(2**2), sigma_y)
+        three_qubit = np.dot(gate, three_qubit)
+        gate = np.kron(cnot, np.identity(2))
+        three_qubit = np.dot(gate, three_qubit)
+        test_state = np.kron(np.kron(np.kron(three_qubit, superpos), superpos), one)
+        random.seed(13)  # fix the collapsed state
+        collapsed_vector_state = collapse_ancilla(test_state, 3)
+        self.assertAlmostEqual(np.sum(np.abs(collapsed_vector_state)**2), 1.0)
+
+
 
     def test_remove_small_values(self):
         """Tests for `remove_small_values()`"""
