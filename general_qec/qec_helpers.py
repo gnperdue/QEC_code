@@ -182,7 +182,7 @@ def collapse_ancilla(logical_state, k): # pylint: disable=too-many-locals,too-ma
 #     print_state_info(collapsed_vector_state, n)
 #     print('pop: ', pop, 'norm: ', norm)
     collapsed_vector_state =  np.sqrt(pop) * (collapsed_vector_state/norm)
-
+    assert np.isclose(np.sum(np.abs(collapsed_vector_state)**2), 1.0), "Normalization!"
     return collapsed_vector_state
 
 
