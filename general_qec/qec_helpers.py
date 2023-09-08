@@ -2,6 +2,7 @@
 QEC Helpers
 """
 import random
+from collections import defaultdict
 import numpy as np
 from general_qec.gates import sigma_x
 
@@ -90,47 +91,49 @@ def collapse_ancilla(logical_state, k): # pylint: disable=too-many-locals,too-ma
 
     # Find all of the bit combinations that are in our vector state
     # representation
-    all_bits, indices, logical_state = \
-        vector_state_to_bit_state(logical_state, n)
-
-    # create two empty arrays to store information
-    organized_bits = np.array([])
-    all_organized_bits = np.array([[]])
+    all_bits, indices, _ = vector_state_to_bit_state(logical_state, n)
 
     # loop over our bit representations and organize them based on
-    # whether or not they have the same ancilla qubits
-    for j in range(int(len(all_bits))):
-        organized_bits = all_bits
-        for i in range(len(all_bits)): # pylint: disable=consider-using-enumerate
-            if all_bits[j][n-k:] != all_bits[i][n-k:]:
-                organized_bits = np.delete(
-                    organized_bits, organized_bits == all_bits[i])
-        if j == 0:
-            all_organized_bits = [organized_bits]
-        else:
-            all_organized_bits = np.append(
-                all_organized_bits, [organized_bits], axis = 0)
+    # whether or not they have the same ancilla qubits and collect
+    # the cumulative probability
+    ancilla_values_dict = defaultdict(list)
+    probs_values_dict = defaultdict(float)
+    for bit in all_bits:
+        ancilla_values_key = bit[n-k:]
+        ancilla_values_dict[ancilla_values_key].append(bit)
+        probs_values_dict[ancilla_values_key] += \
+            np.abs(logical_state[int(indices[all_bits == bit][0])])**2
+    all_organized_bits = []
+    for key in ancilla_values_dict:
+        all_organized_bits.append(ancilla_values_dict[key])
+    all_organized_bits = np.array(all_organized_bits)
 
-    all_organized_bits = np.unique(all_organized_bits, axis=0)
+    # TODO: clean up this fossil code eventually
+    # # finding our probability for measurement - GP: test a faster calculation
+    # rows, cols = np.shape(all_organized_bits)
+    # probs = np.array([])
+    # for i in range(rows):
+    #     summation = 0
+    #     for j in range(cols):
+    #         summation += np.abs(  # GNP - do we need the abs here?
+    #             logical_state[
+    #                 int(indices[all_bits == all_organized_bits[i][j]][0])
+    #             ]
+    #         )**2
+    #     probs = np.append(probs, summation)
+    # # find which ancilla we will measure
+    # index = random.choices(all_organized_bits, weights=probs, k=1)
+    # index = np.where(all_organized_bits == index)[0][0]
+    # # set our collapsed state to that ancilla measurement
+    # collapsed_bits = all_organized_bits[index]
 
-    # finding our probability for measurement
-    rows, cols = np.shape(all_organized_bits)
-    probs = np.array([])
-    for i in range(rows):
-        summation = 0
-        for j in range(cols):
-            summation += np.abs(
-                logical_state[
-                    int(indices[all_bits == all_organized_bits[i][j]][0])
-                ]
-            )**2
-        probs = np.append(probs, summation)
-
-    # find which ancilla we will measure
-    index = random.choices(all_organized_bits, weights=probs, k=1)
-    index = np.where(all_organized_bits == index)[0][0]
-    # set our collapsed state to that ancilla measurement
-    collapsed_bits = all_organized_bits[index]
+    # randomly select an ancilla collapse state - faster calc, but is it baised?
+    test_val, ancilla_choice, cumulative_probability = random.uniform(0, 1), None, 0.0
+    for ancilla_key, ancilla_value in probs_values_dict.items():
+        if cumulative_probability < test_val:
+            ancilla_choice = ancilla_key
+        cumulative_probability += ancilla_value
+    collapsed_bits = ancilla_values_dict[ancilla_choice]
 
     # Here we take the vector state and separate it into vectors so that we
     # can manipulate it.
@@ -167,10 +170,13 @@ def collapse_ancilla(logical_state, k): # pylint: disable=too-many-locals,too-ma
         collapsed_vector_state = collapsed_vector_state + \
             all_vector_states[j][:]
 
-    # normalizing our state
-    pop = 0    # should just be np.sum(probs)?
-    for prob in probs:
-        pop += prob
+    # # normalizing our state
+    # pop = 0    # should just be np.sum(probs)?
+    # for prob in probs:
+    #     pop += prob
+    # assert pop == np.sum(probs), "I was wrong"
+    # GP: test a faster calculation
+    pop = np.sum(list(probs_values_dict.values()))
 
     norm = np.linalg.norm(collapsed_vector_state)
 #     print_state_info(collapsed_vector_state, n)
