@@ -47,12 +47,22 @@ class TestHelpers(unittest.TestCase):
         test_state = np.kron(np.kron(superpos, superpos), superpos)
         random.seed(10)  # fix the collapsed state
         collapsed_vector_state = collapse_ancilla(test_state, 1)
+        collapsed_bits, _, _ = vector_state_to_bit_state(collapsed_vector_state, 3)
+        rho = np.outer(collapsed_vector_state, collapsed_vector_state.conj().T)
         self.assertAlmostEqual(np.sum(np.abs(collapsed_vector_state)**2), 1.0)
         self.assertEqual(collapsed_vector_state.shape, (8,))
-        self.assertAlmostEqual(collapsed_vector_state[1], 0.5+0.0j)
+        self.assertTrue(
+            np.all([np.isclose(collapsed_vector_state[i], 0.5+0.0j) for i in [1, 3, 5, 7]])
+        )
+        self.assertAlmostEqual(np.trace(rho), 1.0)
+        self.assertTrue(set(['001', '011', '101', '111']) == set(collapsed_bits))
         reset_state = ancilla_reset(collapsed_vector_state, 1)
         self.assertEqual(reset_state.shape, (8,))
-        self.assertAlmostEqual(reset_state[0], 0.5+0.0j)
+        self.assertTrue(
+            np.all([np.isclose(reset_state[i], 0.5+0.0j) for i in [0, 2, 4, 6]])
+        )
+        rho = np.outer(collapsed_vector_state, collapsed_vector_state.conj().T)
+        self.assertAlmostEqual(np.trace(rho), 1.0)
         # --
         three_qubit = np.kron(np.kron(zero, zero), zero)
         test_state = np.kron(np.kron(three_qubit, superpos), superpos)
@@ -60,17 +70,31 @@ class TestHelpers(unittest.TestCase):
         collapsed_vector_state = collapse_ancilla(test_state, 2)
         self.assertAlmostEqual(np.sum(np.abs(collapsed_vector_state)**2), 1.0)
         self.assertEqual(collapsed_vector_state.shape, (32,))
-        self.assertAlmostEqual(collapsed_vector_state[2], 1.0+0.0j)
+        self.assertAlmostEqual(collapsed_vector_state[1], 1.0+0.0j)
+        rho = np.outer(collapsed_vector_state, collapsed_vector_state.conj().T)
+        self.assertAlmostEqual(np.trace(rho), 1.0)
         reset_state = ancilla_reset(collapsed_vector_state, 2)
         self.assertEqual(reset_state.shape, (32,))
         self.assertAlmostEqual(reset_state[0], 1.0+0.0j)
+        rho = np.outer(reset_state, reset_state.conj().T)
+        self.assertAlmostEqual(np.trace(rho), 1.0)
         # --
         three_qubit = np.kron(np.kron(superpos, superpos), superpos)
+        gate = np.kron(np.kron(np.identity(2), sigma_y), np.identity(2))
+        three_qubit = np.dot(gate, three_qubit)
         test_state = np.kron(np.kron(three_qubit, superpos), superpos)
-        random.seed(12)  # fix the collapsed state
+        random.seed(12)  # fix the collapsed state -> ancilla to 01
         collapsed_vector_state = collapse_ancilla(test_state, 2)
         self.assertAlmostEqual(np.sum(np.abs(collapsed_vector_state)**2), 1.0)
+        _, collapsed_indices, _ = vector_state_to_bit_state(collapsed_vector_state, 5)
+        self.assertTrue(set([1, 5, 9, 13, 17, 21, 25, 29]) == set(collapsed_indices))
+        rho = np.outer(collapsed_vector_state, collapsed_vector_state.conj().T)
+        self.assertAlmostEqual(np.trace(rho), 1.0)
         reset_state = ancilla_reset(collapsed_vector_state, 2)
+        _, reset_indices, _ = vector_state_to_bit_state(reset_state, 5)
+        self.assertTrue(set([0, 4, 8, 12, 16, 20, 24, 28]) == set(reset_indices))
+        rho = np.outer(reset_state, reset_state.conj().T)
+        self.assertAlmostEqual(np.trace(rho), 1.0)
         # --
         three_qubit = np.kron(np.kron(superpos, superpos), one)
         gate = np.kron(np.identity(2**2), sigma_y)
@@ -78,11 +102,18 @@ class TestHelpers(unittest.TestCase):
         gate = np.kron(cnot, np.identity(2))
         three_qubit = np.dot(gate, three_qubit)
         test_state = np.kron(np.kron(np.kron(three_qubit, superpos), superpos), one)
-        random.seed(13)  # fix the collapsed state
+        random.seed(13)  # fix the collapsed state -> ancilla to 011
         collapsed_vector_state = collapse_ancilla(test_state, 3)
-        self.assertAlmostEqual(np.sum(np.abs(collapsed_vector_state)**2), 1.0)
-
-
+        collapsed_bits, collapsed_indices, _ = vector_state_to_bit_state(collapsed_vector_state, 6)
+        self.assertTrue(set(['000011', '010011', '100011', '110011']) == set(collapsed_bits))
+        self.assertTrue(set([3, 19, 35, 51]) == set(collapsed_indices))
+        rho = np.outer(collapsed_vector_state, collapsed_vector_state.conj().T)
+        self.assertAlmostEqual(np.trace(rho), 1.0)
+        reset_state = ancilla_reset(collapsed_vector_state, 3)
+        reset_bits, _, _ = vector_state_to_bit_state(reset_state, 6)
+        self.assertTrue(set(['000000', '010000', '100000', '110000']) == set(reset_bits))
+        rho = np.outer(reset_state, reset_state.conj().T)
+        self.assertAlmostEqual(np.trace(rho), 1.0)
 
     def test_remove_small_values(self):
         """Tests for `remove_small_values()`"""
