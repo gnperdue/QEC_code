@@ -116,18 +116,17 @@ def initialize_steane_logical_state(initial_state):
     # apply the second hadamard to the ancillas
     full_system = np.dot(ancilla_hadamard, full_system)
 
-    # Find the bit representation of our full system
-#     bits, index, vector_state = vector_state_to_bit_state(full_system, 10)
+    # How many total qubits are in our vector representation
+    nqubits = int(np.log(len(full_system))/np.log(2)) # pylint: disable=invalid-name
+    nancilla = 3
+    assert nqubits == 10, "Invalid initial state for the Steane code."
 
     # Measure and collapse our ancilla qubits
-    collapsed_state = collapse_ancilla(full_system, 3)
-
-    # How many total qubits are in our vector representation
-    n = int(np.log(len(full_system))/np.log(2)) # pylint: disable=invalid-name
+    collapsed_state = collapse_ancilla(full_system, nancilla)
 
     # Measure the three ancilla qubits
     # Applying the Z gate operation on a specific qubit
-    bits = vector_state_to_bit_state(collapsed_state, 10)[0][0]
+    bits = vector_state_to_bit_state(collapsed_state, nqubits)[0][0]
 
     # find index
     m_one = 0
@@ -146,12 +145,14 @@ def initialize_steane_logical_state(initial_state):
     # if no error occurs we dont need to apply a correction
     if index == -1:
         final_vector_state = collapsed_state
-
     else:
         # apply the z gate depending on index
-        operation = np.kron(np.identity(2**(index)), np.kron(sigma_z, np.kron(
-            np.identity(2**(n-3-index-1)), np.identity(2**3))))
-
+        operation = np.kron(
+            np.identity(2**(index)),
+            np.kron(sigma_z,
+                    np.kron(np.identity(2**(nqubits-nancilla-index-1)), np.identity(2**nancilla))
+            )
+        )
         final_vector_state = np.dot(operation, collapsed_state)
 
     # Using this for superposition states, doesnt do anything for |0> initial states
@@ -165,7 +166,7 @@ def initialize_steane_logical_state(initial_state):
     # apply global phase correction:
     z_bar = np.kron(sigma_z, np.kron(sigma_z, np.kron(sigma_z, np.kron(sigma_z, np.kron(
         sigma_z, np.kron(sigma_z, sigma_z))))))
-    z_bar = np.kron(z_bar, np.identity(2**3))
+    z_bar = np.kron(z_bar, np.identity(2**nancilla))
     final_vector_state = np.dot(z_bar, final_vector_state)
 
     return final_vector_state
@@ -388,6 +389,7 @@ larger_control_k_six = np.kron(np.identity(2**7), np.kron(np.identity(2**5), np.
 ### Initializes the 13 qubit (7 physical, 6 ancilla) qubit system ###
 def initialize_larger_steane_code(initial_state):
     # initial_state: initial state of your 7 qubits qubit that you want to use as your logical state combined with ancillas
+    # TODO: answer the questions here, need to look at the paper
 
     n = 13 # Total number of qubits in our system
 
@@ -406,13 +408,13 @@ def initialize_larger_steane_code(initial_state):
     # apply the second hadamard to the ancillas
     full_system = np.dot(ancilla_hadamard, full_system)
 
-    # Find the bit representation of our full system
+    # Find the bit representation of our full system -> why just 10 qubits?
     bits, index, vector_state = vector_state_to_bit_state(full_system, 10)
 
-    # Measure and collapse our ancilla qubits
+    # Measure and collapse our ancilla qubits -> why just three ancialla qubits?
     collapsed_state = collapse_ancilla(vector_state, 3)
 
-    # How many total qubits are in our vector representation
+    # How many total qubits are in our vector representation -> why is this recomputed?
     n = int(np.log(len(full_system))/np.log(2))
 
     # Measure the three ancilla qubits
