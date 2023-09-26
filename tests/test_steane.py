@@ -90,7 +90,7 @@ class TestSteaneCode(unittest.TestCase):
     """Tests for Steane code functions."""
 
     def setUp(self) -> None:
-        # 7-qubit
+        # 7-qubit zero
         self.zero_state = \
             np.kron(zero, np.kron(zero, np.kron(zero, np.kron(zero, np.kron(zero, np.kron(zero, zero)))))
         )
@@ -125,8 +125,7 @@ class TestSteaneCode(unittest.TestCase):
               zero, np.kron(
               zero, np.kron(zero, zero))))))
         self.assertEqual(initial_state.shape, (2**n_qubits,))
-        final_vector_state = initialize_larger_steane_code(
-            np.sqrt(8) * initial_state)
+        final_vector_state = initialize_larger_steane_code(initial_state)
         self.assertEqual(final_vector_state.shape, (2**n_qtotal,)) # pylint: disable=no-member
         error_state = phase_flip_error(
             bit_flip_error(final_vector_state, n_qtotal)[0], n_qtotal)[0]
