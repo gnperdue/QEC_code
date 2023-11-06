@@ -1,9 +1,14 @@
-# The functions in this file are useful when implementing the seven qubit steane code
-
-import numpy as np
+"""
+The functions in this file are useful when implementing the seven qubit steane code.
+"""
 import random
-from general_qec.qec_helpers import *
-from general_qec.gates import *
+import numpy as np
+from general_qec.qec_helpers import collapse_ancilla
+from general_qec.qec_helpers import print_state_info
+from general_qec.qec_helpers import remove_small_values
+from general_qec.qec_helpers import vector_state_to_bit_state
+from general_qec.gates import hadamard
+from general_qec.gates import sigma_x, sigma_z, sigma_I, CNOT, CZ
 
 
 # - - - - - - - - - -  Useful variables - - - - - - - - - - #
@@ -204,11 +209,15 @@ def phase_flip_error(logical_state, n, verbose=False): # pylint: disable=invalid
     return errored_logical_state, error_index
 
 
-### Applies a random X rotation to one of the physical qubits in your system (randomly) (works for both n= 10 and 13 qubits) ###
 def bit_flip_error(logical_state, n, verbose=False):
-    # logical_state: The logical state of the three qubit system you wish to apply the error to
-    # n: The number of qubits in your logical system
+    """
+    Applies a random X rotation to one of the physical qubits in your system
+    (randomly) (works for both n= 10 and 13 qubits).
 
+    * logical_state: The logical state of the three qubit system you wish to
+    apply the error to
+    * n: The number of qubits in your logical system
+    """
     # Choose the index of the qubit you want to apply the error to.
     error_index = random.randint(-1,6)
 
@@ -220,7 +229,10 @@ def bit_flip_error(logical_state, n, verbose=False):
 
     else:
         # Create the error as a gate operation
-        error_gate = np.kron(np.identity(2**(error_index)), np.kron(sigma_x, np.identity(2**(n-error_index-1))))
+        error_gate = np.kron(
+            np.identity(2**(error_index)),
+            np.kron(sigma_x, np.identity(2**(n-error_index-1)))
+        )
 
         # Apply the error to the qubit (no error may occur)
         errored_logical_state = np.dot(error_gate, logical_state)
@@ -817,21 +829,21 @@ K3_grid_operation = np.dot(CNOT(9, 1, 10), np.dot(
 
 # SWAPS needed for K4 are the same as K1
 # Create K1 operator
-K4_grid_operation = np.dot(non_adj_CZ(7, 3, 10), np.dot(np.dot(
-    np.dot(swap_a0_6, swap_6_a1), np.dot(non_adj_CZ(8, 4, 10), np.dot(swap_6_a1, swap_a0_6))), np.dot(
-    non_adj_CZ(7, 5, 10), adj_CZ(7, 6, 10))))
+K4_grid_operation = np.dot(CZ(7, 3, 10), np.dot(np.dot(
+    np.dot(swap_a0_6, swap_6_a1), np.dot(CZ(8, 4, 10), np.dot(swap_6_a1, swap_a0_6))), np.dot(
+    CZ(7, 5, 10), CZ(7, 6, 10))))
 
 # SWAPS needed for K5 are the same as K2
 # Create K2 operator
-K5_grid_operation = np.dot(non_adj_CZ(8, 0, 10), np.dot(
-    np.dot(swap_a1_4, np.dot(non_adj_CZ(4, 2, 10), swap_a1_4)), np.dot(
-    non_adj_CZ(8, 4, 10), non_adj_CZ(8, 6, 10))))
+K5_grid_operation = np.dot(CZ(8, 0, 10), np.dot(
+    np.dot(swap_a1_4, np.dot(CZ(4, 2, 10), swap_a1_4)), np.dot(
+    CZ(8, 4, 10), CZ(8, 6, 10))))
 
 # SWAPS needed for K6 are the same as K3
 # Create K3 operator
-K6_grid_operation = np.dot(non_adj_CZ(9, 1, 10), np.dot(
-    np.dot(swap_a2_4, np.dot(non_adj_CZ(4, 2, 10), swap_a2_4)), np.dot(
-    non_adj_CZ(9, 5, 10), non_adj_CZ(9, 6, 10))))
+K6_grid_operation = np.dot(CZ(9, 1, 10), np.dot(
+    np.dot(swap_a2_4, np.dot(CZ(4, 2, 10), swap_a2_4)), np.dot(
+    CZ(9, 5, 10), CZ(9, 6, 10))))
 
 
 ### Initializes the 10 qubit (7 physical, 3 ancilla) qubit system ###
