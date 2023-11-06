@@ -116,7 +116,7 @@ class TestRealisticThreeQubit(unittest.TestCase):
         t2 = 150 * 10**-6 # pylint: disable=invalid-name
         tg = 20 * 10**-9  # pylint: disable=invalid-name
         # probability of gate error for each of five qubits
-        krauss_probs = [0.0] * 5
+        krauss_probs = None
         # state preparation and measurement errors
         spam_prob = 0.001
         # initialize the circuit
@@ -184,6 +184,44 @@ class TestRealisticThreeQubit(unittest.TestCase):
         )
         self.assertEqual(np.unravel_index(rho.argmax(), rho.shape), (0b11100, 0b11100))
 
+    def test_three_qubit_realistic_error_free(self):
+        """Test of `three_qubit_realistic()` with Krauss errors"""
+        LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
+        random.seed(10)
+        initial_psi = one # initialize our psi
+        # timing parameters in microseconds
+        t1 = None # pylint: disable=invalid-name
+        t2 = None # pylint: disable=invalid-name
+        tg = None # pylint: disable=invalid-name
+        # probability of gate error for each of five qubits
+        krauss_probs = None
+        # state preparation and measurement errors
+        spam_prob = None
+        # initialize the circuit
+        rho = initialize_three_qubit_realisitc(
+            initial_psi, t1=t1, t2=t2, tg=tg,
+            qubit_error_probs=krauss_probs, spam_prob=spam_prob
+        )
+        self.assertTrue(rho.shape, (2**5, 2**5))
+        self.assertEqual(np.unravel_index(rho.argmax(), rho.shape), (0b11100, 0b11100))
+        # apply the 3 qubit circuit
+        rho = three_qubit_realistic(
+            rho, t1=t1, t2=t2, tg=tg,
+            qubit_error_probs=krauss_probs, spam_prob=spam_prob
+        )
+        # errors are low, so most probable state is the same
+        self.assertEqual(np.unravel_index(rho.argmax(), rho.shape), (0b11100, 0b11100))
+        collapsed_state = collapse_dm(rho)
+        # throw an x error on the data qubits
+        errored_state, _ = random_qubit_x_error(collapsed_state, (1,1))
+        self.assertEqual(np.argmax(errored_state), 0b10100)
+        rho = np.outer(errored_state, errored_state.conj().T)
+        # repair it
+        rho = three_qubit_realistic(
+            rho, t1=t1, t2=t2, tg=tg,
+            qubit_error_probs=krauss_probs, spam_prob=spam_prob
+        )
+        self.assertEqual(np.unravel_index(rho.argmax(), rho.shape), (0b11100, 0b11100))
 
 if __name__ == '__main__':
     unittest.main()
