@@ -100,7 +100,7 @@ control_k_six = \
 
 # - - - - - - - - - -  Initializations - - - - - - - - - - #
 
-def initialize_steane_logical_state(initial_state):
+def initialize_steane_logical_state(initial_state): # pylint: disable=too-many-locals
     """
     Initializes the 10 qubit (7 physical, 3 ancilla) qubit system.
 
