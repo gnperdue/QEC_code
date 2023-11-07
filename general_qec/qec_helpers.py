@@ -23,10 +23,10 @@ def vector_state_to_bit_state(logical_state, k):
     * k: the number of qubits you wish to reduce the system to (must be less
     than the full system size) - e.g. 2 for np.kron(one, one)
 
-    TODO: `k` is a confusing argument here...
+    TODO: `k` is a confusing argument here... - really should remove it and
+    always report the bit state as computed.
     """
-    # used to keep an index of where the non-zero element is in the vector
-    # representation
+    # Capture the indices where the non-zero elements sit
     index_of_element = np.array([])
     for i in range(logical_state.size):
         if logical_state[i] != 0:
@@ -53,6 +53,8 @@ def vector_state_to_bit_state(logical_state, k):
         else:
             log_bit = np.append(log_bit, bits[0:k])
 
+    # list of logical bits, list of non-zero elements, pass back the state vector...
+    # TODO: why do we pass back the state vector we passed in? should remove this...
     return log_bit, index_of_element, logical_state
 
 
@@ -176,7 +178,7 @@ def collapse_ancilla(logical_state, k): # pylint: disable=too-many-locals,too-ma
     #     pop += prob
     # assert pop == np.sum(probs), "I was wrong"
     # GP: test a faster calculation
-    pop = np.sum(list(probs_values_dict.values()))
+    pop = np.sum(list(probs_values_dict.values()))  # TODO: is this always ~ 1? should be...
 
     norm = np.linalg.norm(collapsed_vector_state)
 #     print_state_info(collapsed_vector_state, n)
@@ -200,17 +202,20 @@ def ancilla_reset(logical_state, k):
 
     all_ancilla_bits = vector_state_to_bit_state(reset_state, n)[0]
 
+    # Loop over all non-zero bit arrangements and flip the ancilla. Note that we
+    # need to recompute the bit state after each flip to prevent flip-flops. Also
+    # note we are relying on the bit state binary encoding to keep the order of
+    # everythin intact.
     for j in range(len(all_ancilla_bits)):
         ancilla_bits = vector_state_to_bit_state(reset_state, n)[0][j]
-        for i in range(n):
-            if i >= n-k:
-                if ancilla_bits[i] == '1':
-                    reset_gate = np.kron(
-                        np.identity(2**(i)),
-                        np.kron(sigma_x, np.identity(2**(n-i-1)))
-                    )
-                    # reset the ith ancilla qubit using the reset gate
-                    reset_state = np.dot(reset_gate, reset_state)
+        for i in range(n-k, n):
+            if ancilla_bits[i] == '1':
+                reset_gate = np.kron(
+                    np.identity(2**(i)),
+                    np.kron(sigma_x, np.identity(2**(n-i-1)))
+                )
+                # reset the ith ancilla qubit using the reset gate
+                reset_state = np.dot(reset_gate, reset_state)
 
     return reset_state
 
