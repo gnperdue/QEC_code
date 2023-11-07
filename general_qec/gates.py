@@ -22,6 +22,14 @@ cnot = np.array([[1, 0, 0, 0],[0, 1, 0, 0],[0, 0, 0, 1],[0, 0, 1, 0]])
 flipped_cnot = np.array([[1, 0, 0, 0],[0, 0, 0, 1],[0, 0, 1, 0],[0, 1, 0, 0]])
 
 
+def rx_theta(theta):
+    """
+    RX(theta) for a single qubit with theta in radians
+    """
+    return np.array([[np.cos(theta), -1j*np.sin(theta)],
+                     [-1j*np.sin(theta), np.cos(theta)]])
+
+
 def adj_CNOT(control, target, tot_qubits): # pylint: disable=invalid-name
     """
     Implement a CNOT gate between 2 adjacent qubits in a system
