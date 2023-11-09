@@ -7,7 +7,7 @@ import random
 import logging
 import sys
 import numpy as np
-from general_qec.qec_helpers import zero
+from general_qec.qec_helpers import one, zero, superpos
 from general_qec.qec_helpers import ancilla_reset
 from general_qec.qec_helpers import print_state_info
 from general_qec.qec_helpers import vector_state_to_bit_state
@@ -23,6 +23,28 @@ from circuit_specific.steane_helpers import simultaneous_steane_code
 from circuit_specific.steane_helpers import steane_phase_correction
 
 LOGGER = logging.getLogger(__name__)
+
+ZERO_STATE7Q = \
+    np.kron(zero,
+            np.kron(zero,
+                    np.kron(zero,
+                            np.kron(zero,
+                                    np.kron(zero, np.kron(zero, zero)))))
+    )
+ONE_STATE7Q = \
+    np.kron(one,
+            np.kron(one,
+                    np.kron(one,
+                            np.kron(one,
+                                    np.kron(one, np.kron(one, one)))))
+    )
+SUPERPOS_STATE7Q = \
+    np.kron(superpos,
+            np.kron(superpos,
+                    np.kron(superpos,
+                            np.kron(superpos,
+                                    np.kron(superpos, np.kron(superpos, superpos)))))
+    )
 
 
 class TestFiveQubitStabilizer(unittest.TestCase): # pylint: disable=too-many-instance-attributes
@@ -89,31 +111,35 @@ class TestFiveQubitStabilizer(unittest.TestCase): # pylint: disable=too-many-ins
 class TestSteaneCode(unittest.TestCase):
     """Tests for Steane code functions."""
 
-    def setUp(self) -> None:
-        # 7-qubit zero
-        self.zero_state = \
-            np.kron(zero,
-                    np.kron(zero,
-                            np.kron(zero,
-                                    np.kron(zero,
-                                            np.kron(zero, np.kron(zero, zero)))))
-            )
-        self.initialized_zero_state = \
-            initialize_steane_logical_state(self.zero_state)
-        self.initialized_zero_state = ancilla_reset(
-            self.initialized_zero_state, 3)
-        return super().setUp()
-
     def test_phase_flip_error_correction(self):
         """Test `phase_flip_error()`"""
-        LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
-        random.seed(11)
-        phase_error_state = phase_flip_error(self.initialized_zero_state, 10)[0]
         # TODO - try to think of a good test on the phase flip error state, but
         # whether and where there is an error is sensiive to the seed value
+        LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
+        # -
+        random.seed(11)
+        initialized_zero_state = initialize_steane_logical_state(ZERO_STATE7Q)
+        initialized_zero_state = ancilla_reset(initialized_zero_state, 3)
+        phase_error_state = phase_flip_error(initialized_zero_state, 10)[0]
         corrected_state = steane_phase_correction(phase_error_state)
         corrected_state = ancilla_reset(corrected_state, 3)
-        self.assertTrue(np.allclose(self.initialized_zero_state, corrected_state))
+        self.assertTrue(np.allclose(initialized_zero_state, corrected_state))
+        # -
+        random.seed(11)
+        initialized_one_state = initialize_steane_logical_state(ONE_STATE7Q)
+        initialized_one_state = ancilla_reset(initialized_one_state, 3)
+        phase_error_state = phase_flip_error(initialized_one_state, 10)[0]
+        corrected_state = steane_phase_correction(phase_error_state)
+        corrected_state = ancilla_reset(corrected_state, 3)
+        self.assertTrue(np.allclose(initialized_one_state, corrected_state))
+        # -
+        random.seed(11)
+        initialized_superpos_state = initialize_steane_logical_state(SUPERPOS_STATE7Q)
+        initialized_superpos_state = ancilla_reset(initialized_superpos_state, 3)
+        phase_error_state = phase_flip_error(initialized_superpos_state, 10)[0]
+        corrected_state = steane_phase_correction(phase_error_state)
+        corrected_state = ancilla_reset(corrected_state, 3)
+        self.assertTrue(np.allclose(initialized_superpos_state, corrected_state))
 
     def test_simultaneous_steane_code(self):
         """Test `simultaneous_steane_code()`"""
