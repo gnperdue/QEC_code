@@ -56,14 +56,14 @@ class TestHelpers(unittest.TestCase):
         self.assertAlmostEqual(np.sum(np.abs(collapsed_vector_state)**2), 1.0)
         self.assertEqual(collapsed_vector_state.shape, (8,))
         self.assertTrue(
-            np.all([np.isclose(collapsed_vector_state[i], -0.3535533905932737j) for i in [1, 3]])
+            np.all([np.isclose(collapsed_vector_state[i], -0.353553j) for i in [1, 3]])
         )
         self.assertAlmostEqual(np.trace(rho), 1.0)
         self.assertTrue(set(['001', '011', '101', '111']) == set(collapsed_bits))
         reset_state = ancilla_reset(collapsed_vector_state, 1)
         self.assertEqual(reset_state.shape, (8,))
         self.assertTrue(
-            np.all([np.isclose(reset_state[i], -0.3535533905932737j) for i in [0, 2]])
+            np.all([np.isclose(reset_state[i], -0.353553j) for i in [0, 2]])
         )
         rho = np.outer(collapsed_vector_state, collapsed_vector_state.conj().T)
         self.assertAlmostEqual(np.trace(rho), 1.0)
