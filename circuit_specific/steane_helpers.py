@@ -179,44 +179,15 @@ def initialize_steane_logical_state(initial_state): # pylint: disable=too-many-l
 
 # - - - - - - - - - -  Errors - - - - - - - - - - #
 
-def phase_flip_error(logical_state, n, verbose=False): # pylint: disable=invalid-name
+def steane_apply_gate_error(logical_state, nqubits, error_gate=sigma_z):
     """
-    Applies a random Z rotation to one of the physical qubits in your system
-    (randomly) (works for both n = 10 and 13 qubits)
+    Applies an error gate to one of the first 7 qubits (chosen randomly) in a logical state.
+    With equal probability to any of the seven may not apply an error. Will function for
+    both n = 10 and 13 qubit Steane codes.
 
-    * logical_state: The logical state of the three qubit system you wish to apply the error to
-    * n: The number of qubits in your logical system
-    """
-    # Choose the index of the qubit you want to apply the error to.
-    error_index = random.randint(-1,6)
-
-    if error_index == -1:
-        # No error occurs in this case
-        errored_logical_state = logical_state
-        if verbose:
-            print('No phase flip error occured.')
-    else:
-        # Create the error as a gate operation
-        error_gate = np.kron(
-            np.identity(2**(error_index)), np.kron(sigma_z, np.identity(2**(n-error_index-1)))
-        )
-
-        # Apply the error to the qubit (no error may occur)
-        errored_logical_state = np.dot(error_gate, logical_state)
-        if verbose:
-            print('Phase flip error on qubit: ', error_index)
-
-    return errored_logical_state, error_index
-
-
-def bit_flip_error(logical_state, n, verbose=False):
-    """
-    Applies a random X rotation to one of the physical qubits in your system
-    (randomly) (works for both n= 10 and 13 qubits).
-
-    * logical_state: The logical state of the three qubit system you wish to
-    apply the error to
-    * n: The number of qubits in your logical system
+    * logical_state: The logical state of the system you wish to apply the error to
+    * nqubits: The number of qubits in your logical system
+    * error: must be a single qubit gate
     """
     # Choose the index of the qubit you want to apply the error to.
     error_index = random.randint(-1,6)
@@ -224,29 +195,49 @@ def bit_flip_error(logical_state, n, verbose=False):
     if error_index == -1:
         # No error occurs in this case
         errored_logical_state = logical_state
-        if verbose:
-            print('No bit flip error occured.')
-
     else:
         # Create the error as a gate operation
         error_gate = np.kron(
             np.identity(2**(error_index)),
-            np.kron(sigma_x, np.identity(2**(n-error_index-1)))
+            np.kron(error_gate, np.identity(2**(nqubits-error_index-1)))
         )
-
         # Apply the error to the qubit (no error may occur)
         errored_logical_state = np.dot(error_gate, logical_state)
-        if verbose:
-            print('Bit flip error on qubit: ', error_index)
 
     return errored_logical_state, error_index
 
+
+def phase_flip_error(logical_state, nqubits): # pylint: disable=invalid-name
+    """
+    Applies a Z gate to one of the first 7 qubits (chosen randomly) in a logical state.
+    With equal probability to any of the seven may not apply an error. Will function for
+    both n = 10 and 13 qubit Steane codes.
+
+    * logical_state: The logical state of the system you wish to apply the error to
+    * nqubits: The number of qubits in your logical system
+    """
+    return steane_apply_gate_error(logical_state, nqubits, sigma_z)
+
+
+def bit_flip_error(logical_state, nqubits):
+    """
+    Applies an X gate to one of the first 7 qubits (chosen randomly) in a logical state.
+    With equal probability to any of the seven may not apply an error. Will function for
+    both n = 10 and 13 qubit Steane codes.
+
+    * logical_state: The logical state of the system you wish to apply the error to
+    * nqubits: The number of qubits in your logical system
+    """
+    return steane_apply_gate_error(logical_state, nqubits, sigma_x)
+
+
 # - - - - - - - - - - 3 ancilla error correction protocols - - - - - - - - - - #
 
-### Corrects for a single phase flip error in the 7 qubit steane code with 3 ancillas ###
 def steane_phase_correction(logical_state):
-    # logical_state: The vector state representation of your full system
-
+    """
+    Corrects for a single phase flip error in the 7 qubit steane code with 3 ancillas
+    * logical_state: The vector state representation of your full system
+    """
     full_system = logical_state
 
     # apply the first hadamard to the ancillas
@@ -258,7 +249,6 @@ def steane_phase_correction(logical_state):
 
     # apply the second hadamard to the ancillas
     full_system = np.dot(ancilla_hadamard, full_system)
-
 
     # Find the bit representation of our full system
     bits, index, vector_state = vector_state_to_bit_state(full_system, 10)
@@ -292,12 +282,13 @@ def steane_phase_correction(logical_state):
     # if no error occurs we dont need to apply a correction
     if index == -1:
         final_vector_state = collapsed_state
-
     else:
         # apply the z gate depending on index
-        operation = np.kron(np.identity(2**(index)), np.kron(sigma_z, np.kron(
-            np.identity(2**(n-3-index-1)), np.identity(2**3))))
-
+        operation = np.kron(
+            np.identity(2**(index)),
+            np.kron(sigma_z,
+                    np.kron(np.identity(2**(n-3-index-1)), np.identity(2**3)))
+        )
         final_vector_state = np.dot(operation, collapsed_state)
 
     corrected_vector_state = remove_small_values(final_vector_state)
@@ -305,10 +296,11 @@ def steane_phase_correction(logical_state):
     return corrected_vector_state
 
 
-### Corrects for a single bit flip error in the 7 qubit steane code with 3 ancillas ###
 def steane_bit_correction(logical_state):
-    # logical_state: The vector state representation of your full system
-
+    """
+    Corrects for a single bit flip error in the 7 qubit steane code with 3 ancillas
+    * logical_state: The vector state representation of your full system
+    """
     full_system = logical_state
 
     # apply the first hadamard to the ancillas
@@ -320,7 +312,6 @@ def steane_bit_correction(logical_state):
 
     # apply the second hadamard to the ancillas
     full_system = np.dot(ancilla_hadamard, full_system)
-
 
     # Find the bit representation of our full system
     bits, index, vector_state = vector_state_to_bit_state(full_system, 10)
@@ -335,7 +326,7 @@ def steane_bit_correction(logical_state):
     n = int(np.log(len(full_system))/np.log(2))
 
     # Measure the three ancilla qubits
-    # Applying the Z gate operation on a specific qubit
+    # Applying the X gate operation on a specific qubit
     bits = vector_state_to_bit_state(collapsed_state, 10)[0][0]
     # find index
     m_four = 0
@@ -348,18 +339,19 @@ def steane_bit_correction(logical_state):
     if bits[9] == '1':
         m_six = 1
 
-    # Which qubit do we perform the Z gate on
+    # Which qubit do we perform the X gate on
     index = (m_four * 2**2) + (m_six * 2**1) + (m_five * 2**0) - 1
 
     # if no error occurs we dont need to apply a correction
     if index == -1:
         final_vector_state = collapsed_state
-
     else:
         # apply the z gate depending on index
-        operation = np.kron(np.identity(2**(index)), np.kron(sigma_x, np.kron(
-            np.identity(2**(n-3-index-1)), np.identity(2**3))))
-
+        operation = np.kron(
+            np.identity(2**(index)),
+            np.kron(sigma_x,
+                    np.kron(np.identity(2**(n-3-index-1)), np.identity(2**3)))
+        )
         final_vector_state = np.dot(operation, collapsed_state)
 
     # remove small values from state
