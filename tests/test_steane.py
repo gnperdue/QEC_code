@@ -1,6 +1,6 @@
 '''
 Usage:
-    python test_steane.py
+    python test_steane_helpers.py
 '''
 import unittest
 import random
@@ -21,6 +21,7 @@ from circuit_specific.steane_helpers import initialize_steane_logical_state
 from circuit_specific.steane_helpers import phase_flip_error
 from circuit_specific.steane_helpers import simultaneous_steane_code
 from circuit_specific.steane_helpers import steane_phase_correction
+from circuit_specific.steane_helpers import steane_bit_correction
 
 LOGGER = logging.getLogger(__name__)
 
@@ -111,35 +112,55 @@ class TestFiveQubitStabilizer(unittest.TestCase): # pylint: disable=too-many-ins
 class TestSteaneCode(unittest.TestCase):
     """Tests for Steane code functions."""
 
-    def test_phase_flip_error_correction(self):
-        """Test `phase_flip_error()`"""
-        # TODO - try to think of a good test on the phase flip error state, but
-        # whether and where there is an error is sensiive to the seed value
+    def test_phase_and_bit_flip_error_correction(self):
+        """Test 10-qubit Steane initialization, phase, and bit flip error corrections"""
         LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
-        # -
         random.seed(11)
+        # -
         initialized_zero_state = initialize_steane_logical_state(ZERO_STATE7Q)
         initialized_zero_state = ancilla_reset(initialized_zero_state, 3)
-        phase_error_state = phase_flip_error(initialized_zero_state, 10)[0]
-        corrected_state = steane_phase_correction(phase_error_state)
-        corrected_state = ancilla_reset(corrected_state, 3)
-        self.assertTrue(np.allclose(initialized_zero_state, corrected_state))
+        # try 5 random phase flips (equal chance of any or no qubits)
+        for _ in range(5):
+            phase_error_state = phase_flip_error(initialized_zero_state, 10)[0]
+            corrected_state = steane_phase_correction(phase_error_state)
+            corrected_state = ancilla_reset(corrected_state, 3)
+            self.assertTrue(np.allclose(initialized_zero_state, corrected_state))
+        # try 5 random bit flips (equal chance of any or no qubits)
+        for _ in range(5):
+            phase_error_state = bit_flip_error(initialized_zero_state, 10)[0]
+            corrected_state = steane_bit_correction(phase_error_state)
+            corrected_state = ancilla_reset(corrected_state, 3)
+            self.assertTrue(np.allclose(initialized_zero_state, corrected_state))
         # -
-        random.seed(11)
         initialized_one_state = initialize_steane_logical_state(ONE_STATE7Q)
         initialized_one_state = ancilla_reset(initialized_one_state, 3)
-        phase_error_state = phase_flip_error(initialized_one_state, 10)[0]
-        corrected_state = steane_phase_correction(phase_error_state)
-        corrected_state = ancilla_reset(corrected_state, 3)
-        self.assertTrue(np.allclose(initialized_one_state, corrected_state))
+        # try 5 random phase flips
+        for _ in range(5):
+            phase_error_state = phase_flip_error(initialized_one_state, 10)[0]
+            corrected_state = steane_phase_correction(phase_error_state)
+            corrected_state = ancilla_reset(corrected_state, 3)
+            self.assertTrue(np.allclose(initialized_one_state, corrected_state))
+        # try 5 random bit flips
+        for _ in range(5):
+            phase_error_state = bit_flip_error(initialized_one_state, 10)[0]
+            corrected_state = steane_bit_correction(phase_error_state)
+            corrected_state = ancilla_reset(corrected_state, 3)
+            self.assertTrue(np.allclose(initialized_one_state, corrected_state))
         # -
-        random.seed(11)
         initialized_superpos_state = initialize_steane_logical_state(SUPERPOS_STATE7Q)
         initialized_superpos_state = ancilla_reset(initialized_superpos_state, 3)
-        phase_error_state = phase_flip_error(initialized_superpos_state, 10)[0]
-        corrected_state = steane_phase_correction(phase_error_state)
-        corrected_state = ancilla_reset(corrected_state, 3)
-        self.assertTrue(np.allclose(initialized_superpos_state, corrected_state))
+        # try 5 random phase flips
+        for _ in range(5):
+            phase_error_state = phase_flip_error(initialized_superpos_state, 10)[0]
+            corrected_state = steane_phase_correction(phase_error_state)
+            corrected_state = ancilla_reset(corrected_state, 3)
+            self.assertTrue(np.allclose(initialized_superpos_state, corrected_state))
+        # try 5 random bit flips
+        for _ in range(5):
+            phase_error_state = bit_flip_error(initialized_superpos_state, 10)[0]
+            corrected_state = steane_bit_correction(phase_error_state)
+            corrected_state = ancilla_reset(corrected_state, 3)
+            self.assertTrue(np.allclose(initialized_superpos_state, corrected_state))
 
     def test_simultaneous_steane_code(self):
         """Test `simultaneous_steane_code()`"""
