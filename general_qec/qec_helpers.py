@@ -190,7 +190,9 @@ def collapse_ancilla(logical_state, k): # pylint: disable=too-many-locals,too-ma
 
 def ancilla_reset(logical_state, k):
     """
-    Reset the ancilla qubits to '0'
+    Reset the ancilla qubits to '0'. NOTE - this function *requires* the ancilla
+    qubits to have been measured first! If they are in a superposition state, this
+    function will not work.
 
     * logical_state: The vector state representation of your full qubit system
     * k: number of ancillas in your system (at the end of the bit
