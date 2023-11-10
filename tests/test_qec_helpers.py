@@ -8,7 +8,7 @@ import logging
 import sys
 import numpy as np
 from general_qec.qec_helpers import one, zero, superpos
-from general_qec.gates import sigma_y, cnot
+from general_qec.gates import sigma_y, cnot, rx_theta
 from general_qec.qec_helpers import ancilla_reset
 from general_qec.qec_helpers import collapse_ancilla
 from general_qec.qec_helpers import collapse_dm
@@ -44,22 +44,26 @@ class TestHelpers(unittest.TestCase):
         """Tests for various ancilla manipulation functions"""
         LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
         ## --
-        test_state = np.kron(np.kron(superpos, superpos), superpos)
-        random.seed(10)  # fix the collapsed state
+        test_state = np.kron(np.kron(one, superpos), one)
+        gate = np.kron(np.identity(2**2), rx_theta(np.pi/3))
+        test_state = np.dot(gate, test_state)
+        gate = np.kron(rx_theta(np.pi/6), np.identity(2**2))
+        test_state = np.dot(gate, test_state)
+        random.seed(15)  # fix the collapsed state
         collapsed_vector_state = collapse_ancilla(test_state, 1)
         collapsed_bits, _, _ = vector_state_to_bit_state(collapsed_vector_state, 3)
         rho = np.outer(collapsed_vector_state, collapsed_vector_state.conj().T)
         self.assertAlmostEqual(np.sum(np.abs(collapsed_vector_state)**2), 1.0)
         self.assertEqual(collapsed_vector_state.shape, (8,))
         self.assertTrue(
-            np.all([np.isclose(collapsed_vector_state[i], 0.5+0.0j) for i in [1, 3, 5, 7]])
+            np.all([np.isclose(collapsed_vector_state[i], -0.353553j) for i in [1, 3]])
         )
         self.assertAlmostEqual(np.trace(rho), 1.0)
         self.assertTrue(set(['001', '011', '101', '111']) == set(collapsed_bits))
         reset_state = ancilla_reset(collapsed_vector_state, 1)
         self.assertEqual(reset_state.shape, (8,))
         self.assertTrue(
-            np.all([np.isclose(reset_state[i], 0.5+0.0j) for i in [0, 2, 4, 6]])
+            np.all([np.isclose(reset_state[i], -0.353553j) for i in [0, 2]])
         )
         rho = np.outer(collapsed_vector_state, collapsed_vector_state.conj().T)
         self.assertAlmostEqual(np.trace(rho), 1.0)
