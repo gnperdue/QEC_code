@@ -109,10 +109,10 @@ class TestFiveQubitStabilizer(unittest.TestCase): # pylint: disable=too-many-ins
         self.assertTrue(np.all(self.initialized_state == new_state))
 
 
-class TestSteaneCode(unittest.TestCase):
-    """Tests for Steane code functions."""
+class Test10QSteaneCode(unittest.TestCase):
+    """Tests for Steane code functions for the 7+3 qubit system."""
 
-    def test_phase_and_bit_flip_error_correction(self):
+    def test_10q_phase_and_bit_flip_error_correction(self):
         """Test 10-qubit Steane initialization, phase, and bit flip error corrections"""
         LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
         random.seed(11)
@@ -162,27 +162,52 @@ class TestSteaneCode(unittest.TestCase):
             corrected_state = ancilla_reset(corrected_state, 3)
             self.assertTrue(np.allclose(initialized_superpos_state, corrected_state))
 
-    def test_simultaneous_steane_code(self):
-        """Test `simultaneous_steane_code()`"""
+class Test13QSteaneCode(unittest.TestCase):
+    """Tests for Steane code functions for the 7+6 qubit system."""
+
+    def test_13q_phase_and_bit_flip_error_correction(self):
+        """Test 13-qubit Steane initialization, phase, and bit flip error corrections"""
         LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
-        random.seed(10)
         n_qubits = 7  # number of data qubits in our system
         n_ancilla = 6 # for "simultaneous" Steane
         n_qtotal = n_qubits + n_ancilla
-        initial_state = np.kron(
-              zero, np.kron(
-              zero, np.kron(
-              zero, np.kron(
-              zero, np.kron(
-              zero, np.kron(zero, zero))))))
-        self.assertEqual(initial_state.shape, (2**n_qubits,))
-        final_vector_state = initialize_larger_steane_code(initial_state)
-        self.assertEqual(final_vector_state.shape, (2**n_qtotal,)) # pylint: disable=no-member
-        error_state = phase_flip_error(
-            bit_flip_error(final_vector_state, n_qtotal)[0], n_qtotal)[0]
-        self.assertEqual(error_state.shape, (2**n_qtotal,))
-        corrected_vector_state = simultaneous_steane_code(error_state)
-        # TODO: add some good tests checking the states
+        random.seed(11)
+        # -
+        initialized_zero_state = initialize_larger_steane_code(ZERO_STATE7Q)
+        self.assertEqual(initialized_zero_state.shape, (2**n_qtotal,))
+        initialized_zero_state = ancilla_reset(initialized_zero_state, n_ancilla)
+        # too slow for multiple tests - phase flip
+        phase_error_state = phase_flip_error(initialized_zero_state, n_qtotal)[0]
+        corrected_state = simultaneous_steane_code(phase_error_state)
+        corrected_state = ancilla_reset(corrected_state, n_ancilla)
+        self.assertTrue(np.allclose(initialized_zero_state, corrected_state))
+        # too slow for multiple tests - bit flip
+        # too slow for multiple tests - phase and bit flip
+        self.assertTrue(
+            False, "Check the paper for 13 qubit steane - debugging `initialize_larger_steane_code`"
+        )
+
+    # def test_simultaneous_steane_code(self):
+    #     """Test `simultaneous_steane_code()`"""
+    #     LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
+    #     random.seed(10)
+    #     n_qubits = 7  # number of data qubits in our system
+    #     n_ancilla = 6 # for "simultaneous" Steane
+    #     n_qtotal = n_qubits + n_ancilla
+    #     initial_state = np.kron(
+    #           zero, np.kron(
+    #           zero, np.kron(
+    #           zero, np.kron(
+    #           zero, np.kron(
+    #           zero, np.kron(zero, zero))))))
+    #     self.assertEqual(initial_state.shape, (2**n_qubits,))
+    #     final_vector_state = initialize_larger_steane_code(initial_state)
+    #     self.assertEqual(final_vector_state.shape, (2**n_qtotal,)) # pylint: disable=no-member
+    #     error_state = phase_flip_error(
+    #         bit_flip_error(final_vector_state, n_qtotal)[0], n_qtotal)[0]
+    #     self.assertEqual(error_state.shape, (2**n_qtotal,))
+    #     corrected_vector_state = simultaneous_steane_code(error_state)
+    #     # TODO: add some good tests checking the states
 
 
 if __name__ == '__main__':
