@@ -366,28 +366,66 @@ def steane_bit_correction(logical_state):
 # (first 3 are controlled by  first 3 ancilla, other 3 are controlled by the other 3 ancilla)
 
 # phase correction gates
-larger_control_k_one = np.kron(np.identity(2**7), np.kron(np.kron(zero, zero[np.newaxis].T), np.identity(2**5))) + np.kron(
-    k_one, np.kron(np.kron(one, one[np.newaxis].T), np.identity(2**5)))
+larger_control_k_one = \
+    np.kron(
+        np.identity(2**7),
+        np.kron(np.kron(zero, zero[np.newaxis].T), np.identity(2**5))
+    ) + \
+    np.kron(
+        k_one,
+        np.kron(np.kron(one, one[np.newaxis].T), np.identity(2**5))
+    )
 
-larger_control_k_two = np.kron(np.identity(2**7), np.kron(np.identity(2), np.kron(np.kron(
-    zero, zero[np.newaxis].T), np.identity(2**4)))) + np.kron(k_two, np.kron(np.identity(2), np.kron(
-    np.kron(one, one[np.newaxis].T), np.identity(2**4))))
+larger_control_k_two = \
+    np.kron(
+        np.identity(2**7),
+        np.kron(np.identity(2), np.kron(np.kron(zero, zero[np.newaxis].T), np.identity(2**4)))
+    ) + \
+    np.kron(
+        k_two,
+        np.kron(np.identity(2), np.kron(np.kron(one, one[np.newaxis].T), np.identity(2**4)))
+    )
 
-larger_control_k_three = np.kron(np.identity(2**7), np.kron(np.identity(2**2), np.kron(np.kron(
-    zero, zero[np.newaxis].T), np.identity(2**3)))) + np.kron(k_three, np.kron(np.identity(2**2), np.kron(np.kron(
-    one, one[np.newaxis].T), np.identity(2**3))))
+larger_control_k_three = \
+    np.kron(
+        np.identity(2**7),
+        np.kron(np.identity(2**2), np.kron(np.kron(zero, zero[np.newaxis].T), np.identity(2**3)))
+    ) + \
+    np.kron(
+        k_three,
+        np.kron(np.identity(2**2), np.kron(np.kron(one, one[np.newaxis].T), np.identity(2**3)))
+    )
 
 # bit correction gates
-larger_control_k_four = np.kron(np.identity(2**7), np.kron(np.identity(2**3), np.kron(
-    np.kron(zero, zero[np.newaxis].T), np.identity(2**2)))) + np.kron(
-    k_four, np.kron(np.identity(2**3), np.kron(np.kron(one, one[np.newaxis].T), np.identity(2**2))))
+larger_control_k_four = \
+    np.kron(
+        np.identity(2**7),
+        np.kron(np.identity(2**3), np.kron(np.kron(zero, zero[np.newaxis].T), np.identity(2**2)))
+    ) + \
+    np.kron(
+        k_four,
+        np.kron(np.identity(2**3), np.kron(np.kron(one, one[np.newaxis].T), np.identity(2**2)))
+    )
 
-larger_control_k_five = np.kron(np.identity(2**7), np.kron(np.identity(2**4), np.kron(np.kron(
-    zero, zero[np.newaxis].T), np.identity(2)))) + np.kron(k_five, np.kron(np.identity(2**4), np.kron(
-    np.kron(one, one[np.newaxis].T), np.identity(2))))
+larger_control_k_five = \
+    np.kron(
+        np.identity(2**7),
+        np.kron(np.identity(2**4), np.kron(np.kron(zero, zero[np.newaxis].T), np.identity(2)))
+    ) + \
+    np.kron(
+        k_five,
+        np.kron(np.identity(2**4), np.kron(np.kron(one, one[np.newaxis].T), np.identity(2)))
+    )
 
-larger_control_k_six = np.kron(np.identity(2**7), np.kron(np.identity(2**5), np.kron(zero, zero[np.newaxis].T))) + np.kron(
-    k_six, np.kron(np.identity(2**5), np.kron(one, one[np.newaxis].T)))
+larger_control_k_six = \
+    np.kron(
+        np.identity(2**7),
+        np.kron(np.identity(2**5), np.kron(zero, zero[np.newaxis].T))
+    ) + \
+    np.kron(
+        k_six,
+        np.kron(np.identity(2**5), np.kron(one, one[np.newaxis].T))
+    )
 
 
 ### Initializes the 13 qubit (7 physical, 6 ancilla) qubit system ###
