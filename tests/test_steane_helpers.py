@@ -183,9 +183,6 @@ class Test13QSteaneCode(unittest.TestCase):
         self.assertTrue(np.allclose(initialized_zero_state, corrected_state))
         # too slow for multiple tests - bit flip
         # too slow for multiple tests - phase and bit flip
-        self.assertTrue(
-            False, "Check the paper for 13 qubit steane - debugging `initialize_larger_steane_code`"
-        )
 
     # def test_simultaneous_steane_code(self):
     #     """Test `simultaneous_steane_code()`"""
