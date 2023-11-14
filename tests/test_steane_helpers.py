@@ -181,11 +181,17 @@ class Test13QSteaneCode(unittest.TestCase):
         corrected_state = simultaneous_steane_code(phase_error_state)
         corrected_state = ancilla_reset(corrected_state, n_ancilla)
         self.assertTrue(np.allclose(initialized_zero_state, corrected_state))
+        # -
+        initialized_one_state = initialize_larger_steane_code(ONE_STATE7Q)
+        self.assertEqual(initialized_one_state.shape, (2**n_qtotal,))
+        initialized_one_state = ancilla_reset(initialized_one_state, n_ancilla)
         # too slow for multiple tests - bit flip
+        bit_error_state = bit_flip_error(initialized_one_state, n_qtotal)[0]
+        corrected_state = simultaneous_steane_code(bit_error_state)
+        corrected_state = ancilla_reset(corrected_state, n_ancilla)
+        self.assertTrue(np.allclose(initialized_one_state, corrected_state))
+
         # too slow for multiple tests - phase and bit flip
-        self.assertTrue(
-            False, "Check the paper for 13 qubit steane - debugging `initialize_larger_steane_code`"
-        )
 
     # def test_simultaneous_steane_code(self):
     #     """Test `simultaneous_steane_code()`"""
