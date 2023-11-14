@@ -503,7 +503,11 @@ def initialize_larger_steane_code(initial_state): # pylint: disable=too-many-loc
             np.identity(2**(phase_index)),
             np.kron(
                 sigma_z,
-                np.kron(np.identity(2**(n_total-n_ancilla-phase_index-1)), np.identity(2**n_ancilla))
+                # TODO - shouldn't this just be `np.identity(2**(n_ntotal-phase_index-1))` ?
+                np.kron(
+                    np.identity(2**(n_total-n_ancilla-phase_index-1)),
+                    np.identity(2**n_ancilla)
+                )
             )
         )
         collapsed_state = np.dot(operation, collapsed_state)
@@ -514,7 +518,11 @@ def initialize_larger_steane_code(initial_state): # pylint: disable=too-many-loc
             np.identity(2**(bit_index)),
             np.kron(
                 sigma_x,
-                np.kron(np.identity(2**(n_total-n_ancilla-bit_index-1)), np.identity(2**n_ancilla))
+                # TODO - shouldn't this just be `np.identity(2**(n_ntotal-bit_index-1))` ?
+                np.kron(
+                    np.identity(2**(n_total-n_ancilla-bit_index-1)),
+                    np.identity(2**n_ancilla)
+                )
             )
         )
         collapsed_state = np.dot(operation, collapsed_state)
@@ -544,11 +552,11 @@ def initialize_larger_steane_code(initial_state): # pylint: disable=too-many-loc
     return final_vector_state
 
 
-def simultaneous_steane_code(logical_state):
+def simultaneous_steane_code(logical_state): # pylint: disable=too-many-locals
     """
-    Applies the simultaneous initialization/error correction code
+    Applies the simultaneous (13q) initialization/error correction code
 
-    * logical_state: the full logical state of the 13 qubit system
+    * logical_state: the full logical state of the 13 qubit system.
     """
     # TODO - this really looks like the same code as the initialization... do we need it twice? what is the diff?
     full_system = logical_state
@@ -614,6 +622,7 @@ def simultaneous_steane_code(logical_state):
     # Which qubit do we perform the X gate on
     bit_index = (m_four * 2**2) + (m_six * 2**1) + (m_five * 2**0) -1
 
+    # TODO - clean out fossil code once we're sure the logic below is okay...
     # # if no error occurs we dont need to apply a correction
     # if (phase_index == -1) and (bit_index == -1):
     #     final_vector_state = collapsed_state
@@ -648,7 +657,11 @@ def simultaneous_steane_code(logical_state):
             np.identity(2**(phase_index)),
             np.kron(
                 sigma_z,
-                np.kron(np.identity(2**(n_total-n_ancilla-phase_index-1)), np.identity(2**n_ancilla))
+                # TODO - shouldn't this just be `np.identity(2**(n_ntotal-phase_index-1))` ?
+                np.kron(
+                    np.identity(2**(n_total-n_ancilla-phase_index-1)),
+                    np.identity(2**n_ancilla)
+                )
             )
         )
         collapsed_state = np.dot(operation, collapsed_state)
@@ -659,7 +672,11 @@ def simultaneous_steane_code(logical_state):
             np.identity(2**(bit_index)),
             np.kron(
                 sigma_x,
-                np.kron(np.identity(2**(n_total-n_ancilla-bit_index-1)), np.identity(2**n_ancilla))
+                # TODO - shouldn't this just be `np.identity(2**(n_ntotal-bit_index-1))` ?
+                np.kron(
+                    np.identity(2**(n_total-n_ancilla-bit_index-1)),
+                    np.identity(2**n_ancilla)
+                )
             )
         )
         collapsed_state = np.dot(operation, collapsed_state)
