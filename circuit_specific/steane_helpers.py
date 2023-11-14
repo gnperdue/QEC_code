@@ -501,14 +501,7 @@ def initialize_larger_steane_code(initial_state): # pylint: disable=too-many-loc
         # apply the z gate depending on index
         operation = np.kron(
             np.identity(2**(phase_index)),
-            np.kron(
-                sigma_z, np.identity(2**(n_total-phase_index-1))
-                # TODO - shouldn't this just be `np.identity(2**(n_total-phase_index-1))` ?
-                # np.kron(
-                #     np.identity(2**(n_total-n_ancilla-phase_index-1)),
-                #     np.identity(2**n_ancilla)
-                # )
-            )
+            np.kron(sigma_z, np.identity(2**(n_total-phase_index-1)))
         )
         collapsed_state = np.dot(operation, collapsed_state)
 
@@ -516,14 +509,7 @@ def initialize_larger_steane_code(initial_state): # pylint: disable=too-many-loc
         # apply the x gate depending on index
         operation = np.kron(
             np.identity(2**(bit_index)),
-            np.kron(
-                sigma_x, np.identity(2**(n_total-bit_index-1))
-                # TODO - shouldn't this just be `np.identity(2**(n_total-bit_index-1))` ?
-                # np.kron(
-                #     np.identity(2**(n_total-n_ancilla-bit_index-1)),
-                #     np.identity(2**n_ancilla)
-                # )
-            )
+            np.kron(sigma_x, np.identity(2**(n_total-bit_index-1)))
         )
         collapsed_state = np.dot(operation, collapsed_state)
 
@@ -653,14 +639,7 @@ def simultaneous_steane_code(logical_state): # pylint: disable=too-many-locals
         # apply the z gate depending on index
         operation = np.kron(
             np.identity(2**(phase_index)),
-            np.kron(
-                sigma_z, np.identity(2**(n_total-phase_index-1))
-                # TODO - shouldn't this just be `np.identity(2**(n_total-phase_index-1))` ?
-                # np.kron(
-                #     np.identity(2**(n_total-n_ancilla-phase_index-1)),
-                #     np.identity(2**n_ancilla)
-                # )
-            )
+            np.kron(sigma_z, np.identity(2**(n_total-phase_index-1)))
         )
         collapsed_state = np.dot(operation, collapsed_state)
 
@@ -668,14 +647,7 @@ def simultaneous_steane_code(logical_state): # pylint: disable=too-many-locals
         # apply the x gate depending on index
         operation = np.kron(
             np.identity(2**(bit_index)),
-            np.kron(
-                sigma_x, np.identity(2**(n_total-bit_index-1))
-                # TODO - shouldn't this just be `np.identity(2**(n_total-bit_index-1))` ?
-                # np.kron(
-                #     np.identity(2**(n_total-n_ancilla-bit_index-1)),
-                #     np.identity(2**n_ancilla)
-                # )
-            )
+            np.kron(sigma_x, np.identity(2**(n_total-bit_index-1)))
         )
         collapsed_state = np.dot(operation, collapsed_state)
 
