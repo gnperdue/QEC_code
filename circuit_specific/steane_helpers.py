@@ -502,12 +502,12 @@ def initialize_larger_steane_code(initial_state): # pylint: disable=too-many-loc
         operation = np.kron(
             np.identity(2**(phase_index)),
             np.kron(
-                sigma_z,
-                # TODO - shouldn't this just be `np.identity(2**(n_ntotal-phase_index-1))` ?
-                np.kron(
-                    np.identity(2**(n_total-n_ancilla-phase_index-1)),
-                    np.identity(2**n_ancilla)
-                )
+                sigma_z, np.identity(2**(n_total-phase_index-1))
+                # TODO - shouldn't this just be `np.identity(2**(n_total-phase_index-1))` ?
+                # np.kron(
+                #     np.identity(2**(n_total-n_ancilla-phase_index-1)),
+                #     np.identity(2**n_ancilla)
+                # )
             )
         )
         collapsed_state = np.dot(operation, collapsed_state)
@@ -517,12 +517,12 @@ def initialize_larger_steane_code(initial_state): # pylint: disable=too-many-loc
         operation = np.kron(
             np.identity(2**(bit_index)),
             np.kron(
-                sigma_x,
-                # TODO - shouldn't this just be `np.identity(2**(n_ntotal-bit_index-1))` ?
-                np.kron(
-                    np.identity(2**(n_total-n_ancilla-bit_index-1)),
-                    np.identity(2**n_ancilla)
-                )
+                sigma_x, np.identity(2**(n_total-bit_index-1))
+                # TODO - shouldn't this just be `np.identity(2**(n_total-bit_index-1))` ?
+                # np.kron(
+                #     np.identity(2**(n_total-n_ancilla-bit_index-1)),
+                #     np.identity(2**n_ancilla)
+                # )
             )
         )
         collapsed_state = np.dot(operation, collapsed_state)
@@ -593,8 +593,6 @@ def simultaneous_steane_code(logical_state): # pylint: disable=too-many-locals
     # Measure and collapse our ancilla qubits
     collapsed_state = collapse_ancilla(vector_state, n_ancilla)
 
-    print_state_info(collapsed_state, n_total)
-
     # decode the measurements for phase and bit flip locations
     bits = vector_state_to_bit_state(collapsed_state, n_total)[0][0]
     m_one = 0
@@ -656,12 +654,12 @@ def simultaneous_steane_code(logical_state): # pylint: disable=too-many-locals
         operation = np.kron(
             np.identity(2**(phase_index)),
             np.kron(
-                sigma_z,
-                # TODO - shouldn't this just be `np.identity(2**(n_ntotal-phase_index-1))` ?
-                np.kron(
-                    np.identity(2**(n_total-n_ancilla-phase_index-1)),
-                    np.identity(2**n_ancilla)
-                )
+                sigma_z, np.identity(2**(n_total-phase_index-1))
+                # TODO - shouldn't this just be `np.identity(2**(n_total-phase_index-1))` ?
+                # np.kron(
+                #     np.identity(2**(n_total-n_ancilla-phase_index-1)),
+                #     np.identity(2**n_ancilla)
+                # )
             )
         )
         collapsed_state = np.dot(operation, collapsed_state)
@@ -671,12 +669,12 @@ def simultaneous_steane_code(logical_state): # pylint: disable=too-many-locals
         operation = np.kron(
             np.identity(2**(bit_index)),
             np.kron(
-                sigma_x,
-                # TODO - shouldn't this just be `np.identity(2**(n_ntotal-bit_index-1))` ?
-                np.kron(
-                    np.identity(2**(n_total-n_ancilla-bit_index-1)),
-                    np.identity(2**n_ancilla)
-                )
+                sigma_x, np.identity(2**(n_total-bit_index-1))
+                # TODO - shouldn't this just be `np.identity(2**(n_total-bit_index-1))` ?
+                # np.kron(
+                #     np.identity(2**(n_total-n_ancilla-bit_index-1)),
+                #     np.identity(2**n_ancilla)
+                # )
             )
         )
         collapsed_state = np.dot(operation, collapsed_state)
