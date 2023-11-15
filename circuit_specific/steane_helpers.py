@@ -111,7 +111,7 @@ def seven_qubit_kron(q0, q1, q2, q3, q4, q5, q6):
     )))))
 
 
-def steane_logical_zero():
+def steane_dataq_logical_zero():
     """
     Return the Steane 7-qubit logical zero state
     """
@@ -126,7 +126,7 @@ def steane_logical_zero():
     return (1. / np.sqrt(8.0)) * (a + b + c + d + e + f + g + h)
 
 
-def steane_logical_one():
+def steane_dataq_logical_one():
     """
     Return the Steane 7-qubit logical one state
     """
@@ -140,6 +140,12 @@ def steane_logical_one():
     h = seven_qubit_kron(zero, zero, one,  zero, one,  one,  zero)
     return (1. / np.sqrt(8.0)) * (a + b + c + d + e + f + g + h)
 
+def steane_dataq_logical_superpos():
+    """
+    Return the Steane 7-qubit logical one state
+    """
+    return (1. / np.sqrt(2.)) * (steane_dataq_logical_zero() + steane_dataq_logical_one())
+
 
 def initialize_steane_logical_state(initial_state): # pylint: disable=too-many-locals
     """
@@ -148,7 +154,6 @@ def initialize_steane_logical_state(initial_state): # pylint: disable=too-many-l
     * initial_state: initial state of your 7 qubits qubit that you want to use
     as your logical state combined with ancillas
     """
-
     ancilla_syndrome = np.kron(zero, np.kron(zero, zero))
     full_system = np.kron(initial_state, ancilla_syndrome)
 
@@ -206,6 +211,8 @@ def initialize_steane_logical_state(initial_state): # pylint: disable=too-many-l
     comparison_state = np.kron(
         zero, np.kron(zero, np.kron(zero, np.kron(zero, np.kron(zero, np.kron(zero, zero)))))
     )
+    # TODO: what is this comparison really meant for?
+    # ...We require every single element of the vectors to be different here? -> Why?
     if (initial_state != comparison_state).all():
         final_vector_state = steane_bit_correction(final_vector_state)
 
