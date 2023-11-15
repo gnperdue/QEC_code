@@ -105,10 +105,10 @@ def collapse_ancilla(logical_state, k): # pylint: disable=too-many-locals,too-ma
         ancilla_values_dict[ancilla_values_key].append(bit)
         probs_values_dict[ancilla_values_key] += \
             np.abs(logical_state[int(indices[all_bits == bit][0])])**2
-    all_organized_bits = []
-    for key in ancilla_values_dict:
-        all_organized_bits.append(ancilla_values_dict[key])
-    all_organized_bits = np.array(all_organized_bits)
+    # all_organized_bits = []
+    # for key in ancilla_values_dict:
+    #     all_organized_bits.append(ancilla_values_dict[key])
+    # all_organized_bits = np.array(all_organized_bits)
 
     # TODO: clean up this fossil code eventually
     # # finding our probability for measurement - GP: test a faster calculation
