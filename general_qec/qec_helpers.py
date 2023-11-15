@@ -105,31 +105,8 @@ def collapse_ancilla(logical_state, k): # pylint: disable=too-many-locals,too-ma
         ancilla_values_dict[ancilla_values_key].append(bit)
         probs_values_dict[ancilla_values_key] += \
             np.abs(logical_state[int(indices[all_bits == bit][0])])**2
-    all_organized_bits = []
-    for key in ancilla_values_dict:
-        all_organized_bits.append(ancilla_values_dict[key])
-    all_organized_bits = np.array(all_organized_bits)
 
-    # TODO: clean up this fossil code eventually
-    # # finding our probability for measurement - GP: test a faster calculation
-    # rows, cols = np.shape(all_organized_bits)
-    # probs = np.array([])
-    # for i in range(rows):
-    #     summation = 0
-    #     for j in range(cols):
-    #         summation += np.abs(  # GNP - do we need the abs here?
-    #             logical_state[
-    #                 int(indices[all_bits == all_organized_bits[i][j]][0])
-    #             ]
-    #         )**2
-    #     probs = np.append(probs, summation)
-    # # find which ancilla we will measure
-    # index = random.choices(all_organized_bits, weights=probs, k=1)
-    # index = np.where(all_organized_bits == index)[0][0]
-    # # set our collapsed state to that ancilla measurement
-    # collapsed_bits = all_organized_bits[index]
-
-    # randomly select an ancilla collapse state - faster calc, but is it baised?
+    # randomly select an ancilla collapse state
     test_val, ancilla_choice, cumulative_probability = random.uniform(0, 1), None, 0.0
     for ancilla_key, ancilla_value in probs_values_dict.items():
         if cumulative_probability < test_val:

@@ -3,8 +3,8 @@ The functions in this file are useful when implementing the seven qubit steane c
 """
 import random
 import numpy as np
+from general_qec.qec_helpers import one, zero
 from general_qec.qec_helpers import collapse_ancilla
-from general_qec.qec_helpers import print_state_info
 from general_qec.qec_helpers import remove_small_values
 from general_qec.qec_helpers import vector_state_to_bit_state
 from general_qec.gates import hadamard
@@ -12,9 +12,6 @@ from general_qec.gates import sigma_x, sigma_z, sigma_I, CNOT, CZ
 
 
 # - - - - - - - - - -  Useful variables - - - - - - - - - - #
-
-zero = np.array([1, 0])
-one = np.array([0, 1])
 
 # Setting up the 6 Stabilizer Operators for the 7-qubit Steane Code
 k_one = np.kron(sigma_I, np.kron(sigma_I, np.kron(sigma_I, np.kron(
@@ -100,6 +97,56 @@ control_k_six = \
 
 # - - - - - - - - - -  Initializations - - - - - - - - - - #
 
+def seven_qubit_kron(q0, q1, q2, q3, q4, q5, q6):
+    """
+    Take the kronecker product of 7 tensors (meant to build a qubit state)
+    """
+    return \
+        np.kron(q0,
+        np.kron(q1,
+        np.kron(q2,
+        np.kron(q3,
+        np.kron(q4,
+        np.kron(q5, q6)
+    )))))
+
+
+def steane_dataq_logical_zero():
+    """
+    Return the Steane 7-qubit logical zero state
+    """
+    a = seven_qubit_kron(zero, zero, zero, zero, zero, zero, zero)
+    b = seven_qubit_kron(one,  zero, one,  zero, one,  zero, one)
+    c = seven_qubit_kron(zero, one,  one,  zero, zero, one,  one)
+    d = seven_qubit_kron(one,  one,  zero, zero, one,  one,  zero)
+    e = seven_qubit_kron(zero, zero, zero, one,  one,  one,  one)
+    f = seven_qubit_kron(one,  zero, one,  one,  zero, one,  zero)
+    g = seven_qubit_kron(zero, one,  one,  one,  one,  zero, zero)
+    h = seven_qubit_kron(one,  one,  zero, one,  zero, zero, one)
+    return (1. / np.sqrt(8.0)) * (a + b + c + d + e + f + g + h)
+
+
+def steane_dataq_logical_one():
+    """
+    Return the Steane 7-qubit logical one state
+    """
+    a = seven_qubit_kron(one,  one,  one,  one,  one,  one,  one)
+    b = seven_qubit_kron(zero, one,  zero, one,  zero, one,  zero)
+    c = seven_qubit_kron(one,  zero, zero, one,  one,  zero, zero)
+    d = seven_qubit_kron(zero, zero, one,  one,  zero, zero, one)
+    e = seven_qubit_kron(one,  one,  one,  zero, zero, zero, zero)
+    f = seven_qubit_kron(zero, one,  zero, zero, one,  zero, one)
+    g = seven_qubit_kron(one,  zero, zero, zero, zero, one,  one)
+    h = seven_qubit_kron(zero, zero, one,  zero, one,  one,  zero)
+    return (1. / np.sqrt(8.0)) * (a + b + c + d + e + f + g + h)
+
+def steane_dataq_logical_superpos():
+    """
+    Return the Steane 7-qubit logical one state
+    """
+    return (1. / np.sqrt(2.)) * (steane_dataq_logical_zero() + steane_dataq_logical_one())
+
+
 def initialize_steane_logical_state(initial_state): # pylint: disable=too-many-locals
     """
     Initializes the 10 qubit (7 physical, 3 ancilla) qubit system.
@@ -107,7 +154,6 @@ def initialize_steane_logical_state(initial_state): # pylint: disable=too-many-l
     * initial_state: initial state of your 7 qubits qubit that you want to use
     as your logical state combined with ancillas
     """
-
     ancilla_syndrome = np.kron(zero, np.kron(zero, zero))
     full_system = np.kron(initial_state, ancilla_syndrome)
 
@@ -165,6 +211,8 @@ def initialize_steane_logical_state(initial_state): # pylint: disable=too-many-l
     comparison_state = np.kron(
         zero, np.kron(zero, np.kron(zero, np.kron(zero, np.kron(zero, np.kron(zero, zero)))))
     )
+    # TODO: what is this comparison really meant for?
+    # ...We require every single element of the vectors to be different here? -> Why?
     if (initial_state != comparison_state).all():
         final_vector_state = steane_bit_correction(final_vector_state)
 
@@ -466,6 +514,7 @@ def initialize_larger_steane_code(initial_state): # pylint: disable=too-many-loc
 
     # Find the bit representation of our full system
     bits, _, vector_state = vector_state_to_bit_state(full_system, n_total)
+    vector_state = remove_small_values(vector_state)
 
     # Measure and collapse our ancilla qubits
     collapsed_state = collapse_ancilla(vector_state, n_ancilla)
@@ -573,7 +622,6 @@ def simultaneous_steane_code(logical_state): # pylint: disable=too-many-locals
 
     # Find the bit representation of our full system
     bits, _, vector_state = vector_state_to_bit_state(full_system, n_total)
-
     vector_state = remove_small_values(vector_state)
 
     # Measure and collapse our ancilla qubits
