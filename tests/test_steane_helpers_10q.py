@@ -1,33 +1,24 @@
 '''
 Usage:
-    python test_steane_helpers.py
+    python test_steane_helpers_10q.py
 '''
 import unittest
 import random
 import logging
 import sys
 import numpy as np
-from general_qec.qec_helpers import one, zero, superpos
+from general_qec.qec_helpers import one, zero
 from general_qec.qec_helpers import ancilla_reset
-from general_qec.qec_helpers import print_state_info
 from general_qec.qec_helpers import vector_state_to_bit_state
-from general_qec.gates import sigma_I, sigma_x, sigma_y, sigma_z
-# from circuit_specific.steane_helpers import \  # TODO use these later...
-#     k_one, k_two, k_three, \
-#     k_four, k_five, k_six
+from general_qec.gates import sigma_I, sigma_x, sigma_z
 from circuit_specific.steane_helpers import bit_flip_error
-from circuit_specific.steane_helpers import initialize_larger_steane_code
 from circuit_specific.steane_helpers import initialize_steane_logical_state
 from circuit_specific.steane_helpers import phase_flip_error
-from circuit_specific.steane_helpers import simultaneous_steane_code
 from circuit_specific.steane_helpers import steane_phase_correction
 from circuit_specific.steane_helpers import steane_bit_correction
 from circuit_specific.steane_helpers import steane_dataq_logical_zero
 from circuit_specific.steane_helpers import steane_dataq_logical_one
 from circuit_specific.steane_helpers import steane_dataq_logical_superpos
-from circuit_specific.steane_helpers import initialize_steane_line_conn
-from circuit_specific.steane_helpers import steane_line_conn_phase_correction
-from circuit_specific.steane_helpers import steane_line_conn_bit_correction
 
 LOGGER = logging.getLogger(__name__)
 
