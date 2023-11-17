@@ -574,13 +574,6 @@ def initialize_larger_steane_code(initial_state): # pylint: disable=too-many-loc
 
     # apply global phase correction:
     seven_sigma_zs = seven_tensor_kron(*[sigma_z]*7)
-    #     np.kron(sigma_z,
-    #     np.kron(sigma_z,
-    #     np.kron(sigma_z,
-    #     np.kron(sigma_z,
-    #     np.kron(sigma_z,
-    #     np.kron(sigma_z, sigma_z)
-    # )))))
     z_bar = np.kron(seven_sigma_zs, np.identity(2**n_ancilla))
     final_vector_state = np.dot(z_bar, final_vector_state)
 
@@ -703,13 +696,6 @@ def simultaneous_steane_code(logical_state): # pylint: disable=too-many-locals
 
     # apply global phase correction:
     seven_sigma_zs = seven_tensor_kron(*[sigma_z]*7)
-    #     np.kron(sigma_z,
-    #     np.kron(sigma_z,
-    #     np.kron(sigma_z,
-    #     np.kron(sigma_z,
-    #     np.kron(sigma_z,
-    #     np.kron(sigma_z, sigma_z)
-    # )))))
     z_bar = np.kron(seven_sigma_zs, np.identity(2**n_ancilla))
     final_vector_state = np.dot(z_bar, final_vector_state)
 
@@ -989,8 +975,6 @@ K3_grid_operation = np.dot(CNOT(9, 1, 10), np.dot(
     np.dot(swap_a2_4, np.dot(CNOT(4, 2, 10), swap_a2_4)), np.dot(
     CNOT(9, 5, 10), CNOT(9, 6, 10))))
 
-
-
 # SWAPS needed for K4 are the same as K1
 # Create K1 operator
 K4_grid_operation = np.dot(CZ(7, 3, 10), np.dot(np.dot(
@@ -1010,11 +994,13 @@ K6_grid_operation = np.dot(CZ(9, 1, 10), np.dot(
     CZ(9, 5, 10), CZ(9, 6, 10))))
 
 
-### Initializes the 10 qubit (7 physical, 3 ancilla) qubit system ###
 def initialize_steane_grid_conn(initial_state):
-    # initial_state: initial state of your 7 qubits qubit that you want to use as your logical state combined with ancillas
+    """
+    Initializes the 10 qubit (7 physical, 3 ancilla) qubit system
 
-
+    # initial_state: initial state of your 7 qubits that you want to use as your
+    logical state priot to combination with ancillas
+    """
     ancilla_syndrome = np.kron(zero, np.kron(zero, zero))
     full_system = np.kron(initial_state, ancilla_syndrome)
 
@@ -1023,7 +1009,11 @@ def initialize_steane_grid_conn(initial_state):
     full_system = np.dot(ancilla_hadamard, full_system)
 
     # apply the control stabilizer gates to the full_system
-    full_system = np.dot(K1_grid_operation, np.dot(K2_grid_operation, np.dot(K3_grid_operation, full_system)))
+    full_system = \
+        np.dot(K1_grid_operation,
+        np.dot(K2_grid_operation,
+        np.dot(K3_grid_operation,
+               full_system)))
 
     # apply the second hadamard to the ancillas
     full_system = np.dot(ancilla_hadamard, full_system)
@@ -1031,16 +1021,14 @@ def initialize_steane_grid_conn(initial_state):
     # Find the bit representation of our full system
     bits, index, vector_state = vector_state_to_bit_state(full_system, 10)
 
-  # Measure and collapse our ancilla qubits
+    # Measure and collapse our ancilla qubits
     collapsed_state = collapse_ancilla(vector_state, 3)
 
     # How many total qubits are in our vector representation
     n = int(np.log(len(full_system))/np.log(2))
 
     # Measure the three ancilla qubits
-    # Applying the Z gate operation on a specific qubit
     bits = vector_state_to_bit_state(collapsed_state, 10)[0][0]
-    # find index
     m_one = 0
     m_two = 0
     m_three = 0
@@ -1057,51 +1045,50 @@ def initialize_steane_grid_conn(initial_state):
     # if no error occurs we dont need to apply a correction
     if index == -1:
         final_vector_state = collapsed_state
-
     else:
         # apply the z gate depending on index
         operation = np.kron(np.identity(2**(index)), np.kron(sigma_z, np.kron(
             np.identity(2**(n-3-index-1)), np.identity(2**3))))
-
         final_vector_state = np.dot(operation, collapsed_state)
 
     # Using this for superposition states, doesnt do anything for |0> initial states
     # becuase they are already +1 eigenstates of Z
-    if (initial_state != np.kron(zero, np.kron(zero, np.kron(zero, np.kron(
-        zero, np.kron(zero, np.kron(zero, zero))))))).all():
-            final_vector_state = steane_bit_correction(final_vector_state)
+    # TODO - what is this for? - also, assume we need grid connected version...
+    if (initial_state != seven_tensor_kron(*[zero]*7)).all():
+        final_vector_state = steane_grid_conn_bit_correction(final_vector_state)
 
     # apply global phase correction:
-    z_bar = np.kron(sigma_z, np.kron(sigma_z, np.kron(sigma_z, np.kron(sigma_z, np.kron(
-        sigma_z, np.kron(sigma_z, sigma_z))))))
-    z_bar = np.kron(z_bar, np.identity(2**3))
+    # TODO - is this needed? not sure we are consistent with it
+    seven_sigma_zs = seven_tensor_kron(*[sigma_z]*7)
+    z_bar = np.kron(seven_sigma_zs, np.identity(2**3))
     final_vector_state = np.dot(z_bar, final_vector_state)
 
     return final_vector_state
 
-### Implements the 7 Qubit Steane phase correction code using grid connectivity
 def steane_grid_conn_phase_correction(logical_state):
-    # logical_state: The vector state representation of your 10 qubit system
-                    # (7 data qubits initialized to your desired logical state, 3 ancilla initialized to 0)
-
+    """
+    Implements the 7 Qubit Steane phase correction code using grid connectivity
+    * logical_state: The vector state representation of your 10 qubit system
+    * (7 data qubits initialized to your desired logical state, 3 ancilla initialized to 0)
+    """
     full_system = logical_state
-
-
-    # - - - - - - - - - - # Z Error Correction # - - - - - - - - - - #
 
     # apply the first hadamard to the ancillas
     ancilla_hadamard = np.kron(np.identity(2**7), np.kron(hadamard, np.kron(hadamard, hadamard)))
     full_system = np.dot(ancilla_hadamard, full_system)
 
     # apply the control stabilizer gates to the full_system
-    full_system = np.dot(K1_grid_operation, np.dot(K2_grid_operation, np.dot(K3_grid_operation, full_system)))
+    full_system = \
+        np.dot(K1_grid_operation,
+        np.dot(K2_grid_operation,
+        np.dot(K3_grid_operation,
+               full_system)))
 
     # apply the second hadamard to the ancillas
     full_system = np.dot(ancilla_hadamard, full_system)
 
     # Find the bit representation of our full system
     bits, index, vector_state = vector_state_to_bit_state(full_system, 10)
-
 
      # remove small values after applying operations
     vector_state = remove_small_values(vector_state)
@@ -1113,9 +1100,7 @@ def steane_grid_conn_phase_correction(logical_state):
     n = int(np.log(len(full_system))/np.log(2))
 
     # Measure the three ancilla qubits
-    # Applying the Z gate operation on a specific qubit
     bits = vector_state_to_bit_state(collapsed_state, 10)[0][0]
-    # find index
     m_one = 0
     m_two = 0
     m_three = 0
@@ -1132,7 +1117,6 @@ def steane_grid_conn_phase_correction(logical_state):
     # if no error occurs we dont need to apply a correction
     if index == -1:
         final_vector_state = collapsed_state
-
     else:
         # apply the z gate depending on index
         operation = np.kron(np.identity(2**(index)), np.kron(sigma_z, np.kron(
@@ -1145,20 +1129,23 @@ def steane_grid_conn_phase_correction(logical_state):
     return corrected_vector_state
 
 
-### Implements the 7 Qubit Steane bit correction code using grid connectivity
 def steane_grid_conn_bit_correction(logical_state):
-    # logical_state: The vector state representation of your 10 qubit system
-                    # (7 data qubits initialized to your desired logical state, 3 ancilla initialized to 0)
-
+    """
+    Implements the 7 Qubit Steane bit correction code using grid connectivity
+    * logical_state: The vector state representation of your 10 qubit system
+    * (7 data qubits initialized to your desired logical state, 3 ancilla initialized to 0)
+    """
     full_system = logical_state
 
     ancilla_hadamard = np.kron(np.identity(2**7), np.kron(hadamard, np.kron(hadamard, hadamard)))
-
     full_system = np.dot(ancilla_hadamard, full_system)
 
     # apply the control stabilizer gates to the full_system
-    full_system = np.dot(K4_grid_operation, np.dot(K5_grid_operation, np.dot(K6_grid_operation, full_system)))
-    # full_system = np.dot(control_k_four, np.dot(control_k_five, np.dot(control_k_six, full_system)))
+    full_system = \
+        np.dot(K4_grid_operation,
+        np.dot(K5_grid_operation,
+        np.dot(K6_grid_operation,
+               full_system)))
 
     # apply the second hadamard to the ancillas
     full_system = np.dot(ancilla_hadamard, full_system)
@@ -1176,9 +1163,7 @@ def steane_grid_conn_bit_correction(logical_state):
     n = int(np.log(len(full_system))/np.log(2))
 
     # Measure the three ancilla qubits
-    # Applying the Z gate operation on a specific qubit
     bits = vector_state_to_bit_state(collapsed_state, 10)[0][0]
-    # find index
     m_four = 0
     m_five = 0
     m_six = 0
@@ -1195,16 +1180,13 @@ def steane_grid_conn_bit_correction(logical_state):
     # if no error occurs we dont need to apply a correction
     if index == -1:
         final_vector_state = collapsed_state
-
     else:
         # apply the z gate depending on index
         operation = np.kron(np.identity(2**(index)), np.kron(sigma_x, np.kron(
             np.identity(2**(n-3-index-1)), np.identity(2**3))))
-
         final_vector_state = np.dot(operation, collapsed_state)
 
     # remove small values from state
     corrected_vector_state = remove_small_values(final_vector_state)
 
     return corrected_vector_state
-
