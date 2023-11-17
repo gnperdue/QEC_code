@@ -10,7 +10,7 @@ from general_qec.gates import sigma_x, sigma_y, sigma_z
 from general_qec.gates import adj_CNOT, flipped_adj_CNOT, small_non_adj_CNOT
 from general_qec.gates import non_adj_CNOT, flipped_non_adj_CNOT, CNOT
 from general_qec.gates import cnot, flipped_cnot
-from general_qec.gates import adj_CZ, non_adj_CZ, CZ
+from general_qec.gates import CZ
 from general_qec.qec_helpers import one, zero
 
 LOGGER = logging.getLogger(__name__)
@@ -100,17 +100,25 @@ class TestGates(unittest.TestCase): # pylint: disable=too-many-instance-attribut
     def test_cz(self):
         """Test CZ from `gates` module."""
         LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
-        self.assertTrue(np.all(
-            adj_CZ(0, 1, 2) == CZ(0, 1, 2)
+        self.assertEqual(CZ(0, 1, 4).shape, (16, 16))
+        self.assertEqual(CZ(3, 0, 4).shape, (16, 16))
+        self.assertTrue(np.allclose(
+            np.matmul(CZ(0, 1, 3), self.three_qubit100), self.three_qubit100
+        ))
+        self.assertTrue(np.allclose(
+            np.matmul(CZ(0, 2, 3), self.three_qubit101), -1.0 * self.three_qubit101
+        ))
+        self.assertTrue(np.allclose(
+            np.matmul(CZ(2, 0, 3), self.three_qubit101), -1.0 * self.three_qubit101
+        ))
+        self.assertTrue(np.allclose(
+            np.matmul(CZ(0, 1, 3), self.three_qubit111), -1.0 * self.three_qubit111
         ))
         self.assertTrue(np.all(
-            adj_CZ(3, 4, 5) == CZ(3, 4, 5)
+            CZ(1, 0, 2) == CZ(0, 1, 2)
         ))
         self.assertTrue(np.all(
-            non_adj_CZ(0, 4, 5) == CZ(0, 4, 5)
-        ))
-        self.assertTrue(np.all(
-            non_adj_CZ(3, 0, 5) == CZ(3, 0, 5)
+            CZ(2, 3, 4) == CZ(3, 2, 4)
         ))
 
     def test_distant_nonadj_cnot(self):
