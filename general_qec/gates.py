@@ -223,119 +223,22 @@ cz = np.dot(
     np.dot(cnot, np.kron(np.identity(2), hadamard))).round().astype(int)
 
 
-def adj_CZ(control, target, tot_qubits): # pylint: disable=invalid-name
-    """
-    Implement a CZ gate between 2 adjacent qubits in a system
-
-    control: control qubit index (starting from 0)
-    target: target qubit index (starting from 0) (must != control)
-    tot_qubits: total number of qubits in the system
-    """
-    assert target != control, "target must not equal control"
-    # Adds the dimensions needed depending on the tot_qubits
-    if control < target:
-        # exponent used to tensor the left side iden matrix for our full system
-        n1 = control                   # pylint: disable=invalid-name
-        # exponent used to tensor the right side iden matrix for full system
-        n2 = tot_qubits - target - 1   # pylint: disable=invalid-name
-    else:
-        # exponent used to tensor the left side iden matrix for our full system
-        n1 = target                    # pylint: disable=invalid-name
-        # exponent used to tensor the right side iden matrix for full system
-        n2 = tot_qubits - control - 1  # pylint: disable=invalid-name
-
-    final_gate = np.kron(
-        np.identity(2**(n1)), np.kron(cz, np.identity(2**(n2)))
-    )
-
-    # remove small values
-    final_gate[np.abs(final_gate) < 1e-15] = 0
-
-    return final_gate
-
-
-def non_adj_CZ(control, target, tot_qubits): # pylint: disable=invalid-name
-    """
-    Implement a non-adjacent CZ gate between 2 qubits in a system ###
-
-    control: control qubit index (starting from 0)
-    target: target qubit index (starting from 0) (must != control)
-    tot_qubits: total number of qubits in the system
-    """
-    assert target != control, "target must not equal control"
-    # used to index over all gates neeeded to compose final gate
-    p = np.abs(target - control)  # pylint: disable=invalid-name
-    # array used to keep track of the components we will combine at the end
-    all_dots = np.array([[]])
-    # Indexing over the values of p to get the first half of the formula
-    for j in range(p):
-        # Sets the next component of the matrix multiplication up
-        next_dot = np.kron(
-            np.identity(2**(j)), np.kron(cnot, np.identity(2**(p-j-1)))
-        )
-
-        # Adds the components to the array and multiplies them together
-        if j == 0:
-            all_dots = np.array([next_dot])
-            gate = all_dots[j]
-        else:
-            all_dots = np.append(all_dots, [next_dot], axis = 0)
-            gate = np.dot(gate, all_dots[j])
-
-    # Indexing over values of p such that we get the 2nd half of the equation
-    # together
-    for j in range(p - 2):
-        gate = np.dot(gate, all_dots[p-j-2])
-
-    # Squares the final matrix
-    final_gate = np.dot(gate, gate)
-
-    # Adds the dimensions needed depending on the tot_qubits
-    if control < target:
-        # exponent used to tensor the left side iden matrix for our full system
-        n1 = control # pylint: disable=invalid-name
-        # exponent used to tensor the right side iden matrix for our system
-        n2 = tot_qubits - target - 1 # pylint: disable=invalid-name
-    else:
-        # exponent used to tensor the left side iden matrix for our full system
-        n1 = target # pylint: disable=invalid-name
-        # exponent used to tensor the right side identity matrix for our system
-        n2 = tot_qubits - control - 1 # pylint: disable=invalid-name
-
-    # Find the correct Hadamard gate to apply so that you convert the CNOT to
-    # a CZ.
-    h_gate = np.kron(
-        np.identity(2**(n1)),
-        np.kron(
-            np.kron(np.identity(2**(np.abs(target - control))), hadamard),
-            np.identity(2**(n2))
-        )
-    )
-
-    # Calculate the final gate
-    final_total_gate = np.dot(
-        h_gate, np.dot(
-            np.kron(
-                np.identity(2**(n1)), np.kron(final_gate, np.identity(2**(n2)))
-            ),
-            h_gate
-        )
-    )
-
-    # remove small values
-    final_total_gate[np.abs(final_total_gate) < 1e-15] = 0
-
-    return final_total_gate
-
-
 def CZ(control, target, tot_qubits): # pylint: disable=invalid-name
     """
     Implement a Control-Z gate between 2 qubits depending on your parameters
     """
-    # Check if adjacent
-    if target - control == 1:
-        gate = adj_CZ(control, target, tot_qubits)
-    else:
-        gate = non_adj_CZ(control, target, tot_qubits)
+    # first, Hadamard the target
+    target_hadamard = np.kron(
+        np.kron(np.identity(2**target), hadamard),
+        np.identity(2**(tot_qubits - target - 1))
+    )
+    gate = target_hadamard
+    # second, apply a CNOT
+    gate = np.dot(gate, CNOT(control, target, tot_qubits))
+    # third, Hadamard the target
+    gate = np.dot(gate, target_hadamard)
+    # remove small values
+    gate[np.abs(gate) < 1e-15] = 0
 
+    # return the gate
     return gate
