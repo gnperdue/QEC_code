@@ -97,9 +97,9 @@ control_k_six = \
 
 # - - - - - - - - - -  Initializations - - - - - - - - - - #
 
-def seven_qubit_kron(q0, q1, q2, q3, q4, q5, q6):
+def seven_tensor_kron(q0, q1, q2, q3, q4, q5, q6):
     """
-    Take the kronecker product of 7 tensors (meant to build a qubit state)
+    Take the kronecker product of 7 tensors
     """
     return \
         np.kron(q0,
@@ -115,14 +115,14 @@ def steane_dataq_logical_zero():
     """
     Return the Steane 7-qubit logical zero state
     """
-    a = seven_qubit_kron(zero, zero, zero, zero, zero, zero, zero)
-    b = seven_qubit_kron(one,  zero, one,  zero, one,  zero, one)
-    c = seven_qubit_kron(zero, one,  one,  zero, zero, one,  one)
-    d = seven_qubit_kron(one,  one,  zero, zero, one,  one,  zero)
-    e = seven_qubit_kron(zero, zero, zero, one,  one,  one,  one)
-    f = seven_qubit_kron(one,  zero, one,  one,  zero, one,  zero)
-    g = seven_qubit_kron(zero, one,  one,  one,  one,  zero, zero)
-    h = seven_qubit_kron(one,  one,  zero, one,  zero, zero, one)
+    a = seven_tensor_kron(zero, zero, zero, zero, zero, zero, zero)
+    b = seven_tensor_kron(one,  zero, one,  zero, one,  zero, one)
+    c = seven_tensor_kron(zero, one,  one,  zero, zero, one,  one)
+    d = seven_tensor_kron(one,  one,  zero, zero, one,  one,  zero)
+    e = seven_tensor_kron(zero, zero, zero, one,  one,  one,  one)
+    f = seven_tensor_kron(one,  zero, one,  one,  zero, one,  zero)
+    g = seven_tensor_kron(zero, one,  one,  one,  one,  zero, zero)
+    h = seven_tensor_kron(one,  one,  zero, one,  zero, zero, one)
     return (1. / np.sqrt(8.0)) * (a + b + c + d + e + f + g + h)
 
 
@@ -130,14 +130,14 @@ def steane_dataq_logical_one():
     """
     Return the Steane 7-qubit logical one state
     """
-    a = seven_qubit_kron(one,  one,  one,  one,  one,  one,  one)
-    b = seven_qubit_kron(zero, one,  zero, one,  zero, one,  zero)
-    c = seven_qubit_kron(one,  zero, zero, one,  one,  zero, zero)
-    d = seven_qubit_kron(zero, zero, one,  one,  zero, zero, one)
-    e = seven_qubit_kron(one,  one,  one,  zero, zero, zero, zero)
-    f = seven_qubit_kron(zero, one,  zero, zero, one,  zero, one)
-    g = seven_qubit_kron(one,  zero, zero, zero, zero, one,  one)
-    h = seven_qubit_kron(zero, zero, one,  zero, one,  one,  zero)
+    a = seven_tensor_kron(one,  one,  one,  one,  one,  one,  one)
+    b = seven_tensor_kron(zero, one,  zero, one,  zero, one,  zero)
+    c = seven_tensor_kron(one,  zero, zero, one,  one,  zero, zero)
+    d = seven_tensor_kron(zero, zero, one,  one,  zero, zero, one)
+    e = seven_tensor_kron(one,  one,  one,  zero, zero, zero, zero)
+    f = seven_tensor_kron(zero, one,  zero, zero, one,  zero, one)
+    g = seven_tensor_kron(one,  zero, zero, zero, zero, one,  one)
+    h = seven_tensor_kron(zero, zero, one,  zero, one,  one,  zero)
     return (1. / np.sqrt(8.0)) * (a + b + c + d + e + f + g + h)
 
 def steane_dataq_logical_superpos():
@@ -573,14 +573,14 @@ def initialize_larger_steane_code(initial_state): # pylint: disable=too-many-loc
     #         final_vector_state = steane_bit_correction(final_vector_state)
 
     # apply global phase correction:
-    seven_sigma_zs = \
-        np.kron(sigma_z,
-        np.kron(sigma_z,
-        np.kron(sigma_z,
-        np.kron(sigma_z,
-        np.kron(sigma_z,
-        np.kron(sigma_z, sigma_z)
-    )))))
+    seven_sigma_zs = seven_tensor_kron(*[sigma_z]*7)
+    #     np.kron(sigma_z,
+    #     np.kron(sigma_z,
+    #     np.kron(sigma_z,
+    #     np.kron(sigma_z,
+    #     np.kron(sigma_z,
+    #     np.kron(sigma_z, sigma_z)
+    # )))))
     z_bar = np.kron(seven_sigma_zs, np.identity(2**n_ancilla))
     final_vector_state = np.dot(z_bar, final_vector_state)
 
@@ -702,14 +702,14 @@ def simultaneous_steane_code(logical_state): # pylint: disable=too-many-locals
     final_vector_state = collapsed_state
 
     # apply global phase correction:
-    seven_sigma_zs = \
-        np.kron(sigma_z,
-        np.kron(sigma_z,
-        np.kron(sigma_z,
-        np.kron(sigma_z,
-        np.kron(sigma_z,
-        np.kron(sigma_z, sigma_z)
-    )))))
+    seven_sigma_zs = seven_tensor_kron(*[sigma_z]*7)
+    #     np.kron(sigma_z,
+    #     np.kron(sigma_z,
+    #     np.kron(sigma_z,
+    #     np.kron(sigma_z,
+    #     np.kron(sigma_z,
+    #     np.kron(sigma_z, sigma_z)
+    # )))))
     z_bar = np.kron(seven_sigma_zs, np.identity(2**n_ancilla))
     final_vector_state = np.dot(z_bar, final_vector_state)
 
@@ -755,10 +755,13 @@ K6_line_operation = \
            CZ(9, 6, 10))))
 
 
-### Initializes the 10 qubit (7 physical, 3 ancilla) qubit system ###
 def initialize_steane_line_conn(initial_state):
-    # initial_state: initial state of your 7 qubits qubit that you want to use as your logical state combined with ancillas
+    """
+    Initializes the 10 qubit (7 physical, 3 ancilla) qubit system
 
+    * initial_state: initial state of your 7 qubits that you want to use as your
+    logical state prior to combination with ancillas
+    """
     ancilla_syndrome = np.kron(zero, np.kron(zero, zero))
     full_system = np.kron(initial_state, ancilla_syndrome)
 
@@ -767,7 +770,11 @@ def initialize_steane_line_conn(initial_state):
     full_system = np.dot(ancilla_hadamard, full_system)
 
     # apply the control stabilizer gates to the full_system
-    full_system = np.dot(K1_line_operation, np.dot(K2_line_operation, np.dot(K3_line_operation, full_system)))
+    full_system = \
+        np.dot(K1_line_operation,
+        np.dot(K2_line_operation,
+        np.dot(K3_line_operation,
+               full_system)))
 
     # apply the second hadamard to the ancillas
     full_system = np.dot(ancilla_hadamard, full_system)
@@ -801,52 +808,52 @@ def initialize_steane_line_conn(initial_state):
     # if no error occurs we dont need to apply a correction
     if index == -1:
         final_vector_state = collapsed_state
-
     else:
         # apply the z gate depending on index
         operation = np.kron(np.identity(2**(index)), np.kron(sigma_z, np.kron(
             np.identity(2**(n-3-index-1)), np.identity(2**3))))
-
         final_vector_state = np.dot(operation, collapsed_state)
 
     # Using this for superposition states, doesnt do anything for |0> initial states
     # becuase they are already +1 eigenstates of Z
-    if (initial_state != np.kron(zero, np.kron(zero, np.kron(zero, np.kron(
-        zero, np.kron(zero, np.kron(zero, zero))))))).all():
-            final_vector_state = steane_line_conn_bit_correction(final_vector_state)
+    # TODO - what is this for?
+    if (initial_state != seven_tensor_kron(*[zero]*7)).all():
+        final_vector_state = steane_line_conn_bit_correction(final_vector_state)
 
     # apply global phase correction:
-    z_bar = np.kron(sigma_z, np.kron(sigma_z, np.kron(sigma_z, np.kron(sigma_z, np.kron(
-        sigma_z, np.kron(sigma_z, sigma_z))))))
-    z_bar = np.kron(z_bar, np.identity(2**3))
+    seven_sigma_zs = seven_tensor_kron(*[sigma_z]*7)
+    z_bar = np.kron(seven_sigma_zs, np.identity(2**3))
     final_vector_state = np.dot(z_bar, final_vector_state)
 
     return final_vector_state
 
 
-### Implements the 7 Qubit Steane phase correction code using line connectivity
 def steane_line_conn_phase_correction(logical_state):
+    """
+    Implements the 7 Qubit Steane phase correction code using line connectivity
+
     # logical_state: The vector state representation of your 10 qubit system
-                    # (7 data qubits initialized to your desired logical state, 3 ancilla initialized to 0)
-
+    # (7 data qubits initialized to your desired logical state, 3 ancilla initialized to 0)
+    """
+    # TODO - seems like the API across the various Steane codes may need some rationalization
     full_system = logical_state
-
-
-    # - - - - - - - - - - # Z Error Correction # - - - - - - - - - - #
 
     # apply the first hadamard to the ancillas
     ancilla_hadamard = np.kron(np.identity(2**7), np.kron(hadamard, np.kron(hadamard, hadamard)))
     full_system = np.dot(ancilla_hadamard, full_system)
 
     # apply the control stabilizer gates to the full_system
-    full_system = np.dot(K1_line_operation, np.dot(K2_line_operation, np.dot(K3_line_operation, full_system)))
+    full_system = \
+        np.dot(K1_line_operation,
+        np.dot(K2_line_operation,
+        np.dot(K3_line_operation,
+               full_system)))
 
     # apply the second hadamard to the ancillas
     full_system = np.dot(ancilla_hadamard, full_system)
 
     # Find the bit representation of our full system
     bits, index, vector_state = vector_state_to_bit_state(full_system, 10)
-
 
     # remove small values after applying operations
     vector_state = remove_small_values(vector_state)
@@ -857,10 +864,8 @@ def steane_line_conn_phase_correction(logical_state):
     # How many total qubits are in our vector representation
     n = int(np.log(len(full_system))/np.log(2))
 
-    # Measure the three ancilla qubits
-    # Applying the Z gate operation on a specific qubit
+    # Measure the three ancilla qubits & compute error index
     bits = vector_state_to_bit_state(collapsed_state, 10)[0][0]
-    # find index
     m_one = 0
     m_two = 0
     m_three = 0
@@ -877,7 +882,6 @@ def steane_line_conn_phase_correction(logical_state):
     # if no error occurs we dont need to apply a correction
     if index == -1:
         final_vector_state = collapsed_state
-
     else:
         # apply the z gate depending on index
         operation = np.kron(np.identity(2**(index)), np.kron(sigma_z, np.kron(
@@ -907,8 +911,8 @@ def steane_line_conn_bit_correction(logical_state):
     full_system = \
         np.dot(K4_line_operation,
         np.dot(K5_line_operation,
-        np.dot(K6_line_operation, full_system)
-    ))
+        np.dot(K6_line_operation,
+               full_system)))
 
     # apply the second hadamard to the ancillas
     full_system = np.dot(ancilla_hadamard, full_system)

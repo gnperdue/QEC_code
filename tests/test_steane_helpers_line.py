@@ -1,6 +1,6 @@
 '''
 Usage:
-    python test_steane_helpers.py
+    python test_steane_helpers_line.py
 '''
 import unittest
 import random
