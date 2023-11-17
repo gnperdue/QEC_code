@@ -722,19 +722,37 @@ def simultaneous_steane_code(logical_state): # pylint: disable=too-many-locals
 
 # Define the Stabilizer Operators as CNOT gates between line adjacent qubits
 # (remember that the non-adj CNOT calculation is using line connectivity)
-K1_line_operation = np.dot(CNOT(7, 3, 10), np.dot(CNOT(7, 4, 10), np.dot(
-    CNOT(7, 5, 10), CNOT(7, 6, 10))))
-K2_line_operation = np.dot(CNOT(8, 0, 10), np.dot(CNOT(8, 2, 10), np.dot(
-    CNOT(8, 4, 10), CNOT(8, 6, 10))))
-K3_line_operation = np.dot(CNOT(9, 1, 10), np.dot(CNOT(9, 2, 10), np.dot(
-    CNOT(9, 5, 10), CNOT(9, 6, 10))))
+K1_line_operation = \
+    np.dot(CNOT(7, 3, 10),
+    np.dot(CNOT(7, 4, 10),
+    np.dot(CNOT(7, 5, 10),
+           CNOT(7, 6, 10))))
+K2_line_operation = \
+    np.dot(CNOT(8, 0, 10),
+    np.dot(CNOT(8, 2, 10),
+    np.dot(CNOT(8, 4, 10),
+           CNOT(8, 6, 10))))
+K3_line_operation = \
+    np.dot(CNOT(9, 1, 10),
+    np.dot(CNOT(9, 2, 10),
+    np.dot(CNOT(9, 5, 10),
+           CNOT(9, 6, 10))))
 
-K4_line_operation = np.dot(CZ(7, 3, 10), np.dot(CZ(7, 4, 10), np.dot(
-    CZ(7, 5, 10), CZ(7, 6, 10))))
-K5_line_operation =np.dot(CZ(8, 0, 10), np.dot(CZ(8, 2, 10), np.dot(
-    CZ(8, 4, 10), CZ(8, 6, 10))))
-K6_line_operation =np.dot(CZ(9, 1, 10), np.dot(CZ(9, 2, 10), np.dot(
-    CZ(9, 5, 10), CZ(9, 6, 10))))
+K4_line_operation = \
+    np.dot(CZ(7, 3, 10),
+    np.dot(CZ(7, 4, 10),
+    np.dot(CZ(7, 5, 10),
+           CZ(7, 6, 10))))
+K5_line_operation = \
+    np.dot(CZ(8, 0, 10),
+    np.dot(CZ(8, 2, 10),
+    np.dot(CZ(8, 4, 10),
+           CZ(8, 6, 10))))
+K6_line_operation = \
+    np.dot(CZ(9, 1, 10),
+    np.dot(CZ(9, 2, 10),
+    np.dot(CZ(9, 5, 10),
+           CZ(9, 6, 10))))
 
 
 ### Initializes the 10 qubit (7 physical, 3 ancilla) qubit system ###
@@ -873,20 +891,24 @@ def steane_line_conn_phase_correction(logical_state):
 
 
 
-### Implements the 7 Qubit Steane bit correction code using line connectivity
 def steane_line_conn_bit_correction(logical_state):
-    # logical_state: The vector state representation of your 10 qubit system
-                    # (7 data qubits initialized to your desired logical state, 3 ancilla initialized to 0)
-
+    """
+    Implements the 7 Qubit Steane bit correction code using line connectivity
+    * logical_state: The vector state representation of your 10 qubit system
+    * (7 data qubits initialized to your desired logical state, 3 ancilla initialized to 0)
+    """
     full_system = logical_state
 
+    # apply the first hadamard to the ancillas
     ancilla_hadamard = np.kron(np.identity(2**7), np.kron(hadamard, np.kron(hadamard, hadamard)))
-
     full_system = np.dot(ancilla_hadamard, full_system)
 
     # apply the control stabilizer gates to the full_system
-    full_system = np.dot(K4_line_operation, np.dot(K5_line_operation, np.dot(K6_line_operation, full_system)))
-    # full_system = np.dot(control_k_four, np.dot(control_k_five, np.dot(control_k_six, full_system)))
+    full_system = \
+        np.dot(K4_line_operation,
+        np.dot(K5_line_operation,
+        np.dot(K6_line_operation, full_system)
+    ))
 
     # apply the second hadamard to the ancillas
     full_system = np.dot(ancilla_hadamard, full_system)
@@ -904,7 +926,7 @@ def steane_line_conn_bit_correction(logical_state):
     n = int(np.log(len(full_system))/np.log(2))
 
     # Measure the three ancilla qubits
-    # Applying the Z gate operation on a specific qubit
+    # Applying the X gate operation on a specific qubit
     bits = vector_state_to_bit_state(collapsed_state, 10)[0][0]
     # find index
     m_four = 0
@@ -923,12 +945,12 @@ def steane_line_conn_bit_correction(logical_state):
     # if no error occurs we dont need to apply a correction
     if index == -1:
         final_vector_state = collapsed_state
-
     else:
-        # apply the z gate depending on index
-        operation = np.kron(np.identity(2**(index)), np.kron(sigma_x, np.kron(
-            np.identity(2**(n-3-index-1)), np.identity(2**3))))
-
+        # apply the x gate depending on index
+        operation = np.kron(
+            np.identity(2**(index)),
+            np.kron(sigma_x, np.identity(2**(n-index-1)))
+        )
         final_vector_state = np.dot(operation, collapsed_state)
 
     # remove small values from state
