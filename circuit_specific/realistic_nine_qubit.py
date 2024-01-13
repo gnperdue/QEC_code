@@ -1,6 +1,6 @@
 """
 This file will contain functions that are useful when implementing logical t1
-testing for the 3 qubit code from error models.
+testing for the 9 qubit code from error models.
 """
 import random
 
