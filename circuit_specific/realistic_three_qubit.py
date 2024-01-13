@@ -126,7 +126,7 @@ def three_qubit_realistic(
             detection_rho = line_rad_CNOT(
                 detection_rho, control, target, t1, t2, tg, form='rho')
         else:
-            detection_rho = np.dot(CNOT(target, control, 5), np.dot(detection_rho, CNOT(target, control, 5).conj().T))
+            detection_rho = np.dot(CNOT(control, target, 5), np.dot(detection_rho, CNOT(control, target, 5).conj().T))
     
     # Measure the ancilla qubits
     # -- 1st, apply state measurement error if spam_probs is not empty
@@ -209,5 +209,5 @@ def three_qubit_realistic(
     # -- 3rd, apply RAD errors -> assume data and ancilla qubit operations are in paralllel
     if (error_qubit_index is not None) and apply_rad_errors:
         corrected_rho = rad_error(corrected_rho, t1, t2, tg)
-        
+
     return corrected_rho
