@@ -21,6 +21,8 @@ from circuit_specific.realistic_steane import *
 from circuit_specific.steane_helpers import *
 from circuit_specific.realistic_ft_steane import *
 from circuit_specific.fault_tolerant_steane import *
+from circuit_specific.nine_qubit_helpers import *
+from circuit_specific.realistic_nine_qubit import *
 
 # for data management and saving
 from data_management_and_analysis.datamanagement import *
@@ -1818,7 +1820,7 @@ def nine_qubit_simulation(initial_psi, t1, t2, tg, depolarization, spam_prob, it
         zero, np.kron(zero, np.kron(zero, np.kron(zero, np.kron(
             zero, np.kron(zero, np.kron(zero, zero))))))))))
     
-    ideal_state = initialize_nine_qubit_logical_state(initial_state)
+    ideal_state = nine_qubit_initialize_logical_state(initial_psi)
     
     qubit_error_probs = np.array([])
     
@@ -1847,47 +1849,81 @@ def nine_qubit_simulation(initial_psi, t1, t2, tg, depolarization, spam_prob, it
     # Apply the circuit  times
     for i in range(iterations):
         count = np.append(count, i)
-        rho = realistic_nine_qubit(
+        rho = nine_qubit_realistic(
         rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
 
         # Measurement operator to see if you are in the 0 logical state
-        M0 = np.kron(zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
-            zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.identity(2**5)))))))) + np.kron(
-            one_meas, np.kron(zero_meas, np.kron(one_meas, np.kron(zero_meas, np.kron(
-            one_meas, np.kron(zero_meas, np.kron(one_meas, np.identity(2**5)))))))) + np.kron(
-            zero_meas, np.kron(one_meas, np.kron(one_meas, np.kron(zero_meas, np.kron(
-            zero_meas, np.kron(one_meas, np.kron(one_meas, np.identity(2**5)))))))) + np.kron(
-            one_meas, np.kron(one_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
-            one_meas, np.kron(one_meas, np.kron(zero_meas, np.identity(2**5)))))))) + np.kron(
-            zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(one_meas, np.kron(
-            one_meas, np.kron(one_meas, np.kron(one_meas, np.identity(2**5)))))))) + np.kron(
-            one_meas, np.kron(zero_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
-            zero_meas, np.kron(one_meas, np.kron(zero_meas, np.identity(2**5)))))))) + np.kron(
-            zero_meas, np.kron(one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
-            one_meas, np.kron(zero_meas, np.kron(zero_meas, np.identity(2**5)))))))) + np.kron(
-            one_meas, np.kron(one_meas, np.kron(zero_meas, np.kron(one_meas, np.kron(
-            zero_meas, np.kron(zero_meas, np.kron(one_meas, np.identity(2**5))))))))
+        M0 = np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.Identity(2**2)))))))))
+                     ) + np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.Identity(2**2)))))))))
+                     ) + np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.Identity(2**2)))))))))
+                     ) + np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.Identity(2**2)))))))))
+                     ) + np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.Identity(2**2)))))))))
+                     ) + np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.Identity(2**2)))))))))
+                     ) + np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.Identity(2**2)))))))))
+                     ) + np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.Identity(2**2)))))))))
+                     )
         
         # probability of being in the 0 logical state
         prob0 = np.trace(np.dot(M0.conj().T, np.dot(M0, rho)))
         
         # Measurement operator to see if you are in the 1 logical state
-        M1 = np.kron(one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
-            one_meas, np.kron(one_meas, np.kron(one_meas, np.identity(2**5)))))))) + np.kron(
-            zero_meas, np.kron(one_meas, np.kron(zero_meas, np.kron(one_meas, np.kron(
-            zero_meas, np.kron(one_meas, np.kron(zero_meas, np.identity(2**5)))))))) + np.kron(
-            one_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(one_meas, np.kron(
-            one_meas, np.kron(zero_meas, np.kron(zero_meas, np.identity(2**5)))))))) + np.kron(
-            zero_meas, np.kron(zero_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
-            zero_meas, np.kron(zero_meas, np.kron(one_meas, np.identity(2**5)))))))) + np.kron(
-            one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(zero_meas, np.kron(
-            zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.identity(2**5)))))))) + np.kron(
-            zero_meas, np.kron(one_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
-            one_meas, np.kron(zero_meas, np.kron(one_meas, np.identity(2**5)))))))) + np.kron(
-            one_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
-            zero_meas, np.kron(one_meas, np.kron(one_meas, np.identity(2**5)))))))) + np.kron(
-            zero_meas, np.kron(zero_meas, np.kron(one_meas, np.kron(zero_meas, np.kron(
-            one_meas, np.kron(one_meas, np.kron(zero_meas, np.identity(2**5))))))))
+        M1 = np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.Identity(2**2)))))))))
+                     ) - np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.Identity(2**2)))))))))
+                     ) - np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.Identity(2**2)))))))))
+                     ) + np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.Identity(2**2)))))))))
+                     ) - np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.Identity(2**2)))))))))
+                     ) + np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.Identity(2**2)))))))))
+                     ) + np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                     zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.Identity(2**2)))))))))
+                     ) - np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                     one_meas, np.kron(one_meas, np.kron(one_meas, np.Identity(2**2)))))))))
+                     )
         
         # probability of being in the 1 logical state
         prob1 = np.trace(np.dot(M1.conj().T, np.dot(M1, rho)))
@@ -1925,11 +1961,11 @@ def nine_qubit_simulation(initial_psi, t1, t2, tg, depolarization, spam_prob, it
     plt.scatter(count, all_pops0, s = 1, c = 'cornflowerblue', label = 'Logical |0>')
     plt.scatter(count, all_pops1, s = 1, c ='seagreen', label = 'Logical |1>')
     plt.scatter(count, other_probs, s = 1, c ='red', label = 'any other state')
-    plt.title('Qubit Meaurement Probability as a function of running fault tolerant Steane code')
+    plt.title('Qubit Meaurement Probability as a function of running nine qubit code')
     plt.xlabel('Number of Iterations')
     plt.ylabel('Probability of Measurement')
     plt.axhline(y = 1/np.e, color = 'y', linestyle = 'dotted')
-    # Find and plot the fitted exponential for the |111> state
+    # Find and plot the fitted exponential for the |1>_L state
     xdata = (count)
     ydata = all_pops1
     popt, pcov = curve_fit(exp_decay, xdata, ydata)
@@ -1968,8 +2004,8 @@ def nine_qubit_sample(initial_psi, t1, t2, tg, depolarization, spam_prob, iterat
     initial_state = np.kron(initial_psi, np.kron(zero, np.kron(zero, np.kron(zero, np.kron(zero, np.kron(
         zero, np.kron(zero, np.kron(zero, np.kron(zero, np.kron(zero, zero))))))))))
     
-    # to save time we will just calculate the normal steane and add 2 ancillas
-    ideal_state = initialize_nine_qubit_logical_state(initial_state)
+    # to save time we will just calculate the normal nine qubit and add 2 ancillas
+    ideal_state = nine_qubit_initialize_logical_state(initial_psi)
     
     if depolarization != None:
         qubit_error_probs = np.array([])            
@@ -1983,7 +2019,7 @@ def nine_qubit_sample(initial_psi, t1, t2, tg, depolarization, spam_prob, iterat
     # Apply the circuit for (iteration) number of times (samples) times
     for k in range(samples):
         # Initialize our logical state depending on parameters
-        rho = initialize_realistic_nine_qubit(
+        rho = initialize_nine_qubit_realisitc(
             initial_rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
 
         for i in range(iterations):
@@ -1993,7 +2029,7 @@ def nine_qubit_sample(initial_psi, t1, t2, tg, depolarization, spam_prob, iterat
             else:
                 rho_per_sample = np.append(rho_per_sample, [rho], axis = 0)
         
-            rho = realistic_nine_qubit(
+            rho = nine_qubit_realistic(
                 rho, t1=t1, t2=t2, tg=tg, qubit_error_probs=qubit_error_probs, spam_prob=spam_prob)
             
             # for larger circuits this will be useful to know
@@ -2153,8 +2189,6 @@ def nine_qubit_plot_failure(data_file):
 
     circuit_runs = 1/popt[1]
     print('Characteristic number of runs until failure: ', circuit_runs)
-    print('(Remember that the fault tolerant steane code has repititions within the circuit.)')
-
     print('... Number of bins:', len(bins)-1, '...')
 
     # Add a Legend
@@ -2201,8 +2235,40 @@ def nine_qubit_plot_t1(data_file):
             count = np.append(count, i)
             
             # measure the probability of being in the Logical |1> state from the density matrix
-            M = 1 # need to find a proper measurement operator for this
-        
+            M = np.kron(
+                        zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                        zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                        zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.Identity(2**2)))))))))
+                        ) - np.kron(
+                        zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                        zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                        one_meas, np.kron(one_meas, np.kron(one_meas, np.Identity(2**2)))))))))
+                        ) - np.kron(
+                        zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                        one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                        zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.Identity(2**2)))))))))
+                        ) + np.kron(
+                        zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                        one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                        one_meas, np.kron(one_meas, np.kron(one_meas, np.Identity(2**2)))))))))
+                        ) - np.kron(
+                        one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                        zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                        zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.Identity(2**2)))))))))
+                        ) + np.kron(
+                        one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                        zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.kron(
+                        one_meas, np.kron(one_meas, np.kron(one_meas, np.Identity(2**2)))))))))
+                        ) + np.kron(
+                        one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                        one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                        zero_meas, np.kron(zero_meas, np.kron(zero_meas, np.Identity(2**2)))))))))
+                        ) - np.kron(
+                        one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                        one_meas, np.kron(one_meas, np.kron(one_meas, np.kron(
+                        one_meas, np.kron(one_meas, np.kron(one_meas, np.Identity(2**2)))))))))
+                        )
+            
             # probability of being in the 1 logical state
             pop = np.trace(np.dot(M.conj().T, np.dot(M, rho)))
             
