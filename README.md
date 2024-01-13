@@ -27,7 +27,7 @@ There are two ways in which you can use the files in this repository:
 	The topics which we currently cover are:
   
 	- **01. Introduction to Quantum Error** - Here we introduce quantum errors and some of the basic math that we will use in further notebooks.
- - **01a. Error Models** - Here we derive and explain the various error models that we use in our realistic implementations of our circuits. 
+ 	- **01a. Error Models** - Here we derive and explain the various error models that we use in our realistic implementations of our circuits. 
  	- **02. 3-qubit Code Tutorial** - Here we introduce and work through the most basic QEC algorithm, the 3-qubit code.
 	- **02a. Short 3-qubit QEC** - If you want to skip the details of the 3-qubit code, you can just implement it here quickly and see how it works.
 	- **02b. 3 qubit Restricting Connectivity** - Realistically, qubits are not all connected to each other, meaning we may need to ‘break’ up single gates into various gate operations. Here we introduce a connectivity restriction to the 3-qubit code.
