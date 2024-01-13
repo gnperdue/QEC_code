@@ -116,9 +116,18 @@ def three_qubit_realistic(
     # Apply the CNOT gates needed to change the state of the syndrome ancilla
     detection_rho = initial_rho
     for (control, target) in [(0, 3), (1, 3), (0, 4), (2, 4)]:
-        detection_rho = prob_line_rad_CNOT(
-            detection_rho, control, target, t1, t2, tg, qubit_error_probs, form='rho')
-
+        if apply_rad_errors and apply_krauss_errors:
+            detection_rho = prob_line_rad_CNOT(
+                detection_rho, control, target, t1, t2, tg, qubit_error_probs, form='rho')
+        elif apply_krauss_errors:
+            detection_rho = line_errored_CNOT(
+                detection_rho, control, target, qubit_error_probs, form='rho')
+        elif apply_rad_errors:
+            detection_rho = line_rad_CNOT(
+                detection_rho, control, target, t1, t2, tg, form='rho')
+        else:
+            detection_rho = np.dot(CNOT(control, target, 5), np.dot(detection_rho, CNOT(control, target, 5).conj().T))
+    
     # Measure the ancilla qubits
     # -- 1st, apply state measurement error if spam_probs is not empty
     if apply_spam_errors:
