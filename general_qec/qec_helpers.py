@@ -4,7 +4,7 @@ QEC Helpers
 import random
 from collections import defaultdict
 import numpy as np
-from general_qec.gates import sigma_x
+from general_qec.gates import sigma_x, sigma_z
 
 # A few helpful states to use in initializing a single qubit (they have an exra
 # dimension since some cases it is needed, but this can be removed fairly
@@ -295,3 +295,59 @@ def collapse_dm(rho):
         final_psi = np.append(final_psi, rho_prime[i][i])
 
     return final_psi
+
+# - - - - - - - - - -  Errors - - - - - - - - - - #
+
+def apply_gate_error(logical_state, num_data_qubits, error_gate=sigma_z):
+    """
+    Applies an error gate to one of the first `num_data_qubits` qubits (chosen
+    randomly) in a logical state. With equal probability to any of the `num_data_qubits`
+    the function may not apply an error.
+
+    * logical_state: The logical state of the system you wish to apply the error to
+    * num_data_qubits: The number of qubits over which an error may occur
+    * error: must be a single qubit gate
+    """
+    # Choose the index of the qubit you want to apply the error to.
+    error_index = random.randint(-1, num_data_qubits - 1)
+        # How many total qubits are in our vector representation
+    nqubits = int(np.log(len(logical_state))/np.log(2)) # pylint: disable=invalid-name
+
+
+    if error_index == -1:
+        # No error occurs in this case
+        errored_logical_state = logical_state
+    else:
+        # Create the error as a gate operation
+        error_gate = np.kron(
+            np.identity(2**(error_index)),
+            np.kron(error_gate, np.identity(2**(nqubits-error_index-1)))
+        )
+        # Apply the error to the qubit (no error may occur)
+        errored_logical_state = np.dot(error_gate, logical_state)
+
+    return errored_logical_state, error_index
+
+
+def phase_flip_error(logical_state, num_data_qubits): # pylint: disable=invalid-name
+    """
+    Applies a Z gate to one of the first `num_data_qubits` qubits (chosen randomly)
+    in a logical state. With equal probability to any of the `num_data_qubits` may
+    not apply an error.
+
+    * logical_state: The logical state of the system you wish to apply the error to
+    * num_data_qubits: The number of qubits over which an error may occur
+    """
+    return apply_gate_error(logical_state, num_data_qubits, sigma_z)
+
+
+def bit_flip_error(logical_state, num_data_qubits):
+    """
+    Applies an X gate to one of the first `num_data_qubits` qubits (chosen randomly)
+    in a logical state. With equal probability to any of the `num_data_qubits` may
+    not apply an error.
+
+    * logical_state: The logical state of the system you wish to apply the error to
+    * num_data_qubits: The number of qubits over which an error may occur
+    """
+    return apply_gate_error(logical_state, num_data_qubits, sigma_x)

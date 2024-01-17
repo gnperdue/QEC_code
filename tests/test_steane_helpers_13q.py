@@ -9,9 +9,9 @@ import sys
 import numpy as np
 from general_qec.qec_helpers import one, zero
 from general_qec.qec_helpers import ancilla_reset
-from circuit_specific.steane_helpers import bit_flip_error
+from general_qec.qec_helpers import bit_flip_error
+from general_qec.qec_helpers import phase_flip_error
 from circuit_specific.steane_helpers import initialize_larger_steane_code
-from circuit_specific.steane_helpers import phase_flip_error
 from circuit_specific.steane_helpers import simultaneous_steane_code
 from circuit_specific.steane_helpers import steane_dataq_logical_zero
 from circuit_specific.steane_helpers import steane_dataq_logical_one
@@ -63,7 +63,7 @@ class Test13QSteaneCode(unittest.TestCase):
             np.allclose(initialized_zero_state, np.kron(steane_dataq_logical_zero(), ANCILLA_6ZERO))
         )
         # too slow for multiple tests - phase flip
-        phase_error_state, error_index = phase_flip_error(initialized_zero_state, n_qtotal)
+        phase_error_state, error_index = phase_flip_error(initialized_zero_state, n_qubits)
         self.assertEqual(error_index, 5)
         corrected_state = simultaneous_steane_code(phase_error_state)
         corrected_state = ancilla_reset(corrected_state, n_ancilla)
@@ -79,8 +79,8 @@ class Test13QSteaneCode(unittest.TestCase):
         self.assertTrue(
             np.allclose(initialized_one_state, np.kron(steane_dataq_logical_one(), ANCILLA_6ZERO))
         )
-       # too slow for multiple tests - bit flip
-        bit_error_state, error_index = bit_flip_error(initialized_one_state, n_qtotal)
+        # too slow for multiple tests - bit flip
+        bit_error_state, error_index = bit_flip_error(initialized_one_state, n_qubits)
         self.assertEqual(error_index, 6)
         corrected_state = simultaneous_steane_code(bit_error_state)
         corrected_state = ancilla_reset(corrected_state, n_ancilla)

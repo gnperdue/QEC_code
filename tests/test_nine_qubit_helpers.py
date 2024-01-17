@@ -7,7 +7,7 @@ import random
 import logging
 import sys
 import numpy as np
-from general_qec.qec_helpers import one, zero
+from general_qec.qec_helpers import one, zero, superpos
 # from general_qec.qec_helpers import ancilla_reset
 from circuit_specific.nine_qubit_helpers import nine_qubit_initialize_logical_state
 
@@ -23,10 +23,12 @@ LOGICAL_ZERO = 1. / np.sqrt(8.) * np.kron(
 LOGICAL_ONE = 1. / np.sqrt(8.) * np.kron(
     THREE_MINUS, np.kron(THREE_MINUS, THREE_MINUS)
 )
+LOGICAL_SUPERPOS = 1. / np.sqrt(2.) * (LOGICAL_ZERO + LOGICAL_ONE)
 
 ANCILLAE = np.kron(zero, zero)
 FULL_ZERO = np.kron(LOGICAL_ZERO, ANCILLAE)
 FULL_ONE = np.kron(LOGICAL_ONE, ANCILLAE)
+FULL_SUPERPOS = np.kron(LOGICAL_SUPERPOS, ANCILLAE)
 
 
 class TestNineQubitHelpers(unittest.TestCase):
@@ -42,6 +44,8 @@ class TestNineQubitHelpers(unittest.TestCase):
         self.assertTrue(np.allclose(initialized_zero_state, FULL_ZERO))
         initialized_one_state = nine_qubit_initialize_logical_state(one)
         self.assertTrue(np.allclose(initialized_one_state, FULL_ONE))
+        initialized_superpos_state = nine_qubit_initialize_logical_state(superpos)
+        self.assertTrue(np.allclose(initialized_superpos_state, FULL_SUPERPOS))
 
 
 if __name__ == '__main__':

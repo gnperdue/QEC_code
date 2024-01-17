@@ -1,7 +1,6 @@
 """
 The functions in this file are useful when implementing the seven qubit steane code.
 """
-import random
 import numpy as np
 from general_qec.qec_helpers import one, zero
 from general_qec.qec_helpers import collapse_ancilla
@@ -223,59 +222,6 @@ def initialize_steane_logical_state(initial_state): # pylint: disable=too-many-l
     final_vector_state = np.dot(z_bar, final_vector_state)
 
     return final_vector_state
-
-
-# - - - - - - - - - -  Errors - - - - - - - - - - #
-
-def steane_apply_gate_error(logical_state, nqubits, error_gate=sigma_z):
-    """
-    Applies an error gate to one of the first `nqubits` qubits (chosen randomly) in a logical
-    state. With equal probability to any of the `nqubits` the function may not apply an error.
-
-    * logical_state: The logical state of the system you wish to apply the error to
-    * nqubits: The number of qubits in your logical system
-    * error: must be a single qubit gate
-    """
-    # Choose the index of the qubit you want to apply the error to.
-    error_index = random.randint(-1, nqubits)
-
-    if error_index == -1:
-        # No error occurs in this case
-        errored_logical_state = logical_state
-    else:
-        # Create the error as a gate operation
-        error_gate = np.kron(
-            np.identity(2**(error_index)),
-            np.kron(error_gate, np.identity(2**(nqubits-error_index-1)))
-        )
-        # Apply the error to the qubit (no error may occur)
-        errored_logical_state = np.dot(error_gate, logical_state)
-
-    return errored_logical_state, error_index
-
-
-def phase_flip_error(logical_state, nqubits): # pylint: disable=invalid-name
-    """
-    Applies a Z gate to one of the first 7 qubits (chosen randomly) in a logical state.
-    With equal probability to any of the seven may not apply an error. Will function for
-    both n = 10 and 13 qubit Steane codes.
-
-    * logical_state: The logical state of the system you wish to apply the error to
-    * nqubits: The number of qubits in your logical system
-    """
-    return steane_apply_gate_error(logical_state, nqubits, sigma_z)
-
-
-def bit_flip_error(logical_state, nqubits):
-    """
-    Applies an X gate to one of the first 7 qubits (chosen randomly) in a logical state.
-    With equal probability to any of the seven may not apply an error. Will function for
-    both n = 10 and 13 qubit Steane codes.
-
-    * logical_state: The logical state of the system you wish to apply the error to
-    * nqubits: The number of qubits in your logical system
-    """
-    return steane_apply_gate_error(logical_state, nqubits, sigma_x)
 
 
 # - - - - - - - - - - 3 ancilla error correction protocols - - - - - - - - - - #

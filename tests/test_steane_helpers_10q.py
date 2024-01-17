@@ -9,11 +9,11 @@ import sys
 import numpy as np
 from general_qec.qec_helpers import one, zero
 from general_qec.qec_helpers import ancilla_reset
+from general_qec.qec_helpers import bit_flip_error
+from general_qec.qec_helpers import phase_flip_error
 from general_qec.qec_helpers import vector_state_to_bit_state
 from general_qec.gates import sigma_I, sigma_x, sigma_z
-from circuit_specific.steane_helpers import bit_flip_error
 from circuit_specific.steane_helpers import initialize_steane_logical_state
-from circuit_specific.steane_helpers import phase_flip_error
 from circuit_specific.steane_helpers import steane_phase_correction
 from circuit_specific.steane_helpers import steane_bit_correction
 from circuit_specific.steane_helpers import steane_dataq_logical_zero
@@ -129,13 +129,13 @@ class Test10QSteaneCode(unittest.TestCase):
         )
         # try 5 random phase flips (equal chance of any or no qubits)
         for _ in range(5):
-            phase_error_state = phase_flip_error(initialized_zero_state, self.n_qtotal)[0]
+            phase_error_state = phase_flip_error(initialized_zero_state, self.n_qubits)[0]
             corrected_state = steane_phase_correction(phase_error_state)
             corrected_state = ancilla_reset(corrected_state, self.n_ancilla)
             self.assertTrue(np.allclose(initialized_zero_state, corrected_state))
         # try 5 random bit flips (equal chance of any or no qubits)
         for _ in range(5):
-            bit_error_state = bit_flip_error(initialized_zero_state, self.n_qtotal)[0]
+            bit_error_state = bit_flip_error(initialized_zero_state, self.n_qubits)[0]
             corrected_state = steane_bit_correction(bit_error_state)
             corrected_state = ancilla_reset(corrected_state, self.n_ancilla)
             self.assertTrue(np.allclose(initialized_zero_state, corrected_state))
@@ -154,14 +154,14 @@ class Test10QSteaneCode(unittest.TestCase):
         )
         # try 5 random phase flips
         for _ in range(5):
-            phase_error_state = phase_flip_error(initialized_one_state, self.n_qtotal)[0]
+            phase_error_state = phase_flip_error(initialized_one_state, self.n_qubits)[0]
             corrected_state = steane_phase_correction(phase_error_state)
             corrected_state = ancilla_reset(corrected_state, self.n_ancilla)
             self.assertTrue(np.allclose(initialized_one_state, corrected_state))
         # try 5 random bit flips
         for _ in range(5):
-            phase_error_state = bit_flip_error(initialized_one_state, self.n_qtotal)[0]
-            corrected_state = steane_bit_correction(phase_error_state)
+            bit_error_state = bit_flip_error(initialized_one_state, self.n_qubits)[0]
+            corrected_state = steane_bit_correction(bit_error_state)
             corrected_state = ancilla_reset(corrected_state, self.n_ancilla)
             self.assertTrue(np.allclose(initialized_one_state, corrected_state))
 
@@ -183,14 +183,14 @@ class Test10QSteaneCode(unittest.TestCase):
         )
         # try 5 random phase flips
         for _ in range(5):
-            phase_error_state = phase_flip_error(initialized_superpos_state, self.n_qtotal)[0]
+            phase_error_state = phase_flip_error(initialized_superpos_state, self.n_qubits)[0]
             corrected_state = steane_phase_correction(phase_error_state)
             corrected_state = ancilla_reset(corrected_state, self.n_ancilla)
             self.assertTrue(np.allclose(initialized_superpos_state, corrected_state))
         # try 5 random bit flips
         for _ in range(5):
-            phase_error_state = bit_flip_error(initialized_superpos_state, self.n_qtotal)[0]
-            corrected_state = steane_bit_correction(phase_error_state)
+            bit_error_state = bit_flip_error(initialized_superpos_state, self.n_qubits)[0]
+            corrected_state = steane_bit_correction(bit_error_state)
             corrected_state = ancilla_reset(corrected_state, self.n_ancilla)
             self.assertTrue(np.allclose(initialized_superpos_state, corrected_state))
 

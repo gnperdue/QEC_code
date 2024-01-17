@@ -9,8 +9,8 @@ import sys
 import numpy as np
 from general_qec.qec_helpers import one, zero
 from general_qec.qec_helpers import ancilla_reset
-from circuit_specific.steane_helpers import bit_flip_error
-from circuit_specific.steane_helpers import phase_flip_error
+from general_qec.qec_helpers import bit_flip_error
+from general_qec.qec_helpers import phase_flip_error
 from circuit_specific.steane_helpers import steane_dataq_logical_zero
 from circuit_specific.steane_helpers import steane_dataq_logical_one
 from circuit_specific.steane_helpers import steane_dataq_logical_superpos
@@ -67,13 +67,13 @@ class TestSteaneGridConnectivityCode(unittest.TestCase):
         )
         # try 5 random phase flips (equal chance of any or no qubits)
         for _ in range(5):
-            phase_error_state = phase_flip_error(initialized_zero_state, self.n_qtotal)[0]
+            phase_error_state = phase_flip_error(initialized_zero_state, self.n_qubits)[0]
             corrected_state = steane_grid_conn_phase_correction(phase_error_state)
             corrected_state = ancilla_reset(corrected_state, self.n_ancilla)
             self.assertTrue(np.allclose(initialized_zero_state, corrected_state))
         # try 5 random bit flips (equal chance of any or no qubits)
         for _ in range(5):
-            bit_error_state = bit_flip_error(initialized_zero_state, self.n_qtotal)[0]
+            bit_error_state = bit_flip_error(initialized_zero_state, self.n_qubits)[0]
             corrected_state = steane_grid_conn_bit_correction(bit_error_state)
             corrected_state = ancilla_reset(corrected_state, self.n_ancilla)
             self.assertTrue(np.allclose(initialized_zero_state, corrected_state))
@@ -93,13 +93,13 @@ class TestSteaneGridConnectivityCode(unittest.TestCase):
         )
         # try 5 random phase flips (equal chance of any or no qubits)
         for _ in range(5):
-            phase_error_state = phase_flip_error(initialized_one_state, self.n_qtotal)[0]
+            phase_error_state = phase_flip_error(initialized_one_state, self.n_qubits)[0]
             corrected_state = steane_grid_conn_phase_correction(phase_error_state)
             corrected_state = ancilla_reset(corrected_state, self.n_ancilla)
             self.assertTrue(np.allclose(initialized_one_state, corrected_state))
         # try 5 random bit flips (equal chance of any or no qubits)
         for _ in range(5):
-            bit_error_state = bit_flip_error(initialized_one_state, self.n_qtotal)[0]
+            bit_error_state = bit_flip_error(initialized_one_state, self.n_qubits)[0]
             corrected_state = steane_grid_conn_bit_correction(bit_error_state)
             corrected_state = ancilla_reset(corrected_state, self.n_ancilla)
             self.assertTrue(np.allclose(initialized_one_state, corrected_state))
@@ -119,8 +119,8 @@ class TestSteaneGridConnectivityCode(unittest.TestCase):
                         np.kron(steane_dataq_logical_superpos(), ANCILLA_3ZERO))
         )
         # do a phase flip AND a bit flip
-        phase_error_state, phase_index = phase_flip_error(initialized_superpos_state, self.n_qtotal)
-        bit_phase_error_state, bit_index = bit_flip_error(phase_error_state, self.n_qtotal)
+        phase_error_state, phase_index = phase_flip_error(initialized_superpos_state, self.n_qubits)
+        bit_phase_error_state, bit_index = bit_flip_error(phase_error_state, self.n_qubits)
         # could alternatively do a while loop to avoid random seed portability issues
         self.assertTrue(phase_index != bit_index,
                         msg="Check random seed; need different qubit indices here.")
