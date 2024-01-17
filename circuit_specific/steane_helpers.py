@@ -592,35 +592,6 @@ def simultaneous_steane_code(logical_state): # pylint: disable=too-many-locals
     # Which qubit do we perform the X gate on
     bit_index = (m_four * 2**2) + (m_six * 2**1) + (m_five * 2**0) -1
 
-    # TODO - clean out fossil code once we're sure the logic below is okay...
-    # # if no error occurs we dont need to apply a correction
-    # if (phase_index == -1) and (bit_index == -1):
-    #     final_vector_state = collapsed_state
-    # # Phase error occurs but no bit error
-    # elif (phase_index != -1) and (bit_index == -1):
-    #     # apply the z gate depending on index
-    #     operation = np.kron(np.identity(2**(phase_index)), np.kron(sigma_z, np.kron(
-    #         np.identity(2**(n-6-phase_index-1)), np.identity(2**6))))
-
-    #     final_vector_state = np.dot(operation, collapsed_state)
-    # # Bit error occurs but no phase error
-    # elif (phase_index == -1) and (bit_index != -1):
-    #     # apply the x gate depending on bit_index
-    #     operation = np.kron(np.identity(2**(bit_index)), np.kron(sigma_x, np.kron(
-    #         np.identity(2**(n-6-bit_index-1)), np.identity(2**6))))
-
-    #     final_vector_state = np.dot(operation, collapsed_state)
-    # # Both phase and bit errors occur
-    # else:
-    #     # apply the z gate depending on phase_index
-    #     phase_operation = np.kron(np.identity(2**(phase_index)), np.kron(sigma_z, np.kron(
-    #         np.identity(2**(n-6-phase_index-1)), np.identity(2**6))))
-
-    #     # apply the x gate depending on bit_index
-    #     bit_operation = np.kron(np.identity(2**(bit_index)), np.kron(sigma_x, np.kron(
-    #         np.identity(2**(n-6-bit_index-1)), np.identity(2**6))))
-    #     final_vector_state = np.dot(phase_operation, np.dot(bit_operation, collapsed_state))
-
     if phase_index != -1:
         # apply the z gate depending on index
         operation = np.kron(
