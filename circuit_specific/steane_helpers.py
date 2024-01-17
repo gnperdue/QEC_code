@@ -229,16 +229,15 @@ def initialize_steane_logical_state(initial_state): # pylint: disable=too-many-l
 
 def steane_apply_gate_error(logical_state, nqubits, error_gate=sigma_z):
     """
-    Applies an error gate to one of the first 7 qubits (chosen randomly) in a logical state.
-    With equal probability to any of the seven may not apply an error. Will function for
-    both n = 10 and 13 qubit Steane codes.
+    Applies an error gate to one of the first `nqubits` qubits (chosen randomly) in a logical
+    state. With equal probability to any of the `nqubits` the function may not apply an error.
 
     * logical_state: The logical state of the system you wish to apply the error to
     * nqubits: The number of qubits in your logical system
     * error: must be a single qubit gate
     """
     # Choose the index of the qubit you want to apply the error to.
-    error_index = random.randint(-1,6)
+    error_index = random.randint(-1, nqubits)
 
     if error_index == -1:
         # No error occurs in this case
