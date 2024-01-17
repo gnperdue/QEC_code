@@ -10,6 +10,7 @@ import numpy as np
 from general_qec.qec_helpers import one, zero, superpos
 # from general_qec.qec_helpers import ancilla_reset
 from circuit_specific.nine_qubit_helpers import nine_qubit_initialize_logical_state
+from circuit_specific.nine_qubit_helpers import nine_qubit_phase_correction
 
 LOGGER = logging.getLogger(__name__)
 
@@ -46,6 +47,14 @@ class TestNineQubitHelpers(unittest.TestCase):
         self.assertTrue(np.allclose(initialized_one_state, FULL_ONE))
         initialized_superpos_state = nine_qubit_initialize_logical_state(superpos)
         self.assertTrue(np.allclose(initialized_superpos_state, FULL_SUPERPOS))
+
+    def test_nine_qubit_phase_correction(self):
+        """
+        Test nine-qubit code phase correction.
+        """
+        LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
+        # -
+        initialized_superpos_state = nine_qubit_initialize_logical_state(superpos)
 
 
 if __name__ == '__main__':
