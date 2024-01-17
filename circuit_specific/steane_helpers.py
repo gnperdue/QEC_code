@@ -1,7 +1,6 @@
 """
 The functions in this file are useful when implementing the seven qubit steane code.
 """
-import random
 import numpy as np
 from general_qec.qec_helpers import one, zero
 from general_qec.qec_helpers import collapse_ancilla
@@ -223,60 +222,6 @@ def initialize_steane_logical_state(initial_state): # pylint: disable=too-many-l
     final_vector_state = np.dot(z_bar, final_vector_state)
 
     return final_vector_state
-
-
-# - - - - - - - - - -  Errors - - - - - - - - - - #
-
-def steane_apply_gate_error(logical_state, nqubits, error_gate=sigma_z):
-    """
-    Applies an error gate to one of the first 7 qubits (chosen randomly) in a logical state.
-    With equal probability to any of the seven may not apply an error. Will function for
-    both n = 10 and 13 qubit Steane codes.
-
-    * logical_state: The logical state of the system you wish to apply the error to
-    * nqubits: The number of qubits in your logical system
-    * error: must be a single qubit gate
-    """
-    # Choose the index of the qubit you want to apply the error to.
-    error_index = random.randint(-1,6)
-
-    if error_index == -1:
-        # No error occurs in this case
-        errored_logical_state = logical_state
-    else:
-        # Create the error as a gate operation
-        error_gate = np.kron(
-            np.identity(2**(error_index)),
-            np.kron(error_gate, np.identity(2**(nqubits-error_index-1)))
-        )
-        # Apply the error to the qubit (no error may occur)
-        errored_logical_state = np.dot(error_gate, logical_state)
-
-    return errored_logical_state, error_index
-
-
-def phase_flip_error(logical_state, nqubits): # pylint: disable=invalid-name
-    """
-    Applies a Z gate to one of the first 7 qubits (chosen randomly) in a logical state.
-    With equal probability to any of the seven may not apply an error. Will function for
-    both n = 10 and 13 qubit Steane codes.
-
-    * logical_state: The logical state of the system you wish to apply the error to
-    * nqubits: The number of qubits in your logical system
-    """
-    return steane_apply_gate_error(logical_state, nqubits, sigma_z)
-
-
-def bit_flip_error(logical_state, nqubits):
-    """
-    Applies an X gate to one of the first 7 qubits (chosen randomly) in a logical state.
-    With equal probability to any of the seven may not apply an error. Will function for
-    both n = 10 and 13 qubit Steane codes.
-
-    * logical_state: The logical state of the system you wish to apply the error to
-    * nqubits: The number of qubits in your logical system
-    """
-    return steane_apply_gate_error(logical_state, nqubits, sigma_x)
 
 
 # - - - - - - - - - - 3 ancilla error correction protocols - - - - - - - - - - #
@@ -646,35 +591,6 @@ def simultaneous_steane_code(logical_state): # pylint: disable=too-many-locals
 
     # Which qubit do we perform the X gate on
     bit_index = (m_four * 2**2) + (m_six * 2**1) + (m_five * 2**0) -1
-
-    # TODO - clean out fossil code once we're sure the logic below is okay...
-    # # if no error occurs we dont need to apply a correction
-    # if (phase_index == -1) and (bit_index == -1):
-    #     final_vector_state = collapsed_state
-    # # Phase error occurs but no bit error
-    # elif (phase_index != -1) and (bit_index == -1):
-    #     # apply the z gate depending on index
-    #     operation = np.kron(np.identity(2**(phase_index)), np.kron(sigma_z, np.kron(
-    #         np.identity(2**(n-6-phase_index-1)), np.identity(2**6))))
-
-    #     final_vector_state = np.dot(operation, collapsed_state)
-    # # Bit error occurs but no phase error
-    # elif (phase_index == -1) and (bit_index != -1):
-    #     # apply the x gate depending on bit_index
-    #     operation = np.kron(np.identity(2**(bit_index)), np.kron(sigma_x, np.kron(
-    #         np.identity(2**(n-6-bit_index-1)), np.identity(2**6))))
-
-    #     final_vector_state = np.dot(operation, collapsed_state)
-    # # Both phase and bit errors occur
-    # else:
-    #     # apply the z gate depending on phase_index
-    #     phase_operation = np.kron(np.identity(2**(phase_index)), np.kron(sigma_z, np.kron(
-    #         np.identity(2**(n-6-phase_index-1)), np.identity(2**6))))
-
-    #     # apply the x gate depending on bit_index
-    #     bit_operation = np.kron(np.identity(2**(bit_index)), np.kron(sigma_x, np.kron(
-    #         np.identity(2**(n-6-bit_index-1)), np.identity(2**6))))
-    #     final_vector_state = np.dot(phase_operation, np.dot(bit_operation, collapsed_state))
 
     if phase_index != -1:
         # apply the z gate depending on index
