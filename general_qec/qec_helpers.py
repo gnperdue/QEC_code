@@ -150,16 +150,8 @@ def collapse_ancilla(logical_state, k): # pylint: disable=too-many-locals,too-ma
             all_vector_states[j][:]
 
     # # normalizing our state
-    # pop = 0    # should just be np.sum(probs)?
-    # for prob in probs:
-    #     pop += prob
-    # assert pop == np.sum(probs), "I was wrong"
-    # GP: test a faster calculation
-    pop = np.sum(list(probs_values_dict.values()))  # TODO: is this always ~ 1? should be...
-
+    pop = np.sum(list(probs_values_dict.values()))
     norm = np.linalg.norm(collapsed_vector_state)
-#     print_state_info(collapsed_vector_state, n)
-#     print('pop: ', pop, 'norm: ', norm)
     collapsed_vector_state =  np.sqrt(pop) * (collapsed_vector_state/norm)
     assert np.isclose(np.sum(np.abs(collapsed_vector_state)**2), 1.0), "Normalization!"
     return collapsed_vector_state
