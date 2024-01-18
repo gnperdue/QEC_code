@@ -49,7 +49,7 @@ def nine_qubit_initialize_logical_state(initial_psi):
 ### - - - - - - Error Detection and Correction - - - - - - ###
 
 ### Detects where the z rotation error occured from the vector from of the 11 qubit system ###
-def nine_qubit_phase_correction(logical_state, verbose=False):
+def nine_qubit_phase_correction(logical_state):
     # logical_state: the full vector state representation of your 11 qubit system (9 data, 2 ancilla)
 
      # First Nine Hadamard gates
@@ -92,22 +92,14 @@ def nine_qubit_phase_correction(logical_state, verbose=False):
     a2 = ancilla_bits[1]
 
     if (a1 == '0') and (a2 == '0'):
-        if verbose:
-            print('No Phase Error Occured')
         corrected_state = final_state
     elif (a1 == '1') and (a2 == '0'):
-        if verbose:
-            print('Phase Error In Block 1')
         operation = np.kron(sigma_z, np.identity(2**10))
         corrected_state = np.dot(operation, final_state)
     elif (a1 == '0') and (a2 == '1'):
-        if verbose:
-            print('Phase Error In Block 3')
         operation = np.kron(np.identity(2**6),np.kron(sigma_z, np.identity(2**4)))
         corrected_state = np.dot(operation, final_state)
     elif (a1 == '1') and (a2 == '1'):
-        if verbose:
-            print('Phase Error In Block 2')
         operation = np.kron(np.identity(2**3), np.kron(sigma_z, np.identity(2**7)))
         corrected_state = np.dot(operation, final_state)
 
@@ -184,7 +176,7 @@ def second_block(logical_state):
     return corrected_state
 
 # Third Block
-def third_block(logical_state, verbose=False):
+def third_block(logical_state):
     # logical_state: the full vector state representation of your 11 qubit system (9 data, 2 ancilla)
 
     current_state = np.dot(CNOT(6, 9, 11), logical_state)
@@ -200,22 +192,14 @@ def third_block(logical_state, verbose=False):
     a2 = ancilla_bits[1]
 
     if (a1 == '0') and (a2 == '0'):
-        if verbose:
-            print('No Bit Error Occured In Block 3')
         corrected_state = final_state
     elif (a1 == '1') and (a2 == '1'):
-        if verbose:
-            print('Bit Error In Block 3 qubit 1')
         operation = np.kron(np.identity(2**6),np.kron(sigma_x, np.identity(2**4)))
         corrected_state = np.dot(operation, final_state)
     elif (a1 == '1') and (a2 == '0'):
-        if verbose:
-            print('Bit Error In Block 3 qubit 2')
         operation = np.kron(np.identity(2**7),np.kron(sigma_x, np.identity(2**3)))
         corrected_state = np.dot(operation, final_state)
     elif (a1 == '0') and (a2 == '1'):
-        if verbose:
-            print('Bit Error In Block 3 qubit 3')
         operation = np.kron(np.identity(2**8),np.kron(sigma_x, np.identity(2**2)))
         corrected_state = np.dot(operation, final_state)
 
