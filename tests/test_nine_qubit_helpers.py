@@ -10,7 +10,7 @@ import numpy as np
 from general_qec.qec_helpers import one, zero, superpos
 from general_qec.qec_helpers import bit_flip_error, phase_flip_error
 from general_qec.qec_helpers import print_state_info
-# from general_qec.qec_helpers import ancilla_reset
+from circuit_specific.nine_qubit_helpers import full_nine_qubit_code
 from circuit_specific.nine_qubit_helpers import nine_qubit_initialize_logical_state
 from circuit_specific.nine_qubit_helpers import nine_qubit_bit_correction
 from circuit_specific.nine_qubit_helpers import nine_qubit_phase_correction
@@ -33,6 +33,14 @@ ANCILLAE = np.kron(zero, zero)
 FULL_ZERO = np.kron(LOGICAL_ZERO, ANCILLAE)
 FULL_ONE = np.kron(LOGICAL_ONE, ANCILLAE)
 FULL_SUPERPOS = np.kron(LOGICAL_SUPERPOS, ANCILLAE)
+
+
+def equal_to_within_global_sign(state_vec1, state_vec2):
+    """
+    Check to see if state vecs 1 and 2 are the same up to a global sign (phase).
+    """
+    return np.allclose(state_vec1, state_vec2) or \
+        np.allclose(state_vec1, -1.0 * state_vec2)
 
 
 class TestNineQubitHelpers(unittest.TestCase):
@@ -59,17 +67,12 @@ class TestNineQubitHelpers(unittest.TestCase):
         # -
         random.seed(11)
         initialized_superpos_state = nine_qubit_initialize_logical_state(superpos)
-        print("init state")
-        print_state_info(initialized_superpos_state, 11)
         bit_error_state, bit_index = bit_flip_error(initialized_superpos_state, 9)
-        print("bit error state")
-        print_state_info(bit_error_state, 11)
-        print(bit_index)
         self.assertEqual(bit_index, 6)
         corrected_state = nine_qubit_bit_correction(bit_error_state)
-        print("corrected state")
-        print_state_info(corrected_state, 11)
-        self.assertTrue(np.allclose(initialized_superpos_state, corrected_state))
+        self.assertTrue(
+            equal_to_within_global_sign(initialized_superpos_state, corrected_state)
+        )
 
     def test_nine_qubit_phase_correction(self):
         """
@@ -79,17 +82,40 @@ class TestNineQubitHelpers(unittest.TestCase):
         # -
         random.seed(10)
         initialized_superpos_state = nine_qubit_initialize_logical_state(superpos)
-        # print("init state")
-        # print_state_info(initialized_superpos_state, 11)
         phase_error_state, phase_index = phase_flip_error(initialized_superpos_state, 9)
-        # print("phase error state")
-        # print_state_info(phase_error_state, 11)
-        # print(phase_index)
         self.assertEqual(phase_index, 8)
         corrected_state = nine_qubit_phase_correction(phase_error_state)
+        self.assertTrue(
+            equal_to_within_global_sign(initialized_superpos_state, corrected_state)
+        )
+
+    def test_full_nine_qubit_code(self):
+        """
+        Test full nine-qubit code (bit and phase) correction.
+        """
+        LOGGER.info(sys._getframe().f_code.co_name) # pylint: disable=protected-access
+        # -
+        random.seed(10)
+        initialized_superpos_state = nine_qubit_initialize_logical_state(superpos)
+        # print("init state")
+        # print_state_info(initialized_superpos_state, 11)
+        error_state, phase_index = phase_flip_error(initialized_superpos_state, 9)
+        # print("phase error state")
+        # print_state_info(error_state, 11)
+        # print(phase_index)
+        self.assertEqual(phase_index, 8)
+        random.seed(11)
+        error_state, bit_index = bit_flip_error(error_state, 9)
+        # print("bit and phase error state")
+        # print_state_info(error_state, 11)
+        # print(bit_index)
+        self.assertEqual(bit_index, 6)
+        corrected_state = full_nine_qubit_code(error_state)
         # print("corrected state")
         # print_state_info(corrected_state, 11)
-        self.assertTrue(np.allclose(initialized_superpos_state, corrected_state))
+        self.assertTrue(
+            equal_to_within_global_sign(initialized_superpos_state, corrected_state)
+        )
 
 
 if __name__ == '__main__':
