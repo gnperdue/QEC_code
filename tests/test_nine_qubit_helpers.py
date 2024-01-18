@@ -73,6 +73,13 @@ class TestNineQubitHelpers(unittest.TestCase):
         self.assertTrue(
             equal_to_within_global_sign(initialized_superpos_state, corrected_state)
         )
+        for _ in range(20):
+            bit_error_state, _ = bit_flip_error(initialized_superpos_state, 9)
+            corrected_state = nine_qubit_bit_correction(bit_error_state)
+            self.assertTrue(
+                equal_to_within_global_sign(initialized_superpos_state, corrected_state)
+            )
+
 
     def test_nine_qubit_phase_correction(self):
         """
@@ -88,6 +95,12 @@ class TestNineQubitHelpers(unittest.TestCase):
         self.assertTrue(
             equal_to_within_global_sign(initialized_superpos_state, corrected_state)
         )
+        for _ in range(20):
+            phase_error_state, _ = phase_flip_error(initialized_superpos_state, 9)
+            corrected_state = nine_qubit_phase_correction(phase_error_state)
+            self.assertTrue(
+                equal_to_within_global_sign(initialized_superpos_state, corrected_state)
+            )
 
     def test_full_nine_qubit_code(self):
         """
