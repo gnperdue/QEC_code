@@ -4,8 +4,7 @@
 if [ $# -gt 0 ]; then
   export VERBOSE=True && coverage run run_tests.py
 else
-#  coverage run run_tests.py --pattern test_steane_helpers_grid
-#  coverage run run_tests.py --pattern test_steane
+#  coverage run run_tests.py --pattern test_nine
   coverage run run_tests.py
 fi
 
